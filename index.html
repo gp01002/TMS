@@ -703,7 +703,7 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
             
-            // 相機設定 - 調整為更好的初始視角
+            // 相機設定 - 調整為俯視房間中央的藍色床
             camera = new THREE.PerspectiveCamera(
                 75,  // 視野角度
                 container.clientWidth / container.clientHeight,
@@ -711,10 +711,9 @@
                 1000
             );
             
-            // 初始相機位置 - 從床的斜上方俯視
-            // 調整 Z 值讓相機對準床的位置（床在 Z = -2.0 附近）
-            camera.position.set(3, 3, 2);  // (X, Y, Z)
-            camera.lookAt(0, 1, -2);       // 看向床的位置
+            // 初始相機位置 - 從斜上方俯視房間中央
+            camera.position.set(3, 4, 3);  // 調整到能看清整個房間
+            camera.lookAt(0, 0, 0);        // 看向房間中央（藍色床的位置）
             
             // 渲染器
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -833,27 +832,29 @@
                 function(gltf) {
                     patientModel = gltf.scene;
                     
-                    // 調整模特兒大小
-                    const modelScale = 3.5;
+                    // 調整模特兒大小 - 縮小到約七分之一
+                    const modelScale = 0.5; // 從 3.5 縮小到 0.5（大約七分之一）
                     patientModel.scale.set(modelScale, modelScale, modelScale);
                     
                     // ===== 方向設定 =====
-                    // 躺下並旋轉180度，讓頭朝向相機（上方）
-                    patientModel.rotation.x = -Math.PI / 2;  // 躺下（面朝上）
-                    patientModel.rotation.z = Math.PI;       // 旋轉180度（頭朝上）✨
+                    // 躺下並順時針旋轉90度，讓頭腳方向對齊床的方向
+                    patientModel.rotation.x = -Math.PI / 2;      // 躺下（面朝上）
+                    patientModel.rotation.z = Math.PI + Math.PI / 2;  // 180° + 90° = 270° (順時針90度)
                     
                     // ===== 位置設定 =====
+                    // 藍色床在房間中央，調整位置到床上
                     patientModel.position.set(
                         0,      // X軸：床的中央
                         0.9,    // Y軸：床面高度
-                        -2.0    // Z軸：床的位置
+                        0       // Z軸：房間中央（藍色床的位置）
                     );
                     
-                    console.log('=== 模特兒已載入（頭朝上）===');
+                    console.log('=== 模特兒已載入（順時針90度，縮小）===');
                     console.log('位置:', patientModel.position);
+                    console.log('大小:', modelScale, '(縮小到約1/7)');
                     console.log('旋轉:', {
-                        x: patientModel.rotation.x,
-                        z: patientModel.rotation.z + ' (180度 - 頭朝上)'
+                        x: patientModel.rotation.x + ' (躺下)',
+                        z: patientModel.rotation.z + ' (270度 - 順時針90度)'
                     });
                     console.log('==================');
                     
@@ -1030,8 +1031,8 @@
 
         // 重置相機
         function resetCamera() {
-            camera.position.set(3, 3, 2);  // 從斜上方看床
-            controls.target.set(0, 1, -2); // 看向床的位置
+            camera.position.set(3, 4, 3);  // 從斜上方看房間中央
+            controls.target.set(0, 0, 0);  // 看向房間中央（藍色床）
             controls.update();
         }
 
