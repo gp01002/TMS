@@ -832,29 +832,29 @@
                 function(gltf) {
                     patientModel = gltf.scene;
                     
-                    // 調整模特兒大小 - 縮小到約七分之一
-                    const modelScale = 0.5; // 從 3.5 縮小到 0.5（大約七分之一）
+                    // 調整模特兒大小 - 放大一點
+                    const modelScale = 1.0; // 從 0.5 放大到 1.0
                     patientModel.scale.set(modelScale, modelScale, modelScale);
                     
                     // ===== 方向設定 =====
-                    // 躺下並順時針旋轉90度，讓頭腳方向對齊床的方向
-                    patientModel.rotation.x = -Math.PI / 2;      // 躺下（面朝上）
-                    patientModel.rotation.z = Math.PI + Math.PI / 2;  // 180° + 90° = 270° (順時針90度)
+                    // 躺下並旋轉，讓頭腳方向正確
+                    patientModel.rotation.x = -Math.PI / 2;  // 躺下（面朝上）
+                    patientModel.rotation.z = Math.PI / 2;   // 90度（上下顛倒180度後的正確角度）
                     
                     // ===== 位置設定 =====
-                    // 藍色床在房間中央，調整位置到床上
+                    // 往左移到藍色床墊上
                     patientModel.position.set(
-                        0,      // X軸：床的中央
-                        0.9,    // Y軸：床面高度
-                        0       // Z軸：房間中央（藍色床的位置）
+                        -1.2,   // X軸：往左移（負值 = 左）✨
+                        0.95,   // Y軸：床面高度（稍微提高一點）
+                        0       // Z軸：房間中央
                     );
                     
-                    console.log('=== 模特兒已載入（順時針90度，縮小）===');
-                    console.log('位置:', patientModel.position);
-                    console.log('大小:', modelScale, '(縮小到約1/7)');
+                    console.log('=== 模特兒已載入（放大+旋轉+左移）===');
+                    console.log('位置:', patientModel.position, '← 已往左移到藍色床');
+                    console.log('大小:', modelScale, '← 已放大');
                     console.log('旋轉:', {
                         x: patientModel.rotation.x + ' (躺下)',
-                        z: patientModel.rotation.z + ' (270度 - 順時針90度)'
+                        z: patientModel.rotation.z + ' (90度)'
                     });
                     console.log('==================');
                     
