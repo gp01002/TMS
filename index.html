@@ -125,13 +125,12 @@
                 </div>
             </div>
 
-            <!-- Debug 面板：已調整預設值 -->
+            <!-- Debug 面板：已調整預設值至 3.0 -->
             <div class="debug-panel">
                 <div style="margin-bottom:5px; color:#aaa;">🔧 模特兒位置微調</div>
-                <!-- 預設顯示 0.30 -->
-                <div class="debug-row">Y軸高度: <span id="val-y">0.30</span></div>
-                <!-- 預設值改為 0.30 (往上提升) -->
-                <input type="range" id="range-y" min="-2" max="2" step="0.01" value="0.30" oninput="updateHeight(this.value)">
+                <div class="debug-row">Y軸高度: <span id="val-y">3.00</span></div>
+                <!-- ✨ 這裡將預設值改為 3.00 -->
+                <input type="range" id="range-y" min="-5" max="10" step="0.05" value="3.00" oninput="updateHeight(this.value)">
                 <div style="margin-top:5px;">
                     <button style="padding:2px 5px;" onclick="resetCam()">重置視角</button>
                 </div>
@@ -184,7 +183,7 @@
 
                 // 2. 攝影機
                 camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
-                camera.position.set(0, 2, 4); // 拉遠一點
+                camera.position.set(0, 5, 8); // 將攝影機也稍微拉高一點，方便觀看
                 camera.lookAt(0, 0, 0);
 
                 // 3. 渲染器
@@ -251,7 +250,7 @@
             const loader = new THREE.GLTFLoader();
             loader.load(url, (gltf) => {
                 model = gltf.scene;
-                // 預設位置 (使用滑桿的值) - 預設為 0.30
+                // 預設位置 (使用滑桿的值)
                 const y = parseFloat(document.getElementById('range-y').value);
                 model.position.set(-1.2, y, 0);
                 model.rotation.set(-Math.PI/2, 0, Math.PI/2);
