@@ -159,9 +159,9 @@
             <!-- Debug 面板 -->
             <div class="debug-panel">
                 <div style="margin-bottom:5px; color:#aaa;">🔧 高度校正</div>
-                <div class="debug-row">Y軸: <span id="val-y">6.00</span></div>
-                <!-- ✨ 預設值改為 6.00 -->
-                <input type="range" id="range-y" min="0" max="10" step="0.1" value="6.00" oninput="updateHeight(this.value)">
+                <div class="debug-row">Y軸: <span id="val-y">4.00</span></div>
+                <!-- ✨ 預設值改為 4.00 -->
+                <input type="range" id="range-y" min="0" max="10" step="0.1" value="4.00" oninput="updateHeight(this.value)">
                 <div style="margin-top:5px;">
                     <button style="padding:2px 5px;" onclick="resetCam()">重置視角</button>
                 </div>
@@ -195,7 +195,6 @@
                 { id: "2.6", text: "小腿向上長推至委中穴", note: "注意膝蓋後方力道需減輕。" },
                 { id: "2.7", text: "小腿分三等份操作", note: "內、中、外側各一次，來回共三次。" },
                 { id: "2.8", text: "抬腳 90 度，一手托腳盤", note: "準備進行腳底按摩。" }
-                // ... 可繼續補完
             ],
             3: [
                 { id: "3.1", text: "雙手拇指並排長推大腿", note: "右腿開始，重複左腿基礎動作。" },
@@ -281,7 +280,7 @@
             const loader = new THREE.GLTFLoader();
             loader.load(url, (gltf) => {
                 model = gltf.scene;
-                // ✨ 預設高度設為 6.0
+                // ✨ 預設高度設為 4.0
                 const y = parseFloat(document.getElementById('range-y').value);
                 model.position.set(-1.2, y, 0);
                 model.rotation.set(-Math.PI/2, 0, Math.PI/2);
