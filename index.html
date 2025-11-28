@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艾柏國際芳療 - VR虛擬按摩治療系統</title>
+    <title>艾柏國際芳療 - VR虛擬按摩治療系統 (優化版)</title>
+    <!-- 引入 GSAP 動畫庫 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -690,6 +692,8 @@
 
         // 進入空間
         function enterSpace(vr) {
+            if (scene) return; // Prevent multiple inits
+
             isVRMode = vr;
             document.getElementById('welcome-screen').classList.add('hidden');
             initScene();
@@ -764,8 +768,18 @@
             renderer.domElement.addEventListener('click', onModelClick);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
             
+            // 視窗調整 (✨ 移動到這裡，確保 camera 與 renderer 存在)
+            window.addEventListener('resize', onWindowResize);
+
             // 動畫循環
             renderer.setAnimationLoop(animate);
+        }
+
+        function onWindowResize() {
+            if (!camera || !renderer) return;
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
         // 載入空間
@@ -841,23 +855,17 @@
                     patientModel.rotation.x = -Math.PI / 2;  // 躺下（面朝上）
                     patientModel.rotation.z = Math.PI / 2;   // 90度（上下顛倒180度後的正確角度）
                     
-                    // ===== 位置設定 =====
+                    // ===== 位置設定 (✨ 修改這裡!) =====
                     // 往左移到藍色床墊上，降低高度貼合床面
+                    // 從原本的 0.45 改為 0.28，讓身體更貼合床面
                     patientModel.position.set(
                         -1.2,   // X軸：往左移到藍色床
-                        0.45,   // Y軸：降低高度（從 0.95 降到 0.45）✨
+                        0.28,   // Y軸：降低高度 (如果還浮空，可試著調為 0.25)
                         0       // Z軸：房間中央
                     );
                     
                     console.log('=== 模特兒已載入（降低高度貼床）===');
-                    console.log('位置:', patientModel.position, '← Y軸降低到 0.45');
-                    console.log('大小:', modelScale);
-                    console.log('旋轉:', {
-                        x: patientModel.rotation.x + ' (躺下)',
-                        z: patientModel.rotation.z + ' (90度)'
-                    });
-                    console.log('如果還浮空，試試: patientModel.position.y = 0.3');
-                    console.log('==================');
+                    console.log('位置:', patientModel.position);
                     
                     patientModel.traverse((child) => {
                         if (child.isMesh) {
@@ -884,7 +892,6 @@
                     }
                     
                     hideLoading();
-                    console.log('模特兒已載入，位置:', patientModel.position);
                 },
                 function(xhr) {
                     const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
@@ -908,6 +915,85 @@
             showTreatmentEffect(`✅ ${techniqueNames[id]} 已選擇`);
         }
 
+        // ===== ✨ 新增功能：建立按摩視覺指標 =====
+        function createHandIndicator(position) {
+            const geometry = new THREE.SphereGeometry(0.15, 32, 32); // 小球體
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0xffff00, // 黃色高亮
+                transparent: true, 
+                opacity: 0.6 
+            });
+            const indicator = new THREE.Mesh(geometry, material);
+            indicator.position.copy(position);
+            scene.add(indicator);
+            return indicator;
+        }
+
+        // ===== ✨ 新增功能：播放按摩動畫 (使用 GSAP) =====
+        function playMassageAnimation(techniqueId, hitPoint) {
+            // 創建指示球
+            const indicator = createHandIndicator(hitPoint);
+            
+            // 根據手法 ID 決定動畫類型
+            switch(parseInt(techniqueId)) {
+                case 1: // 推撫法 (Effleurage) - 沿著身體長距離滑動
+                    gsap.to(indicator.position, {
+                        z: hitPoint.z + 0.5, // 往腳的方向滑動
+                        duration: 1.5,
+                        repeat: 1,
+                        yoyo: true, // 來回
+                        ease: "power2.inOut",
+                        onComplete: () => scene.remove(indicator)
+                    });
+                    // 模擬游標變扁（施力感）
+                    gsap.to(indicator.scale, {
+                        y: 0.5,
+                        duration: 0.5,
+                        repeat: 3,
+                        yoyo: true
+                    });
+                    break;
+
+                case 4: // 叩擊法 (Tapotement) - 快速上下跳動
+                    // 調整起始位置稍微高一點
+                    indicator.position.y += 0.2;
+                    
+                    gsap.to(indicator.position, {
+                        y: hitPoint.y, // 打擊到皮膚表面
+                        duration: 0.1,
+                        repeat: 10, // 快速連擊 10 下
+                        yoyo: true,
+                        ease: "power1.in",
+                        onComplete: () => scene.remove(indicator)
+                    });
+                    break;
+
+                case 5: // 震顫法 (Vibration) - 快速左右震動
+                    gsap.to(indicator.position, {
+                        x: hitPoint.x + 0.05,
+                        z: hitPoint.z + 0.05,
+                        duration: 0.05,
+                        repeat: 20,
+                        yoyo: true,
+                        onComplete: () => scene.remove(indicator)
+                    });
+                    break;
+
+                case 2: // 揉捏法 (Petrissage)
+                case 3: // 摩擦法 (Friction)
+                default: // 其他手法 - 擠壓變形
+                    gsap.to(indicator.scale, {
+                        x: 1.5, // 擴散
+                        y: 0.2, // 下壓
+                        z: 1.5,
+                        duration: 0.8,
+                        repeat: 3,
+                        yoyo: true,
+                        onComplete: () => scene.remove(indicator)
+                    });
+            }
+        }
+
         // 點擊模特兒進行治療
         function onModelClick(event) {
             if (!currentPatient || !selectedTechnique) {
@@ -928,6 +1014,13 @@
                 const intersects = raycaster.intersectObject(patientModel, true);
                 
                 if (intersects.length > 0) {
+                    // 1. 取得點擊的精確 3D 座標點
+                    const hitPoint = intersects[0].point;
+
+                    // 2. ✨ 執行按摩視覺動畫
+                    playMassageAnimation(selectedTechnique, hitPoint);
+                    
+                    // 3. 執行原本的數據運算
                     applyTreatment();
                 }
             }
@@ -1075,12 +1168,7 @@
             renderer.render(scene, camera);
         }
 
-        // 視窗調整
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
+        // (移除底部的全域 resize 監聽器，改在 initScene 內註冊)
     </script>
 </body>
 </html>
