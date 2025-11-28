@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>艾柏國際芳療 - 虛擬按摩治療互動空間</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            overflow: hidden;
+        }
+
+        /* 遊戲主容器 */
+        .game-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        /* 歡迎畫面 */
+        .welcome-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            transition: opacity 0.5s;
+        }
+
+        .welcome-screen.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .welcome-content {
+            text-align: center;
+            color: white;
+            max-width: 800px;
+            padding: 40px;
+        }
+
+        .welcome-content h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .welcome-content p {
+            font-size: 18px;
+            margin-bottom: 30px;
+            line-height: 1.8;
+        }
+
+        .enter-btn {
+            background: white;
+            color: #667eea;
+            border: none;
+            padding: 20px 60px;
+            font-size: 24px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .enter-btn:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        /* 3D 視窗 */
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+
+        /* 頂部狀態欄 */
+        .status-bar {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+        }
+
+        .status-icon {
+            font-size: 24px;
+        }
+
+        /* 左側控制面板 */
+        .control-panel {
+            position: absolute;
+            left: 20px;
+            top: 100px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 100;
+            max-height: calc(100vh - 140px);
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            margin-bottom: 20px;
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        /* 模特兒選擇 */
+        .model-selector {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .model-card {
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border: 3px solid transparent;
+            border-radius: 15px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+
+        .model-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .model-card.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .model-icon {
+            font-size: 48px;
+            margin-bottom: 8px;
+        }
+
+        .model-name {
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        /* 治療手法選擇 */
+        .technique-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .technique-btn {
+            background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+            border: none;
+            border-radius: 12px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .technique-btn:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .technique-btn.active {
+            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+            box-shadow: 0 0 20px rgba(250, 112, 154, 0.5);
+        }
+
+        .technique-icon {
+            font-size: 24px;
+        }
+
+        .technique-info {
+            flex: 1;
+        }
+
+        .technique-name {
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 3px;
+        }
+
+        .technique-desc {
+            font-size: 11px;
+            opacity: 0.8;
+        }
+
+        /* 右側資訊面板 */
+        .info-panel {
+            position: absolute;
+            right: 20px;
+            top: 100px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 100;
+        }
+
+        .patient-info {
+            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .patient-info h3 {
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+
+        .progress-section {
+            margin-top: 20px;
+        }
+
+        .progress-item {
+            margin-bottom: 15px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+        }
+
+        /* 底部工具欄 */
+        .toolbar {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 15px 30px;
+            border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+            z-index: 100;
+            display: flex;
+            gap: 15px;
+        }
+
+        .tool-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tool-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        /* 載入畫面 */
+        .loading-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 500;
+            transition: opacity 0.3s;
+        }
+
+        .loading-overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .spinner {
+            width: 60px;
+            height: 60px;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #667eea;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* 治療效果動畫 */
+        .treatment-effect {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(102, 126, 234, 0.9);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+
+        .treatment-effect.show {
+            opacity: 1;
+            animation: pulse 0.5s ease-in-out;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); }
+            50% { transform: translate(-50%, -50%) scale(1.1); }
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 968px) {
+            .control-panel, .info-panel {
+                width: 280px;
+            }
+            
+            .status-bar {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .control-panel {
+                left: 10px;
+                width: calc(50% - 15px);
+            }
+            
+            .info-panel {
+                right: 10px;
+                width: calc(50% - 15px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <!-- 歡迎畫面 -->
+        <div class="welcome-screen" id="welcome-screen">
+            <div class="welcome-content">
+                <h1>🌿 歡迎來到虛擬按摩治療空間</h1>
+                <p>
+                    這是一個互動式的專業按摩治療模擬系統。<br>
+                    您將進入艾柏國際的醫療空間，<br>
+                    選擇模特兒進行瑞典式按摩治療訓練。
+                </p>
+                <p>
+                    💆‍♂️ 選擇男性或女性模特兒<br>
+                    🖐️ 體驗五大專業按摩手法<br>
+                    📊 即時查看治療進度<br>
+                    🎓 提升您的專業技能
+                </p>
+                <button class="enter-btn" onclick="enterSpace()">
+                    🚪 進入治療空間
+                </button>
+            </div>
+        </div>
+
+        <!-- 3D 視窗 -->
+        <div id="canvas-container">
+            <div class="loading-overlay" id="loading-overlay">
+                <div class="spinner"></div>
+                <div class="loading-text" id="loading-text">載入治療空間中...</div>
+            </div>
+        </div>
+
+        <!-- 頂部狀態欄 -->
+        <div class="status-bar">
+            <div class="status-item">
+                <span class="status-icon">🏥</span>
+                <span>艾柏國際醫療空間</span>
+            </div>
+            <div class="status-item">
+                <span class="status-icon">👤</span>
+                <span id="current-patient">未選擇模特兒</span>
+            </div>
+            <div class="status-item">
+                <span class="status-icon">🖐️</span>
+                <span id="current-technique">待選擇手法</span>
+            </div>
+        </div>
+
+        <!-- 左側控制面板 -->
+        <div class="control-panel">
+            <!-- 空間狀態 -->
+            <div class="panel-section">
+                <div class="panel-title">🏥 治療空間</div>
+                <div style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); padding: 15px; border-radius: 10px; text-align: center;">
+                    <div style="font-size: 14px; margin-bottom: 5px;">當前空間</div>
+                    <div style="font-size: 20px; font-weight: bold;">A01 醫療室</div>
+                    <div style="font-size: 12px; margin-top: 5px; opacity: 0.8;">專業治療環境</div>
+                </div>
+            </div>
+
+            <!-- 模特兒選擇 -->
+            <div class="panel-section">
+                <div class="panel-title">👥 選擇模特兒</div>
+                <div class="model-selector">
+                    <div class="model-card" onclick="selectModel('male')" id="model-male">
+                        <div class="model-icon">👨</div>
+                        <div class="model-name">男性模特兒</div>
+                        <div style="font-size: 11px; opacity: 0.7; margin-top: 5px;">B01</div>
+                    </div>
+                    <div class="model-card" onclick="selectModel('female')" id="model-female">
+                        <div class="model-icon">👩</div>
+                        <div class="model-name">女性模特兒</div>
+                        <div style="font-size: 11px; opacity: 0.7; margin-top: 5px;">B02</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 治療手法 -->
+            <div class="panel-section">
+                <div class="panel-title">🖐️ 治療手法</div>
+                <div class="technique-list">
+                    <button class="technique-btn" onclick="applyTechnique(1)">
+                        <span class="technique-icon">🖐️</span>
+                        <div class="technique-info">
+                            <div class="technique-name">推撫法 Effleurage</div>
+                            <div class="technique-desc">流暢推動・舒緩放鬆</div>
+                        </div>
+                    </button>
+                    
+                    <button class="technique-btn" onclick="applyTechnique(2)">
+                        <span class="technique-icon">👐</span>
+                        <div class="technique-info">
+                            <div class="technique-name">揉捏法 Petrissage</div>
+                            <div class="technique-desc">深層按摩・促進循環</div>
+                        </div>
+                    </button>
+                    
+                    <button class="technique-btn" onclick="applyTechnique(3)">
+                        <span class="technique-icon">👆</span>
+                        <div class="technique-info">
+                            <div class="technique-name">摩擦法 Friction</div>
+                            <div class="technique-desc">圓形摩擦・鬆解緊繃</div>
+                        </div>
+                    </button>
+                    
+                    <button class="technique-btn" onclick="applyTechnique(4)">
+                        <span class="technique-icon">✊</span>
+                        <div class="technique-info">
+                            <div class="technique-name">叩擊法 Tapotement</div>
+                            <div class="technique-desc">節奏拍打・刺激神經</div>
+                        </div>
+                    </button>
+                    
+                    <button class="technique-btn" onclick="applyTechnique(5)">
+                        <span class="technique-icon">🌊</span>
+                        <div class="technique-info">
+                            <div class="technique-name">震顫法 Vibration</div>
+                            <div class="technique-desc">快速顫動・深度放鬆</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右側資訊面板 -->
+        <div class="info-panel">
+            <!-- 模特兒資訊 -->
+            <div class="patient-info">
+                <h3>📋 模特兒資訊</h3>
+                <div class="info-row">
+                    <span>姓名：</span>
+                    <span id="patient-name">未選擇</span>
+                </div>
+                <div class="info-row">
+                    <span>性別：</span>
+                    <span id="patient-gender">-</span>
+                </div>
+                <div class="info-row">
+                    <span>模型：</span>
+                    <span id="patient-model">-</span>
+                </div>
+                <div class="info-row">
+                    <span>狀態：</span>
+                    <span id="patient-status">待治療</span>
+                </div>
+            </div>
+
+            <!-- 治療進度 -->
+            <div class="panel-section">
+                <div class="panel-title">📊 治療進度</div>
+                <div class="progress-section">
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span>放鬆度</span>
+                            <span id="relax-value">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="relax-bar" style="width: 0%;">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span>循環改善</span>
+                            <span id="circulation-value">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="circulation-bar" style="width: 0%;">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span>肌肉舒緩</span>
+                            <span id="muscle-value">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="muscle-bar" style="width: 0%;">0%</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-item">
+                        <div class="progress-label">
+                            <span>整體療效</span>
+                            <span id="overall-value">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="overall-bar" style="width: 0%; background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);">0%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 治療統計 -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 20px;">
+                <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">📈 本次治療</div>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
+                    <div>
+                        <div style="opacity: 0.7;">治療次數</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #667eea;" id="treatment-count">0</div>
+                    </div>
+                    <div>
+                        <div style="opacity: 0.7;">治療時間</div>
+                        <div style="font-size: 20px; font-weight: bold; color: #667eea;" id="treatment-time">0:00</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部工具欄 -->
+        <div class="toolbar">
+            <button class="tool-btn" onclick="resetCamera()">
+                <span>🔄</span>
+                <span>重置視角</span>
+            </button>
+            <button class="tool-btn" onclick="toggleRotation()" id="rotate-btn">
+                <span>▶️</span>
+                <span>自動旋轉</span>
+            </button>
+            <button class="tool-btn" onclick="changeView()">
+                <span>👁️</span>
+                <span>切換視角</span>
+            </button>
+            <button class="tool-btn" onclick="resetTreatment()">
+                <span>🔄</span>
+                <span>重置治療</span>
+            </button>
+        </div>
+
+        <!-- 治療效果提示 -->
+        <div class="treatment-effect" id="treatment-effect"></div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script>
+        // 全域變數
+        let scene, camera, renderer, spaceModel, patientModel;
+        let autoRotate = false;
+        let currentPatient = null;
+        let currentTechnique = null;
+        let treatmentProgress = {
+            relax: 0,
+            circulation: 0,
+            muscle: 0,
+            overall: 0
+        };
+        let treatmentCount = 0;
+        let treatmentStartTime = null;
+        let timerInterval = null;
+
+        const techniqueNames = {
+            1: '推撫法',
+            2: '揉捏法',
+            3: '摩擦法',
+            4: '叩擊法',
+            5: '震顫法'
+        };
+
+        const techniqueEffects = {
+            1: { relax: 15, circulation: 10, muscle: 10 },
+            2: { relax: 10, circulation: 20, muscle: 15 },
+            3: { relax: 10, circulation: 15, muscle: 20 },
+            4: { relax: 5, circulation: 15, muscle: 10 },
+            5: { relax: 20, circulation: 10, muscle: 15 }
+        };
+
+        // 進入空間
+        function enterSpace() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            initScene();
+            loadSpace();
+        }
+
+        // 初始化3D場景
+        function initScene() {
+            const container = document.getElementById('canvas-container');
+            
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0xf5f5f5);
+            
+            camera = new THREE.PerspectiveCamera(
+                50,
+                container.clientWidth / container.clientHeight,
+                0.1,
+                1000
+            );
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 1, 0);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.shadowMap.enabled = true;
+            container.appendChild(renderer.domElement);
+            
+            // 光源
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+            scene.add(ambientLight);
+            
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7.5);
+            directionalLight.castShadow = true;
+            scene.add(directionalLight);
+            
+            const spotLight1 = new THREE.SpotLight(0xffffff, 0.5);
+            spotLight1.position.set(-5, 10, -5);
+            scene.add(spotLight1);
+            
+            const spotLight2 = new THREE.SpotLight(0xffffff, 0.3);
+            spotLight2.position.set(5, 8, -5);
+            scene.add(spotLight2);
+            
+            // 控制
+            addMouseControls();
+            animate();
+        }
+
+        // 載入空間（A01）
+        function loadSpace() {
+            showLoading('載入醫療空間 A01...');
+            
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                'A01.glb',
+                function(gltf) {
+                    spaceModel = gltf.scene;
+                    
+                    // 調整空間模型
+                    const box = new THREE.Box3().setFromObject(spaceModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    spaceModel.position.x = -center.x;
+                    spaceModel.position.y = -center.y;
+                    spaceModel.position.z = -center.z;
+                    
+                    spaceModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    
+                    scene.add(spaceModel);
+                    hideLoading();
+                },
+                function(xhr) {
+                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                    document.getElementById('loading-text').textContent = `載入空間... ${percent}%`;
+                },
+                function(error) {
+                    console.error('載入空間失敗:', error);
+                    hideLoading();
+                }
+            );
+        }
+
+        // 選擇模特兒
+        function selectModel(gender) {
+            showLoading(`載入${gender === 'male' ? '男性' : '女性'}模特兒...`);
+            
+            // 移除舊模特兒
+            if (patientModel) {
+                scene.remove(patientModel);
+            }
+            
+            // 更新UI
+            document.querySelectorAll('.model-card').forEach(card => card.classList.remove('active'));
+            document.getElementById('model-' + gender).classList.add('active');
+            
+            const modelFile = gender === 'male' ? 'B01.glb' : 'B02.glb';
+            const modelName = gender === 'male' ? 'B01' : 'B02';
+            const patientName = gender === 'male' ? '男性模特兒' : '女性模特兒';
+            
+            const loader = new THREE.GLTFLoader();
+            loader.load(
+                modelFile,
+                function(gltf) {
+                    patientModel = gltf.scene;
+                    
+                    // 調整模特兒位置（放在空間中心）
+                    const box = new THREE.Box3().setFromObject(patientModel);
+                    const center = box.getCenter(new THREE.Vector3());
+                    patientModel.position.set(-center.x, -center.y + 0.5, -center.z);
+                    
+                    patientModel.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+                    
+                    scene.add(patientModel);
+                    
+                    // 更新資訊
+                    currentPatient = gender;
+                    document.getElementById('current-patient').textContent = patientName;
+                    document.getElementById('patient-name').textContent = patientName;
+                    document.getElementById('patient-gender').textContent = gender === 'male' ? '男性' : '女性';
+                    document.getElementById('patient-model').textContent = modelName;
+                    document.getElementById('patient-status').textContent = '準備治療';
+                    
+                    // 開始計時
+                    if (!treatmentStartTime) {
+                        treatmentStartTime = Date.now();
+                        startTimer();
+                    }
+                    
+                    hideLoading();
+                },
+                function(xhr) {
+                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
+                    document.getElementById('loading-text').textContent = `載入模特兒... ${percent}%`;
+                },
+                function(error) {
+                    console.error('載入模特兒失敗:', error);
+                    hideLoading();
+                }
+            );
+        }
+
+        // 應用治療手法
+        function applyTechnique(techniqueId) {
+            if (!currentPatient) {
+                alert('請先選擇模特兒！');
+                return;
+            }
+            
+            currentTechnique = techniqueId;
+            const techniqueName = techniqueNames[techniqueId];
+            document.getElementById('current-technique').textContent = techniqueName;
+            
+            // 高亮按鈕
+            document.querySelectorAll('.technique-btn').forEach(btn => btn.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            
+            // 應用治療效果
+            const effects = techniqueEffects[techniqueId];
+            treatmentProgress.relax = Math.min(100, treatmentProgress.relax + effects.relax);
+            treatmentProgress.circulation = Math.min(100, treatmentProgress.circulation + effects.circulation);
+            treatmentProgress.muscle = Math.min(100, treatmentProgress.muscle + effects.muscle);
+            treatmentProgress.overall = Math.round((treatmentProgress.relax + treatmentProgress.circulation + treatmentProgress.muscle) / 3);
+            
+            // 更新進度條
+            updateProgress();
+            
+            // 增加治療次數
+            treatmentCount++;
+            document.getElementById('treatment-count').textContent = treatmentCount;
+            
+            // 顯示治療效果
+            showTreatmentEffect(`✨ ${techniqueName} 治療完成！`);
+            
+            // 更新狀態
+            if (treatmentProgress.overall >= 100) {
+                document.getElementById('patient-status').textContent = '✅ 治療完成';
+                showTreatmentEffect('🎉 恭喜！治療達到100%！');
+            } else if (treatmentProgress.overall >= 50) {
+                document.getElementById('patient-status').textContent = '進行中...';
+            }
+        }
+
+        // 更新進度條
+        function updateProgress() {
+            const updateBar = (id, value) => {
+                document.getElementById(id + '-bar').style.width = value + '%';
+                document.getElementById(id + '-bar').textContent = value + '%';
+                document.getElementById(id + '-value').textContent = value + '%';
+            };
+            
+            updateBar('relax', treatmentProgress.relax);
+            updateBar('circulation', treatmentProgress.circulation);
+            updateBar('muscle', treatmentProgress.muscle);
+            updateBar('overall', treatmentProgress.overall);
+        }
+
+        // 顯示治療效果
+        function showTreatmentEffect(message) {
+            const effect = document.getElementById('treatment-effect');
+            effect.textContent = message;
+            effect.classList.add('show');
+            
+            setTimeout(() => {
+                effect.classList.remove('show');
+            }, 2000);
+        }
+
+        // 重置治療
+        function resetTreatment() {
+            if (!confirm('確定要重置治療進度嗎？')) return;
+            
+            treatmentProgress = { relax: 0, circulation: 0, muscle: 0, overall: 0 };
+            treatmentCount = 0;
+            treatmentStartTime = Date.now();
+            
+            updateProgress();
+            document.getElementById('treatment-count').textContent = '0';
+            document.getElementById('patient-status').textContent = '準備治療';
+            document.querySelectorAll('.technique-btn').forEach(btn => btn.classList.remove('active'));
+            
+            showTreatmentEffect('🔄 治療進度已重置');
+        }
+
+        // 計時器
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Date.now() - treatmentStartTime;
+                const minutes = Math.floor(elapsed / 60000);
+                const seconds = Math.floor((elapsed % 60000) / 1000);
+                document.getElementById('treatment-time').textContent = 
+                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        // 載入/隱藏載入畫面
+        function showLoading(text = '載入中...') {
+            document.getElementById('loading-text').textContent = text;
+            document.getElementById('loading-overlay').classList.remove('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loading-overlay').classList.add('hidden');
+        }
+
+        // 滑鼠控制
+        function addMouseControls() {
+            let isDragging = false;
+            let previousMousePosition = { x: 0, y: 0 };
+            const canvas = renderer.domElement;
+            
+            canvas.addEventListener('mousedown', () => isDragging = true);
+            canvas.addEventListener('mousemove', (e) => {
+                if (isDragging && patientModel) {
+                    const deltaMove = {
+                        x: e.offsetX - previousMousePosition.x,
+                        y: e.offsetY - previousMousePosition.y
+                    };
+                    patientModel.rotation.y += deltaMove.x * 0.01;
+                }
+                previousMousePosition = { x: e.offsetX, y: e.offsetY };
+            });
+            canvas.addEventListener('mouseup', () => isDragging = false);
+            canvas.addEventListener('mouseleave', () => isDragging = false);
+            
+            canvas.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                camera.position.z += e.deltaY * 0.01;
+                camera.position.z = Math.max(2, Math.min(10, camera.position.z));
+            });
+        }
+
+        // 動畫循環
+        function animate() {
+            requestAnimationFrame(animate);
+            
+            if (autoRotate && patientModel) {
+                patientModel.rotation.y += 0.005;
+            }
+            
+            renderer.render(scene, camera);
+        }
+
+        // 工具列功能
+        function resetCamera() {
+            camera.position.set(0, 2, 5);
+            camera.lookAt(0, 1, 0);
+            if (patientModel) patientModel.rotation.set(0, 0, 0);
+        }
+
+        function toggleRotation() {
+            autoRotate = !autoRotate;
+            document.getElementById('rotate-btn').innerHTML = autoRotate 
+                ? '<span>⏸️</span><span>停止旋轉</span>' 
+                : '<span>▶️</span><span>自動旋轉</span>';
+        }
+
+        let viewAngle = 0;
+        function changeView() {
+            viewAngle = (viewAngle + 1) % 4;
+            const positions = [
+                { x: 0, y: 2, z: 5 },      // 正面
+                { x: 5, y: 2, z: 0 },      // 側面
+                { x: 0, y: 2, z: -5 },     // 背面
+                { x: -5, y: 2, z: 0 }      // 另一側
+            ];
+            camera.position.set(...Object.values(positions[viewAngle]));
+            camera.lookAt(0, 1, 0);
+        }
+
+        // 視窗調整
+        window.addEventListener('resize', () => {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        });
+
+        // 載入 GLTFLoader
+        const script = document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js';
+        document.head.appendChild(script);
+    </script>
+</body>
+</html>
