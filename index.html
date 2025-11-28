@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艾柏國際芳療 - VR虛擬按摩治療系統 (穴位互動版)</title>
+    <title>艾柏國際芳療 - VR虛擬按摩治療系統 (修復版)</title>
     <!-- 引入 GSAP 動畫庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
@@ -145,7 +145,7 @@
             Z: <span id="val-z">0.00</span>
             <input type="range" id="range-z" min="-5" max="5" step="0.05" value="0">
         </div>
-        <p style="color:#aaa;">* Y軸設為負值可穿過地板</p>
+        <p style="color:#aaa;">* 調整後請記下數值</p>
     </div>
 
     <div class="game-container">
@@ -231,10 +231,9 @@
         let scene, camera, renderer, controls, patientModel;
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
-        let targetPoints = []; // 存放按摩熱點
+        let targetPoints = []; 
         let isGameActive = false;
         
-        // 遊戲狀態
         let gameState = {
             hits: 0,
             misses: 0,
@@ -244,18 +243,17 @@
 
         const techniqueNames = { 1: '推撫法', 2: '揉捏法', 3: '摩擦法', 4: '叩擊法' };
 
-        // 初始化場景
         function init() {
             const container = document.getElementById('canvas-container');
             
             scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
+            scene.background = new THREE.Color(0x87ceeb); // 設定背景為藍色天空
 
             camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
             camera.position.set(2, 3, 3);
             camera.lookAt(0, 0, 0);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.shadowMap.enabled = true;
             container.appendChild(renderer.domElement);
@@ -279,33 +277,46 @@
             window.addEventListener('resize', onResize);
             renderer.domElement.addEventListener('click', onClick);
             
-            // Debug 滑桿監聽
             document.getElementById('range-x').addEventListener('input', updateModelPos);
             document.getElementById('range-y').addEventListener('input', updateModelPos);
             document.getElementById('range-z').addEventListener('input', updateModelPos);
 
-            animate();
+            // ✨ 使用 setAnimationLoop 確保渲染循環正常啟動
+            renderer.setAnimationLoop(animate);
         }
 
+        // ✨ 修復房間消失問題：使用 getCenter 確保房間置中
         function loadRoom() {
             const loader = new THREE.GLTFLoader();
             loader.load('A01.glb', (gltf) => {
                 const room = gltf.scene;
-                // 自動縮放房間
+                
                 const box = new THREE.Box3().setFromObject(room);
                 const size = box.getSize(new THREE.Vector3());
+                const center = box.getCenter(new THREE.Vector3());
+                
+                // 自動縮放與置中
                 const scale = 20 / Math.max(size.x, size.y, size.z);
                 room.scale.set(scale, scale, scale);
-                room.position.y = -box.min.y * scale; // 貼地
+                
+                // 將房間中心點移回 (0,0,0)
+                room.position.set(
+                    -center.x * scale, 
+                    -box.min.y * scale, // 底部貼地
+                    -center.z * scale
+                );
+                
                 scene.add(room);
                 document.getElementById('loading-overlay').classList.add('hidden');
+            }, undefined, (error) => {
+                console.error("房間載入失敗:", error);
+                document.getElementById('loading-text').innerText = "載入失敗，請檢查檔案";
             });
         }
 
         function selectModel(gender) {
             if (patientModel) {
                 scene.remove(patientModel);
-                // 清除舊的熱點
                 targetPoints.forEach(p => scene.remove(p));
                 targetPoints = [];
             }
@@ -313,7 +324,6 @@
             document.getElementById('loading-overlay').classList.remove('hidden');
             document.getElementById('loading-text').innerText = "載入模特兒...";
 
-            // UI 更新
             document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
             document.getElementById('model-' + gender).classList.add('active');
 
@@ -323,20 +333,17 @@
             loader.load(file, (gltf) => {
                 patientModel = gltf.scene;
                 
-                // 預設位置 (解決浮空問題)
-                // ✨ 將預設高度設為 0.0，如果還太高，可用 Debug 面板拉到負數
-                patientModel.position.set(-1.2, 0.0, 0); 
+                // ✨ 預設位置 (使用 Debug 面板數值)
+                const dx = parseFloat(document.getElementById('range-x').value);
+                const dy = parseFloat(document.getElementById('range-y').value);
+                const dz = parseFloat(document.getElementById('range-z').value);
+
+                patientModel.position.set(dx, dy, dz); 
                 patientModel.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
                 
                 scene.add(patientModel);
                 
-                // 更新 Debug 面板數值
-                document.getElementById('range-x').value = -1.2;
-                document.getElementById('range-y').value = 0.0;
-                document.getElementById('range-z').value = 0;
-                updateDebugVal();
-
-                // ✨ 建立按摩熱點 (肩膀、背部、腿)
+                // 建立按摩熱點
                 createTargetPoints(patientModel.position);
 
                 document.getElementById('loading-overlay').classList.add('hidden');
@@ -345,14 +352,11 @@
             });
         }
 
-        // ✨ 建立發光的按摩穴位點
         function createTargetPoints(basePos) {
-            // 定義相對於模特兒位置的熱點偏移量 (需根據實際模型大小微調)
-            // 由於模型旋轉了，這裡的座標是世界座標
             const pointsData = [
-                { x: 0, y: 0.2, z: -0.6, name: '肩頸' }, // 頭部附近
-                { x: 0, y: 0.25, z: 0, name: '背部' },   // 背部中央
-                { x: 0, y: 0.2, z: 0.8, name: '腿部' }   // 腿部
+                { x: 0, y: 0.2, z: -0.6, name: '肩頸' },
+                { x: 0, y: 0.25, z: 0, name: '背部' },
+                { x: 0, y: 0.2, z: 0.8, name: '腿部' }
             ];
 
             const geometry = new THREE.SphereGeometry(0.25, 32, 32);
@@ -366,17 +370,14 @@
                 
                 const sphere = new THREE.Mesh(geometry, material);
                 
-                // 計算世界座標：基底位置 + 偏移
-                // 注意：這裡假設 basePos 是(-1.2, y, 0)，我們需要加上相對位置
                 sphere.position.set(
                     basePos.x + p.x, 
-                    basePos.y + p.y + 0.5, // 稍微浮起來一點方便看到
+                    basePos.y + p.y + 0.5,
                     basePos.z + p.z
                 );
                 
                 sphere.userData = { isTarget: true, name: p.name };
                 
-                // 加入呼吸燈動畫
                 gsap.to(material, {
                     opacity: 0.1,
                     duration: 1,
@@ -389,7 +390,6 @@
             });
         }
 
-        // Debug: 更新模型位置
         function updateModelPos() {
             if (!patientModel) return;
             const x = parseFloat(document.getElementById('range-x').value);
@@ -397,21 +397,16 @@
             const z = parseFloat(document.getElementById('range-z').value);
             
             patientModel.position.set(x, y, z);
-            updateDebugVal();
+            
+            document.getElementById('val-x').innerText = x;
+            document.getElementById('val-y').innerText = y;
+            document.getElementById('val-z').innerText = z;
 
-            // 更新熱點位置 (跟隨模型)
             if (targetPoints.length > 0) {
-                // 重新建立熱點 (簡單暴力法)
                 targetPoints.forEach(p => scene.remove(p));
                 targetPoints = [];
                 createTargetPoints(patientModel.position);
             }
-        }
-
-        function updateDebugVal() {
-            document.getElementById('val-x').innerText = document.getElementById('range-x').value;
-            document.getElementById('val-y').innerText = document.getElementById('range-y').value;
-            document.getElementById('val-z').innerText = document.getElementById('range-z').value;
         }
 
         function selectTechnique(id) {
@@ -433,7 +428,6 @@
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
 
-            // 1. 檢測是否點中熱點 (Target Points)
             const hitTargets = raycaster.intersectObjects(targetPoints);
             
             if (hitTargets.length > 0) {
@@ -442,7 +436,6 @@
                 return;
             }
 
-            // 2. 檢測是否點中身體 (但沒中熱點)
             if (patientModel) {
                 const hitModel = raycaster.intersectObject(patientModel, true);
                 if (hitModel.length > 0) {
@@ -453,14 +446,11 @@
 
         function handleSuccess(pos, partName) {
             gameState.hits++;
-            gameState.progress += 10; // 每次增加10%
+            gameState.progress += 10;
             if(gameState.progress > 100) gameState.progress = 100;
 
             updateUI();
-            
-            // 播放按摩特效
             playVisualEffect(pos);
-            
             showFeedback(`✨ Perfect! 成功按壓${partName}`, "success");
         }
 
@@ -468,7 +458,6 @@
             gameState.misses++;
             updateUI();
             
-            // 顯示一個小的失敗提示點
             const missMark = new THREE.Mesh(
                 new THREE.RingGeometry(0.05, 0.08, 32),
                 new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide })
@@ -484,7 +473,6 @@
         }
 
         function playVisualEffect(pos) {
-            // 產生一個手掌或光球
             const sphere = new THREE.Mesh(
                 new THREE.SphereGeometry(0.15, 32, 32),
                 new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 })
@@ -492,10 +480,9 @@
             sphere.position.copy(pos);
             scene.add(sphere);
 
-            // 根據手法播放動畫
-            if (gameState.selectedTechnique == 4) { // 叩擊
+            if (gameState.selectedTechnique == 4) {
                 gsap.to(sphere.position, { y: pos.y + 0.3, duration: 0.1, yoyo: true, repeat: 5, onComplete: () => scene.remove(sphere) });
-            } else { // 其他
+            } else {
                 gsap.to(sphere.scale, { x: 1.5, z: 1.5, duration: 0.5, yoyo: true, repeat: 1, onComplete: () => scene.remove(sphere) });
             }
         }
@@ -503,12 +490,9 @@
         function showFeedback(text, type) {
             const el = document.getElementById('treatment-effect');
             el.innerText = text;
-            el.className = `treatment-effect ${type}`; // reset class
+            el.className = `treatment-effect ${type}`;
             el.style.opacity = 1;
-            
-            // 重新觸發動畫
-            void el.offsetWidth; 
-            
+            void el.offsetWidth;
             setTimeout(() => { el.style.opacity = 0; }, 1500);
         }
 
@@ -518,7 +502,6 @@
             document.getElementById('progress-val').innerText = gameState.progress + '%';
             document.getElementById('progress-bar').style.width = gameState.progress + '%';
 
-            // 計算準確度
             const total = gameState.hits + gameState.misses;
             const acc = total === 0 ? 0 : Math.round((gameState.hits / total) * 100);
             document.getElementById('score-val').innerText = acc + '%';
@@ -530,6 +513,7 @@
         }
 
         function enterSpace() {
+            if(scene) return;
             document.getElementById('welcome-screen').classList.add('hidden');
             init();
         }
@@ -551,7 +535,6 @@
         }
 
         function animate() {
-            requestAnimationFrame(animate);
             controls.update();
             renderer.render(scene, camera);
         }
