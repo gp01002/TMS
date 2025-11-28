@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艾柏國際芳療 - VR虛擬按摩治療系統 (優化版)</title>
+    <title>艾柏國際芳療 - VR虛擬按摩治療系統 (開發調校版)</title>
     <!-- 引入 GSAP 動畫庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
@@ -20,438 +20,208 @@
             overflow: hidden;
         }
 
-        .game-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-        }
-
+        /* ... (保留原本的 CSS) ... */
+        .game-container { width: 100vw; height: 100vh; position: relative; }
         .welcome-screen {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            transition: opacity 0.5s;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            z-index: 1000; transition: opacity 0.5s;
         }
-
-        .welcome-screen.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .welcome-content {
-            text-align: center;
-            color: white;
-            max-width: 800px;
-            padding: 40px;
-        }
-
-        .welcome-content h1 {
-            font-size: 48px;
-            margin-bottom: 20px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-        }
-
-        .welcome-content p {
-            font-size: 18px;
-            margin-bottom: 30px;
-            line-height: 1.8;
-        }
-
+        .welcome-screen.hidden { opacity: 0; pointer-events: none; }
+        .welcome-content { text-align: center; color: white; max-width: 800px; padding: 40px; }
+        .welcome-content h1 { font-size: 48px; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .welcome-content p { font-size: 18px; margin-bottom: 30px; line-height: 1.8; }
         .enter-btn {
-            background: white;
-            color: #667eea;
-            border: none;
-            padding: 20px 60px;
-            font-size: 24px;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-weight: bold;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-            margin: 10px;
+            background: white; color: #667eea; border: none; padding: 20px 60px; font-size: 24px;
+            border-radius: 50px; cursor: pointer; transition: all 0.3s; font-weight: bold;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); margin: 10px;
         }
-
-        .enter-btn:hover {
-            transform: translateY(-5px) scale(1.05);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
-        }
-
-        .enter-btn.vr-btn {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: white;
-        }
-
-        #canvas-container {
-            width: 100%;
-            height: 100%;
-            position: relative;
-        }
-
+        .enter-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
+        .enter-btn.vr-btn { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; }
+        
+        #canvas-container { width: 100%; height: 100%; position: relative; }
+        
         .status-bar {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 30px;
-            border-radius: 50px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            z-index: 100;
-            display: flex;
-            align-items: center;
-            gap: 20px;
+            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); padding: 15px 30px; border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100;
+            display: flex; align-items: center; gap: 20px;
         }
-
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 16px;
-        }
-
+        .status-item { display: flex; align-items: center; gap: 8px; font-size: 16px; }
+        
         .control-panel {
-            position: absolute;
-            left: 20px;
-            top: 100px;
-            width: 320px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            z-index: 100;
-            max-height: calc(100vh - 140px);
-            overflow-y: auto;
+            position: absolute; left: 20px; top: 100px; width: 320px;
+            background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100;
+            max-height: calc(100vh - 140px); overflow-y: auto;
         }
-
-        .panel-section {
-            margin-bottom: 20px;
-        }
-
-        .panel-title {
-            font-size: 18px;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #f0f0f0;
-        }
-
-        .model-selector {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
+        .panel-section { margin-bottom: 20px; }
+        .panel-title { font-size: 18px; font-weight: bold; color: #667eea; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 2px solid #f0f0f0; }
+        
+        .model-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .model-card {
             background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border: 3px solid transparent;
-            border-radius: 15px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: center;
+            border: 3px solid transparent; border-radius: 15px; padding: 15px;
+            cursor: pointer; transition: all 0.3s; text-align: center;
         }
-
-        .model-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .model-card.active {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-color: #764ba2;
-        }
-
-        .model-icon {
-            font-size: 48px;
-            margin-bottom: 8px;
-        }
-
-        .technique-list {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
+        .model-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .model-card.active { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-color: #764ba2; }
+        .model-icon { font-size: 48px; margin-bottom: 8px; }
+        
+        .technique-list { display: flex; flex-direction: column; gap: 10px; }
         .technique-btn {
             background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
-            border: none;
-            border-radius: 12px;
-            padding: 15px;
-            cursor: pointer;
-            transition: all 0.3s;
-            text-align: left;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            border: none; border-radius: 12px; padding: 15px;
+            cursor: pointer; transition: all 0.3s; text-align: left;
+            display: flex; align-items: center; gap: 10px;
         }
-
-        .technique-btn:hover {
-            transform: translateX(5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-
-        .technique-btn.active {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            box-shadow: 0 0 20px rgba(250, 112, 154, 0.5);
-        }
-
-        .technique-icon {
-            font-size: 24px;
-        }
-
-        .technique-info {
-            flex: 1;
-        }
-
-        .technique-name {
-            font-weight: bold;
-            font-size: 14px;
-            margin-bottom: 3px;
-        }
-
-        .technique-desc {
-            font-size: 11px;
-            opacity: 0.8;
-        }
-
+        .technique-btn:hover { transform: translateX(5px); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .technique-btn.active { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); box-shadow: 0 0 20px rgba(250, 112, 154, 0.5); }
+        .technique-icon { font-size: 24px; }
+        .technique-info { flex: 1; }
+        .technique-name { font-weight: bold; font-size: 14px; margin-bottom: 3px; }
+        .technique-desc { font-size: 11px; opacity: 0.8; }
+        
         .info-panel {
-            position: absolute;
-            right: 20px;
-            top: 100px;
-            width: 320px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            z-index: 100;
+            position: absolute; right: 20px; top: 100px; width: 320px;
+            background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100;
         }
-
-        .patient-info {
-            background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);
-            border-radius: 15px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .info-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            font-size: 14px;
-        }
-
-        .progress-section {
-            margin-top: 20px;
-        }
-
-        .progress-item {
-            margin-bottom: 15px;
-        }
-
-        .progress-label {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 5px;
-            font-size: 13px;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 20px;
-            background: #e0e0e0;
-            border-radius: 10px;
-            overflow: hidden;
-        }
-
+        .patient-info { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); border-radius: 15px; padding: 20px; margin-bottom: 20px; }
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; }
+        
+        .progress-section { margin-top: 20px; }
+        .progress-item { margin-bottom: 15px; }
+        .progress-label { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; }
+        .progress-bar { width: 100%; height: 20px; background: #e0e0e0; border-radius: 10px; overflow: hidden; }
         .progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.5s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-size: 11px;
-            font-weight: bold;
+            height: 100%; background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s; display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 11px; font-weight: bold;
         }
-
+        
         .toolbar {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95);
-            padding: 15px 30px;
-            border-radius: 50px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-            z-index: 100;
-            display: flex;
-            gap: 15px;
-            flex-wrap: wrap;
-            justify-content: center;
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.95); padding: 15px 30px; border-radius: 50px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100;
+            display: flex; gap: 15px; flex-wrap: wrap; justify-content: center;
         }
-
         .tool-btn {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white; border: none; padding: 12px 25px; border-radius: 25px;
+            cursor: pointer; transition: all 0.3s; font-size: 14px;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .tool-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4); }
+        .tool-btn.vr-btn { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        
+        .loading-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 500; transition: opacity 0.3s;
+        }
+        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+        .spinner {
+            width: 60px; height: 60px; border: 6px solid #f3f3f3; border-top: 6px solid #667eea;
+            border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px;
+        }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .loading-text { color: #667eea; font-size: 18px; font-weight: bold; }
+        
+        .treatment-effect {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(102, 126, 234, 0.9); color: white; padding: 30px 50px;
+            border-radius: 20px; font-size: 24px; font-weight: bold; z-index: 200;
+            opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
+        .treatment-effect.show { opacity: 1; animation: pulse 0.5s ease-in-out; }
+        @keyframes pulse { 0%, 100% { transform: translate(-50%, -50%) scale(1); } 50% { transform: translate(-50%, -50%) scale(1.1); } }
+        
+        .interaction-hint {
+            position: absolute; bottom: 100px; left: 50%; transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7); color: white; padding: 15px 30px;
+            border-radius: 25px; font-size: 14px; z-index: 90; animation: fadeInOut 3s infinite;
+        }
+        @keyframes fadeInOut { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+        
+        .crosshair {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 20px; height: 20px; border: 2px solid rgba(255, 255, 255, 0.8);
+            border-radius: 50%; pointer-events: none; z-index: 50; display: none;
+        }
+        .crosshair.active { display: block; background: rgba(102, 126, 234, 0.3); }
+
+        /* ===== ✨ 新增：調校面板樣式 ===== */
+        .debug-panel {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            z-index: 1000;
+            width: 250px;
+            display: none; /* 預設隱藏，按按鈕開啟 */
+        }
+        .debug-panel.active { display: block; }
+        .debug-row { margin-bottom: 10px; }
+        .debug-row label { display: block; font-size: 12px; margin-bottom: 3px; color: #aaa; }
+        .debug-row input[type="range"] { width: 100%; }
+        .debug-row span { font-size: 12px; float: right; color: #4CAF50; }
+        .debug-toggle {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff5722;
             color: white;
             border: none;
-            padding: 12px 25px;
-            border-radius: 25px;
+            padding: 5px 10px;
+            border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s;
-            font-size: 14px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .tool-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .tool-btn.vr-btn {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-        }
-
-        .loading-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.95);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 500;
-            transition: opacity 0.3s;
-        }
-
-        .loading-overlay.hidden {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .spinner {
-            width: 60px;
-            height: 60px;
-            border: 6px solid #f3f3f3;
-            border-top: 6px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 20px;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            color: #667eea;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .treatment-effect {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(102, 126, 234, 0.9);
-            color: white;
-            padding: 30px 50px;
-            border-radius: 20px;
-            font-size: 24px;
-            font-weight: bold;
-            z-index: 200;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s;
-        }
-
-        .treatment-effect.show {
-            opacity: 1;
-            animation: pulse 0.5s ease-in-out;
-        }
-
-        @keyframes pulse {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); }
-            50% { transform: translate(-50%, -50%) scale(1.1); }
-        }
-
-        .interaction-hint {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 25px;
-            font-size: 14px;
-            z-index: 90;
-            animation: fadeInOut 3s infinite;
-        }
-
-        @keyframes fadeInOut {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-        }
-
-        .crosshair {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.8);
-            border-radius: 50%;
-            pointer-events: none;
-            z-index: 50;
-            display: none;
-        }
-
-        .crosshair.active {
-            display: block;
-            background: rgba(102, 126, 234, 0.3);
+            z-index: 1001;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
+    <button class="debug-toggle" onclick="toggleDebug()">🔧 開啟位置調校</button>
+
+    <div class="debug-panel" id="debug-panel">
+        <h3 style="margin-bottom: 10px; color: #fff; font-size: 16px;">🔧 模特兒位置微調</h3>
+        <div class="debug-row">
+            <label>左右 (X軸) <span id="val-x">-1.20</span></label>
+            <input type="range" id="range-x" min="-5" max="5" step="0.05" value="-1.2">
+        </div>
+        <div class="debug-row">
+            <label>上下 (Y軸) <span id="val-y">0.10</span></label>
+            <input type="range" id="range-y" min="-1" max="2" step="0.01" value="0.10">
+        </div>
+        <div class="debug-row">
+            <label>前後 (Z軸) <span id="val-z">0.00</span></label>
+            <input type="range" id="range-z" min="-5" max="5" step="0.05" value="0">
+        </div>
+        <div style="font-size: 11px; color: #aaa; margin-top: 10px; line-height: 1.4;">
+            * 拖動滑桿直到模特兒貼合床面。<br>
+            * 記下 "上下 (Y軸)" 的數值告訴我，我再幫你寫死。
+        </div>
+    </div>
+
     <div class="game-container">
+        <!-- (保留原本的歡迎畫面與 UI) -->
         <div class="welcome-screen" id="welcome-screen">
             <div class="welcome-content">
                 <h1>🥽 VR虛擬按摩治療系統</h1>
-                <p>
-                    歡迎來到艾柏國際的VR治療空間！<br>
-                    體驗真實的3D醫療環境，進行專業按摩訓練。
-                </p>
+                <p>歡迎來到艾柏國際的VR治療空間！<br>體驗真實的3D醫療環境，進行專業按摩訓練。</p>
                 <p>
                     🖱️ <strong>桌面模式</strong>：滑鼠拖曳移動視角<br>
                     🥽 <strong>VR模式</strong>：沉浸式虛擬實境體驗<br>
                     👆 <strong>互動操作</strong>：點擊模特兒身體進行治療
                 </p>
                 <div>
-                    <button class="enter-btn" onclick="enterSpace(false)">
-                        🖥️ 桌面模式
-                    </button>
-                    <button class="enter-btn vr-btn" onclick="enterSpace(true)">
-                        🥽 VR模式
-                    </button>
+                    <button class="enter-btn" onclick="enterSpace(false)">🖥️ 桌面模式</button>
+                    <button class="enter-btn vr-btn" onclick="enterSpace(true)">🥽 VR模式</button>
                 </div>
             </div>
         </div>
@@ -465,18 +235,9 @@
         </div>
 
         <div class="status-bar">
-            <div class="status-item">
-                <span class="status-icon">🏥</span>
-                <span>艾柏國際醫療空間</span>
-            </div>
-            <div class="status-item">
-                <span class="status-icon">👤</span>
-                <span id="current-patient">未選擇模特兒</span>
-            </div>
-            <div class="status-item">
-                <span class="status-icon">🖐️</span>
-                <span id="current-technique">待選擇手法</span>
-            </div>
+            <div class="status-item"><span class="status-icon">🏥</span><span>艾柏國際醫療空間</span></div>
+            <div class="status-item"><span class="status-icon">👤</span><span id="current-patient">未選擇模特兒</span></div>
+            <div class="status-item"><span class="status-icon">🖐️</span><span id="current-technique">待選擇手法</span></div>
         </div>
 
         <div class="control-panel">
@@ -514,7 +275,6 @@
                             <div class="technique-desc">流暢推動・舒緩放鬆</div>
                         </div>
                     </button>
-                    
                     <button class="technique-btn" onclick="selectTechnique(2)">
                         <span class="technique-icon">👐</span>
                         <div class="technique-info">
@@ -522,7 +282,6 @@
                             <div class="technique-desc">深層按摩・促進循環</div>
                         </div>
                     </button>
-                    
                     <button class="technique-btn" onclick="selectTechnique(3)">
                         <span class="technique-icon">👆</span>
                         <div class="technique-info">
@@ -530,7 +289,6 @@
                             <div class="technique-desc">圓形摩擦・鬆解緊繃</div>
                         </div>
                     </button>
-                    
                     <button class="technique-btn" onclick="selectTechnique(4)">
                         <span class="technique-icon">✊</span>
                         <div class="technique-info">
@@ -538,7 +296,6 @@
                             <div class="technique-desc">節奏拍打・刺激神經</div>
                         </div>
                     </button>
-                    
                     <button class="technique-btn" onclick="selectTechnique(5)">
                         <span class="technique-icon">🌊</span>
                         <div class="technique-info">
@@ -553,65 +310,30 @@
         <div class="info-panel">
             <div class="patient-info">
                 <h3>📋 模特兒資訊</h3>
-                <div class="info-row">
-                    <span>姓名：</span>
-                    <span id="patient-name">未選擇</span>
-                </div>
-                <div class="info-row">
-                    <span>性別：</span>
-                    <span id="patient-gender">-</span>
-                </div>
-                <div class="info-row">
-                    <span>模型：</span>
-                    <span id="patient-model">-</span>
-                </div>
-                <div class="info-row">
-                    <span>狀態：</span>
-                    <span id="patient-status">待治療</span>
-                </div>
+                <div class="info-row"><span>姓名：</span><span id="patient-name">未選擇</span></div>
+                <div class="info-row"><span>性別：</span><span id="patient-gender">-</span></div>
+                <div class="info-row"><span>模型：</span><span id="patient-model">-</span></div>
+                <div class="info-row"><span>狀態：</span><span id="patient-status">待治療</span></div>
             </div>
 
             <div class="panel-section">
                 <div class="panel-title">📊 治療進度</div>
                 <div class="progress-section">
                     <div class="progress-item">
-                        <div class="progress-label">
-                            <span>放鬆度</span>
-                            <span id="relax-value">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="relax-bar" style="width: 0%;">0%</div>
-                        </div>
+                        <div class="progress-label"><span>放鬆度</span><span id="relax-value">0%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" id="relax-bar" style="width: 0%;">0%</div></div>
                     </div>
-                    
                     <div class="progress-item">
-                        <div class="progress-label">
-                            <span>循環改善</span>
-                            <span id="circulation-value">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="circulation-bar" style="width: 0%;">0%</div>
-                        </div>
+                        <div class="progress-label"><span>循環改善</span><span id="circulation-value">0%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" id="circulation-bar" style="width: 0%;">0%</div></div>
                     </div>
-                    
                     <div class="progress-item">
-                        <div class="progress-label">
-                            <span>肌肉舒緩</span>
-                            <span id="muscle-value">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="muscle-bar" style="width: 0%;">0%</div>
-                        </div>
+                        <div class="progress-label"><span>肌肉舒緩</span><span id="muscle-value">0%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" id="muscle-bar" style="width: 0%;">0%</div></div>
                     </div>
-                    
                     <div class="progress-item">
-                        <div class="progress-label">
-                            <span>整體療效</span>
-                            <span id="overall-value">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" id="overall-bar" style="width: 0%; background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);">0%</div>
-                        </div>
+                        <div class="progress-label"><span>整體療效</span><span id="overall-value">0%</span></div>
+                        <div class="progress-bar"><div class="progress-fill" id="overall-bar" style="width: 0%; background: linear-gradient(90deg, #fa709a 0%, #fee140 100%);">0%</div></div>
                     </div>
                 </div>
             </div>
@@ -619,44 +341,28 @@
             <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-top: 20px;">
                 <div style="font-size: 14px; font-weight: bold; margin-bottom: 10px;">📈 本次治療</div>
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px;">
-                    <div>
-                        <div style="opacity: 0.7;">治療次數</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #667eea;" id="treatment-count">0</div>
-                    </div>
-                    <div>
-                        <div style="opacity: 0.7;">治療時間</div>
-                        <div style="font-size: 20px; font-weight: bold; color: #667eea;" id="treatment-time">0:00</div>
-                    </div>
+                    <div><div style="opacity: 0.7;">治療次數</div><div style="font-size: 20px; font-weight: bold; color: #667eea;" id="treatment-count">0</div></div>
+                    <div><div style="opacity: 0.7;">治療時間</div><div style="font-size: 20px; font-weight: bold; color: #667eea;" id="treatment-time">0:00</div></div>
                 </div>
             </div>
         </div>
 
         <div class="toolbar">
-            <button class="tool-btn" onclick="resetCamera()">
-                <span>🔄</span>
-                <span>重置視角</span>
-            </button>
-            <button class="tool-btn vr-btn" onclick="toggleVR()" id="vr-toggle">
-                <span>🥽</span>
-                <span>進入VR</span>
-            </button>
-            <button class="tool-btn" onclick="resetTreatment()">
-                <span>🔄</span>
-                <span>重置治療</span>
-            </button>
+            <button class="tool-btn" onclick="resetCamera()"><span>🔄</span><span>重置視角</span></button>
+            <button class="tool-btn vr-btn" onclick="toggleVR()" id="vr-toggle"><span>🥽</span><span>進入VR</span></button>
+            <button class="tool-btn" onclick="resetTreatment()"><span>🔄</span><span>重置治療</span></button>
         </div>
 
-        <div class="interaction-hint" id="interaction-hint">
-            👆 點擊模特兒身體部位進行治療
-        </div>
-
+        <div class="interaction-hint" id="interaction-hint">👆 點擊模特兒身體部位進行治療</div>
         <div class="treatment-effect" id="treatment-effect"></div>
     </div>
 
+    <!-- Three.js Libraries -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/VRButton.js"></script>
+    
     <script>
         // 全域變數
         let scene, camera, renderer, controls, spaceModel, patientModel;
@@ -664,22 +370,13 @@
         let isVRMode = false;
         let currentPatient = null;
         let selectedTechnique = null;
-        let treatmentProgress = {
-            relax: 0,
-            circulation: 0,
-            muscle: 0,
-            overall: 0
-        };
+        let treatmentProgress = { relax: 0, circulation: 0, muscle: 0, overall: 0 };
         let treatmentCount = 0;
         let treatmentStartTime = null;
         let timerInterval = null;
 
         const techniqueNames = {
-            1: '推撫法',
-            2: '揉捏法',
-            3: '摩擦法',
-            4: '叩擊法',
-            5: '震顫法'
+            1: '推撫法', 2: '揉捏法', 3: '摩擦法', 4: '叩擊法', 5: '震顫法'
         };
 
         const techniqueEffects = {
@@ -690,88 +387,60 @@
             5: { relax: 20, circulation: 10, muscle: 15 }
         };
 
-        // 進入空間
         function enterSpace(vr) {
-            if (scene) return; // Prevent multiple inits
-
+            if (scene) return;
             isVRMode = vr;
             document.getElementById('welcome-screen').classList.add('hidden');
             initScene();
             loadSpace();
         }
 
-        // 初始化3D場景
         function initScene() {
             const container = document.getElementById('canvas-container');
-            
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
-            
-            // 相機設定 - 調整為俯視房間中央的藍色床
-            camera = new THREE.PerspectiveCamera(
-                75,  // 視野角度
-                container.clientWidth / container.clientHeight,
-                0.1,
-                1000
-            );
-            
-            // 初始相機位置 - 從斜上方俯視房間中央
-            camera.position.set(3, 4, 3);  // 調整到能看清整個房間
-            camera.lookAt(0, 0, 0);        // 看向房間中央（藍色床的位置）
-            
-            // 渲染器
+
+            camera = new THREE.PerspectiveCamera(75, container.clientWidth / container.clientHeight, 0.1, 1000);
+            camera.position.set(3, 4, 3);
+            camera.lookAt(0, 0, 0);
+
             renderer = new THREE.WebGLRenderer({ antialias: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.xr.enabled = isVRMode;
             container.appendChild(renderer.domElement);
-            
-            // 軌道控制器 - 允許自由移動視角
+
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.minDistance = 2;
             controls.maxDistance = 20;
-            controls.maxPolarAngle = Math.PI / 1.5;
             controls.target.set(0, 1, 0);
-            
-            // VR按鈕
+
             if (isVRMode && navigator.xr) {
                 document.body.appendChild(THREE.VRButton.createButton(renderer));
             }
-            
-            // 光源設定
+
             const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambientLight);
-            
             const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0);
             directionalLight.position.set(0, 15, 5);
             directionalLight.castShadow = true;
-            directionalLight.shadow.mapSize.width = 2048;
-            directionalLight.shadow.mapSize.height = 2048;
             scene.add(directionalLight);
-            
             const spotLight1 = new THREE.SpotLight(0xffffff, 0.6);
             spotLight1.position.set(-8, 12, 0);
             scene.add(spotLight1);
-            
             const spotLight2 = new THREE.SpotLight(0xffffff, 0.6);
             spotLight2.position.set(8, 12, 0);
             scene.add(spotLight2);
-            
-            // 射線檢測（用於點擊互動）
+
             raycaster = new THREE.Raycaster();
             mouse = new THREE.Vector2();
-            
-            // 點擊事件
+
             renderer.domElement.addEventListener('click', onModelClick);
             renderer.domElement.addEventListener('mousemove', onMouseMove);
-            
-            // 視窗調整 (✨ 移動到這裡，確保 camera 與 renderer 存在)
             window.addEventListener('resize', onWindowResize);
-
-            // 動畫循環
             renderer.setAnimationLoop(animate);
         }
 
@@ -782,56 +451,30 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // 載入空間
         function loadSpace() {
             showLoading('載入醫療空間 A01...');
-            
             const loader = new THREE.GLTFLoader();
-            loader.load(
-                'A01.glb',
-                function(gltf) {
-                    spaceModel = gltf.scene;
-                    
-                    // 放大房間場景
-                    const box = new THREE.Box3().setFromObject(spaceModel);
-                    const size = box.getSize(new THREE.Vector3());
-                    const maxDim = Math.max(size.x, size.y, size.z);
-                    const scale = 20 / maxDim; // 放大房間
-                    spaceModel.scale.set(scale, scale, scale);
-                    
-                    const center = box.getCenter(new THREE.Vector3());
-                    spaceModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
-                    
-                    spaceModel.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                        }
-                    });
-                    
-                    scene.add(spaceModel);
-                    hideLoading();
-                    
-                    console.log('房間已載入，尺寸:', size, '縮放:', scale);
-                },
-                function(xhr) {
-                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
-                    document.getElementById('loading-text').textContent = `載入空間... ${percent}%`;
-                },
-                function(error) {
-                    console.error('載入失敗:', error);
-                    hideLoading();
-                }
-            );
+            loader.load('A01.glb', function(gltf) {
+                spaceModel = gltf.scene;
+                const box = new THREE.Box3().setFromObject(spaceModel);
+                const size = box.getSize(new THREE.Vector3());
+                const maxDim = Math.max(size.x, size.y, size.z);
+                const scale = 20 / maxDim;
+                spaceModel.scale.set(scale, scale, scale);
+                const center = box.getCenter(new THREE.Vector3());
+                spaceModel.position.set(-center.x * scale, -center.y * scale, -center.z * scale);
+                spaceModel.traverse((child) => {
+                    if (child.isMesh) { child.castShadow = true; child.receiveShadow = true; }
+                });
+                scene.add(spaceModel);
+                hideLoading();
+            });
         }
 
-        // 選擇模特兒
+        // ===== ✨ 修改後的 selectModel (包含 Debug 設定) =====
         function selectModel(gender) {
             showLoading(`載入${gender === 'male' ? '男性' : '女性'}模特兒...`);
-            
-            if (patientModel) {
-                scene.remove(patientModel);
-            }
+            if (patientModel) scene.remove(patientModel);
             
             document.querySelectorAll('.model-card').forEach(card => card.classList.remove('active'));
             document.getElementById('model-' + gender).classList.add('active');
@@ -841,201 +484,148 @@
             const patientName = gender === 'male' ? '男性模特兒' : '女性模特兒';
             
             const loader = new THREE.GLTFLoader();
-            loader.load(
-                modelFile,
-                function(gltf) {
-                    patientModel = gltf.scene;
-                    
-                    // 調整模特兒大小 - 放大一點
-                    const modelScale = 1.0; // 從 0.5 放大到 1.0
-                    patientModel.scale.set(modelScale, modelScale, modelScale);
-                    
-                    // ===== 方向設定 =====
-                    // 躺下並旋轉，讓頭腳方向正確
-                    patientModel.rotation.x = -Math.PI / 2;  // 躺下（面朝上）
-                    patientModel.rotation.z = Math.PI / 2;   // 90度（上下顛倒180度後的正確角度）
-                    
-                    // ===== 位置設定 (✨ 修改這裡!) =====
-                    // 往左移到藍色床墊上，降低高度貼合床面
-                    // 從原本的 0.45 改為 0.28，讓身體更貼合床面
-                    patientModel.position.set(
-                        -1.2,   // X軸：往左移到藍色床
-                        0.28,   // Y軸：降低高度 (如果還浮空，可試著調為 0.25)
-                        0       // Z軸：房間中央
-                    );
-                    
-                    console.log('=== 模特兒已載入（降低高度貼床）===');
-                    console.log('位置:', patientModel.position);
-                    
-                    patientModel.traverse((child) => {
-                        if (child.isMesh) {
-                            child.castShadow = true;
-                            child.receiveShadow = true;
-                            // 設定為可互動
-                            child.userData.clickable = true;
-                        }
-                    });
-                    
-                    scene.add(patientModel);
-                    
-                    // 更新資訊
-                    currentPatient = gender;
-                    document.getElementById('current-patient').textContent = patientName;
-                    document.getElementById('patient-name').textContent = patientName;
-                    document.getElementById('patient-gender').textContent = gender === 'male' ? '男性' : '女性';
-                    document.getElementById('patient-model').textContent = modelName;
-                    document.getElementById('patient-status').textContent = '準備治療';
-                    
-                    if (!treatmentStartTime) {
-                        treatmentStartTime = Date.now();
-                        startTimer();
+            loader.load(modelFile, function(gltf) {
+                patientModel = gltf.scene;
+                patientModel.scale.set(1.0, 1.0, 1.0);
+                patientModel.rotation.x = -Math.PI / 2;
+                patientModel.rotation.z = Math.PI / 2;
+
+                // ✨ 這裡使用 Debug 面板上的數值
+                const defaultX = -1.2;
+                const defaultY = 0.1; // 預設高度降得更低
+                const defaultZ = 0;
+                
+                patientModel.position.set(defaultX, defaultY, defaultZ);
+                
+                // 更新 Debug 面板 UI
+                document.getElementById('range-x').value = defaultX;
+                document.getElementById('range-y').value = defaultY;
+                document.getElementById('range-z').value = defaultZ;
+                updateDebugDisplay();
+
+                patientModel.traverse((child) => {
+                    if (child.isMesh) {
+                        child.castShadow = true;
+                        child.receiveShadow = true;
+                        child.userData.clickable = true;
                     }
-                    
-                    hideLoading();
-                },
-                function(xhr) {
-                    const percent = (xhr.loaded / xhr.total * 100).toFixed(0);
-                    document.getElementById('loading-text').textContent = `載入模特兒... ${percent}%`;
-                },
-                function(error) {
-                    console.error('載入失敗:', error);
-                    hideLoading();
-                }
-            );
+                });
+                scene.add(patientModel);
+                
+                currentPatient = gender;
+                document.getElementById('current-patient').textContent = patientName;
+                document.getElementById('patient-name').textContent = patientName;
+                document.getElementById('patient-gender').textContent = gender === 'male' ? '男性' : '女性';
+                document.getElementById('patient-model').textContent = modelName;
+                document.getElementById('patient-status').textContent = '準備治療';
+                
+                if (!treatmentStartTime) { treatmentStartTime = Date.now(); startTimer(); }
+                hideLoading();
+            });
         }
 
-        // 選擇治療手法
+        // ===== ✨ 調校面板功能 =====
+        function toggleDebug() {
+            const panel = document.getElementById('debug-panel');
+            panel.classList.toggle('active');
+        }
+
+        function updateDebugDisplay() {
+            document.getElementById('val-x').textContent = parseFloat(document.getElementById('range-x').value).toFixed(2);
+            document.getElementById('val-y').textContent = parseFloat(document.getElementById('range-y').value).toFixed(2);
+            document.getElementById('val-z').textContent = parseFloat(document.getElementById('range-z').value).toFixed(2);
+        }
+
+        // 綁定事件監聽器到滑桿
+        document.getElementById('range-x').addEventListener('input', updateModelPosition);
+        document.getElementById('range-y').addEventListener('input', updateModelPosition);
+        document.getElementById('range-z').addEventListener('input', updateModelPosition);
+
+        function updateModelPosition() {
+            if (patientModel) {
+                const x = parseFloat(document.getElementById('range-x').value);
+                const y = parseFloat(document.getElementById('range-y').value);
+                const z = parseFloat(document.getElementById('range-z').value);
+                
+                patientModel.position.set(x, y, z);
+                updateDebugDisplay();
+            }
+        }
+        // ==========================
+
         function selectTechnique(id) {
             selectedTechnique = id;
             document.getElementById('current-technique').textContent = techniqueNames[id];
-            
             document.querySelectorAll('.technique-btn').forEach(btn => btn.classList.remove('active'));
             event.currentTarget.classList.add('active');
-            
             showTreatmentEffect(`✅ ${techniqueNames[id]} 已選擇`);
         }
 
-        // ===== ✨ 新增功能：建立按摩視覺指標 =====
+        // ===== 視覺特效部分 (黃色光球) =====
         function createHandIndicator(position) {
-            const geometry = new THREE.SphereGeometry(0.15, 32, 32); // 小球體
-            const material = new THREE.MeshBasicMaterial({ 
-                color: 0xffff00, // 黃色高亮
-                transparent: true, 
-                opacity: 0.6 
-            });
+            const geometry = new THREE.SphereGeometry(0.15, 32, 32);
+            const material = new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.6 });
             const indicator = new THREE.Mesh(geometry, material);
             indicator.position.copy(position);
             scene.add(indicator);
             return indicator;
         }
 
-        // ===== ✨ 新增功能：播放按摩動畫 (使用 GSAP) =====
         function playMassageAnimation(techniqueId, hitPoint) {
-            // 創建指示球
             const indicator = createHandIndicator(hitPoint);
-            
-            // 根據手法 ID 決定動畫類型
             switch(parseInt(techniqueId)) {
-                case 1: // 推撫法 (Effleurage) - 沿著身體長距離滑動
+                case 1: // 推撫法
                     gsap.to(indicator.position, {
-                        z: hitPoint.z + 0.5, // 往腳的方向滑動
-                        duration: 1.5,
-                        repeat: 1,
-                        yoyo: true, // 來回
-                        ease: "power2.inOut",
+                        z: hitPoint.z + 0.5, duration: 1.5, repeat: 1, yoyo: true, ease: "power2.inOut",
                         onComplete: () => scene.remove(indicator)
                     });
-                    // 模擬游標變扁（施力感）
-                    gsap.to(indicator.scale, {
-                        y: 0.5,
-                        duration: 0.5,
-                        repeat: 3,
-                        yoyo: true
-                    });
+                    gsap.to(indicator.scale, { y: 0.5, duration: 0.5, repeat: 3, yoyo: true });
                     break;
-
-                case 4: // 叩擊法 (Tapotement) - 快速上下跳動
-                    // 調整起始位置稍微高一點
+                case 4: // 叩擊法
                     indicator.position.y += 0.2;
-                    
                     gsap.to(indicator.position, {
-                        y: hitPoint.y, // 打擊到皮膚表面
-                        duration: 0.1,
-                        repeat: 10, // 快速連擊 10 下
-                        yoyo: true,
-                        ease: "power1.in",
+                        y: hitPoint.y, duration: 0.1, repeat: 10, yoyo: true, ease: "power1.in",
                         onComplete: () => scene.remove(indicator)
                     });
                     break;
-
-                case 5: // 震顫法 (Vibration) - 快速左右震動
+                case 5: // 震顫法
                     gsap.to(indicator.position, {
-                        x: hitPoint.x + 0.05,
-                        z: hitPoint.z + 0.05,
-                        duration: 0.05,
-                        repeat: 20,
-                        yoyo: true,
+                        x: hitPoint.x + 0.05, z: hitPoint.z + 0.05, duration: 0.05, repeat: 20, yoyo: true,
                         onComplete: () => scene.remove(indicator)
                     });
                     break;
-
-                case 2: // 揉捏法 (Petrissage)
-                case 3: // 摩擦法 (Friction)
-                default: // 其他手法 - 擠壓變形
+                default: // 揉捏/摩擦
                     gsap.to(indicator.scale, {
-                        x: 1.5, // 擴散
-                        y: 0.2, // 下壓
-                        z: 1.5,
-                        duration: 0.8,
-                        repeat: 3,
-                        yoyo: true,
+                        x: 1.5, y: 0.2, z: 1.5, duration: 0.8, repeat: 3, yoyo: true,
                         onComplete: () => scene.remove(indicator)
                     });
             }
         }
 
-        // 點擊模特兒進行治療
         function onModelClick(event) {
             if (!currentPatient || !selectedTechnique) {
-                if (!currentPatient) {
-                    alert('請先選擇模特兒！');
-                } else {
-                    alert('請先選擇治療手法！');
-                }
+                if (!currentPatient) alert('請先選擇模特兒！');
+                else alert('請先選擇治療手法！');
                 return;
             }
-            
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            
             raycaster.setFromCamera(mouse, camera);
-            
             if (patientModel) {
                 const intersects = raycaster.intersectObject(patientModel, true);
-                
                 if (intersects.length > 0) {
-                    // 1. 取得點擊的精確 3D 座標點
-                    const hitPoint = intersects[0].point;
-
-                    // 2. ✨ 執行按摩視覺動畫
-                    playMassageAnimation(selectedTechnique, hitPoint);
-                    
-                    // 3. 執行原本的數據運算
+                    playMassageAnimation(selectedTechnique, intersects[0].point);
                     applyTreatment();
                 }
             }
         }
 
-        // 滑鼠移動（顯示可點擊區域）
         function onMouseMove(event) {
             if (!patientModel) return;
-            
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            
             raycaster.setFromCamera(mouse, camera);
             const intersects = raycaster.intersectObject(patientModel, true);
-            
             const crosshair = document.getElementById('crosshair');
             if (intersects.length > 0 && selectedTechnique) {
                 crosshair.classList.add('active');
@@ -1046,42 +636,34 @@
             }
         }
 
-        // 應用治療
         function applyTreatment() {
             const effects = techniqueEffects[selectedTechnique];
             treatmentProgress.relax = Math.min(100, treatmentProgress.relax + effects.relax);
             treatmentProgress.circulation = Math.min(100, treatmentProgress.circulation + effects.circulation);
             treatmentProgress.muscle = Math.min(100, treatmentProgress.muscle + effects.muscle);
             treatmentProgress.overall = Math.round((treatmentProgress.relax + treatmentProgress.circulation + treatmentProgress.muscle) / 3);
-            
             updateProgress();
-            
             treatmentCount++;
             document.getElementById('treatment-count').textContent = treatmentCount;
-            
             showTreatmentEffect(`✨ ${techniqueNames[selectedTechnique]} 治療完成！+${effects.relax + effects.circulation + effects.muscle}%`);
-            
             if (treatmentProgress.overall >= 100) {
                 document.getElementById('patient-status').textContent = '✅ 治療完成';
                 showTreatmentEffect('🎉 恭喜！達成100%療效！');
             }
         }
 
-        // 更新進度條
         function updateProgress() {
             const updateBar = (id, value) => {
                 document.getElementById(id + '-bar').style.width = value + '%';
                 document.getElementById(id + '-bar').textContent = value + '%';
                 document.getElementById(id + '-value').textContent = value + '%';
             };
-            
             updateBar('relax', treatmentProgress.relax);
             updateBar('circulation', treatmentProgress.circulation);
             updateBar('muscle', treatmentProgress.muscle);
             updateBar('overall', treatmentProgress.overall);
         }
 
-        // VR切換
         function toggleVR() {
             if ('xr' in navigator) {
                 navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
@@ -1089,13 +671,9 @@
                         renderer.xr.enabled = true;
                         const sessionInit = { optionalFeatures: ['local-floor', 'bounded-floor', 'hand-tracking'] };
                         navigator.xr.requestSession('immersive-vr', sessionInit).then(onSessionStarted);
-                    } else {
-                        alert('您的裝置不支援WebXR VR');
-                    }
+                    } else alert('您的裝置不支援WebXR VR');
                 });
-            } else {
-                alert('您的瀏覽器不支援WebXR');
-            }
+            } else alert('您的瀏覽器不支援WebXR');
         }
 
         function onSessionStarted(session) {
@@ -1108,51 +686,39 @@
             document.getElementById('vr-toggle').innerHTML = '<span>🥽</span><span>進入VR</span>';
         }
 
-        // 重置治療
         function resetTreatment() {
             if (!confirm('確定要重置治療進度嗎？')) return;
-            
             treatmentProgress = { relax: 0, circulation: 0, muscle: 0, overall: 0 };
             treatmentCount = 0;
             treatmentStartTime = Date.now();
-            
             updateProgress();
             document.getElementById('treatment-count').textContent = '0';
             document.getElementById('patient-status').textContent = '準備治療';
-            
             showTreatmentEffect('🔄 治療進度已重置');
         }
 
-        // 重置相機
         function resetCamera() {
-            camera.position.set(3, 4, 3);  // 從斜上方看房間中央
-            controls.target.set(0, 0, 0);  // 看向房間中央（藍色床）
+            camera.position.set(3, 4, 3);
+            controls.target.set(0, 0, 0);
             controls.update();
         }
 
-        // 計時器
         function startTimer() {
             timerInterval = setInterval(() => {
                 const elapsed = Date.now() - treatmentStartTime;
                 const minutes = Math.floor(elapsed / 60000);
                 const seconds = Math.floor((elapsed % 60000) / 1000);
-                document.getElementById('treatment-time').textContent = 
-                    `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('treatment-time').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
             }, 1000);
         }
 
-        // 顯示治療效果
         function showTreatmentEffect(message) {
             const effect = document.getElementById('treatment-effect');
             effect.textContent = message;
             effect.classList.add('show');
-            
-            setTimeout(() => {
-                effect.classList.remove('show');
-            }, 2000);
+            setTimeout(() => { effect.classList.remove('show'); }, 2000);
         }
 
-        // 載入/隱藏載入畫面
         function showLoading(text = '載入中...') {
             document.getElementById('loading-text').textContent = text;
             document.getElementById('loading-overlay').classList.remove('hidden');
@@ -1162,13 +728,10 @@
             document.getElementById('loading-overlay').classList.add('hidden');
         }
 
-        // 動畫循環
         function animate() {
             if (controls) controls.update();
             renderer.render(scene, camera);
         }
-
-        // (移除底部的全域 resize 監聽器，改在 initScene 內註冊)
     </script>
 </body>
 </html>
