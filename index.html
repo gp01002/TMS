@@ -703,17 +703,18 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
             
-            // 相機設定 - 根據您的圖片調整
+            // 相機設定 - 調整為更好的初始視角
             camera = new THREE.PerspectiveCamera(
-                75,  // 更大視野
+                75,  // 視野角度
                 container.clientWidth / container.clientHeight,
                 0.1,
                 1000
             );
             
-            // 初始相機位置 - 從房間一角斜看床
-            camera.position.set(5, 3, 8);
-            camera.lookAt(0, 1, 0);
+            // 初始相機位置 - 從床的斜上方俯視
+            // 調整 Z 值讓相機對準床的位置（床在 Z = -2.0 附近）
+            camera.position.set(3, 3, 2);  // (X, Y, Z)
+            camera.lookAt(0, 1, -2);       // 看向床的位置
             
             // 渲染器
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -832,19 +833,32 @@
                 function(gltf) {
                     patientModel = gltf.scene;
                     
-                    // 調整模特兒
-                    const modelScale = 4.0; // 根據您的圖片調整
+                    // 調整模特兒大小
+                    const modelScale = 3.5; // 稍微縮小，更符合床的比例
                     patientModel.scale.set(modelScale, modelScale, modelScale);
                     
-                    // 躺下姿勢
-                    patientModel.rotation.x = -Math.PI / 2;
+                    // ===== 方向設定 =====
+                    // 讓模特兒平躺，頭朝上（Z軸正方向），腳朝下（Z軸負方向）
+                    patientModel.rotation.x = -Math.PI / 2;  // 躺下（面朝上）
+                    patientModel.rotation.z = Math.PI;       // 旋轉180度使頭腳方向正確
                     
-                    // 位置 - 根據床的實際位置調整（參考您的截圖）
+                    // ===== 位置設定 =====
+                    // 根據您的截圖，床大約在 Z = -1.5 到 -2.5 之間
+                    // 床的高度大約在 Y = 0.8 到 1.2 之間
                     patientModel.position.set(
-                        0,      // X: 中央
-                        1.2,    // Y: 床的高度（根據您的圖片調整）
-                        -0.5    // Z: 稍微向前
+                        0,      // X軸：床的中央（左右居中）
+                        0.9,    // Y軸：床面高度（降低一點避免浮空）
+                        -2.0    // Z軸：床的前後位置（往後移，確保在床上）
                     );
+                    
+                    console.log('=== 模特兒已載入 ===');
+                    console.log('位置:', patientModel.position);
+                    console.log('旋轉:', patientModel.rotation);
+                    console.log('如果位置不對，請按F12查看控制台');
+                    console.log('可以即時調整：');
+                    console.log('  patientModel.position.y = 1.0  // 調整高度');
+                    console.log('  patientModel.position.z = -2.5 // 調整前後');
+                    console.log('==================');
                     
                     patientModel.traverse((child) => {
                         if (child.isMesh) {
@@ -1019,8 +1033,8 @@
 
         // 重置相機
         function resetCamera() {
-            camera.position.set(5, 3, 8);
-            controls.target.set(0, 1, 0);
+            camera.position.set(3, 3, 2);  // 從斜上方看床
+            controls.target.set(0, 1, -2); // 看向床的位置
             controls.update();
         }
 
