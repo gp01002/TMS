@@ -3,539 +3,388 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艾柏國際芳療 - VR虛擬按摩治療系統 (修復版)</title>
-    <!-- 引入 GSAP 動畫庫 -->
+    <title>艾柏國際芳療 - VR系統 (救援版)</title>
+    <!-- 引入 GSAP -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <!-- 引入 Three.js 核心與外掛 (更換為 unpkg 來源，通常較穩定) -->
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: 'Microsoft JhengHei', 'Segoe UI', Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
+            font-family: 'Microsoft JhengHei', sans-serif;
+            background: #333; /* 背景改深色，方便區分 Canvas */
             overflow: hidden;
         }
-
         .game-container { width: 100vw; height: 100vh; position: relative; }
         
         /* 歡迎畫面 */
         .welcome-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.95) 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 1000; transition: opacity 0.5s;
         }
         .welcome-screen.hidden { opacity: 0; pointer-events: none; }
-        .welcome-content { text-align: center; color: white; max-width: 800px; padding: 40px; }
-        .welcome-content h1 { font-size: 48px; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
         .enter-btn {
             background: white; color: #667eea; border: none; padding: 15px 40px; font-size: 20px;
-            border-radius: 50px; cursor: pointer; transition: all 0.3s; font-weight: bold; margin: 10px;
+            border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 20px;
         }
-        .enter-btn:hover { transform: translateY(-3px); box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
-        .enter-btn.vr-btn { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); color: white; }
 
-        /* 狀態列 */
+        /* 介面層 */
+        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+        .pointer-events-auto { pointer-events: auto; }
+
         .status-bar {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95); padding: 10px 30px; border-radius: 50px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100; display: flex; gap: 20px;
+            background: rgba(255,255,255,0.9); padding: 10px 30px; border-radius: 50px;
+            font-weight: bold; color: #333;
         }
-        .status-item { display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: bold; }
 
-        /* 左側面板 */
         .control-panel {
-            position: absolute; left: 20px; top: 90px; width: 300px;
-            background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100;
-            max-height: calc(100vh - 120px); overflow-y: auto;
+            position: absolute; left: 20px; top: 80px; width: 280px;
+            background: rgba(255,255,255,0.9); border-radius: 15px; padding: 15px;
+            max-height: 80vh; overflow-y: auto; pointer-events: auto;
         }
-        .panel-section { margin-bottom: 20px; }
-        .panel-title { font-size: 18px; font-weight: bold; color: #667eea; margin-bottom: 10px; border-bottom: 2px solid #f0f0f0; padding-bottom: 5px; }
-
-        /* 模特兒選擇卡片 */
-        .model-selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .model-card {
-            background: #f5f7fa; border: 2px solid transparent; border-radius: 10px; padding: 10px;
-            cursor: pointer; text-align: center; transition: all 0.2s;
-        }
-        .model-card.active { border-color: #764ba2; background: #e0eafc; }
-        .model-icon { font-size: 32px; display: block; margin-bottom: 5px; }
-
-        /* 治療手法按鈕 */
-        .technique-list { display: flex; flex-direction: column; gap: 8px; }
-        .technique-btn {
-            background: #fff; border: 1px solid #ddd; border-radius: 10px; padding: 12px;
-            cursor: pointer; text-align: left; transition: all 0.2s; display: flex; align-items: center; gap: 10px;
-        }
-        .technique-btn:hover { transform: translateX(5px); background: #f0f0f0; }
-        .technique-btn.active {
-            background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-            color: white; border: none; box-shadow: 0 5px 15px rgba(250, 112, 154, 0.4);
-        }
-
-        /* 右側資訊面板 */
+        
         .info-panel {
-            position: absolute; right: 20px; top: 90px; width: 300px;
-            background: rgba(255, 255, 255, 0.95); border-radius: 20px; padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100;
-        }
-        .progress-item { margin-bottom: 10px; }
-        .progress-label { display: flex; justify-content: space-between; font-size: 13px; margin-bottom: 3px; }
-        .progress-bar { width: 100%; height: 15px; background: #eee; border-radius: 10px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #667eea; width: 0%; transition: width 0.3s; }
-
-        /* 底部工具列 */
-        .toolbar {
-            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(255, 255, 255, 0.95); padding: 10px 20px; border-radius: 50px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2); z-index: 100; display: flex; gap: 10px;
-        }
-        .tool-btn {
-            background: #667eea; color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer;
+            position: absolute; right: 20px; top: 80px; width: 280px;
+            background: rgba(255,255,255,0.9); border-radius: 15px; padding: 15px;
+            pointer-events: auto;
         }
 
-        /* Loading */
-        .loading-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(255,255,255,0.95); display: flex; flex-direction: column;
-            align-items: center; justify-content: center; z-index: 500; transition: opacity 0.3s;
+        .btn {
+            display: block; width: 100%; padding: 10px; margin-bottom: 5px;
+            border: 1px solid #ccc; background: white; border-radius: 8px; cursor: pointer;
         }
-        .loading-overlay.hidden { opacity: 0; pointer-events: none; }
-        .spinner { width: 40px; height: 40px; border: 4px solid #f3f3f3; border-top: 4px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .btn.active { background: #667eea; color: white; border-color: #667eea; }
+        .btn:hover { transform: translateX(3px); }
 
-        /* 特效提示文字 */
-        .treatment-effect {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            padding: 20px 40px; border-radius: 15px; font-size: 24px; font-weight: bold; color: white;
-            opacity: 0; pointer-events: none; z-index: 200; text-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        }
-        .treatment-effect.success { background: rgba(76, 175, 80, 0.9); animation: popIn 0.5s; }
-        .treatment-effect.fail { background: rgba(244, 67, 54, 0.9); animation: shake 0.5s; }
-
-        @keyframes popIn { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; } 100% { transform: translate(-50%, -50%) scale(1); opacity: 1; } }
-        @keyframes shake { 0%, 100% { transform: translate(-50%, -50%); } 25% { transform: translate(-60px, -50%); } 75% { transform: translate(-40px, -50%); } }
-
-        /* Debug Panel */
         .debug-panel {
-            position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.8); color: white;
-            padding: 10px; border-radius: 5px; z-index: 2000; width: 220px; font-size: 12px;
+            position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8);
+            color: white; padding: 10px; border-radius: 5px; font-size: 12px; pointer-events: auto;
         }
         .debug-row { margin-bottom: 5px; }
-        .debug-row input { width: 100%; }
-        .toggle-debug { position: absolute; top: 10px; right: 10px; z-index: 2001; }
+        .debug-row input { width: 150px; }
+
+        /* Loading */
+        .loading {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            color: white; font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none; display: none;
+        }
+        .loading.show { display: block; }
+
+        /* Feedback */
+        .feedback {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7); color: white; padding: 20px; border-radius: 10px;
+            font-size: 24px; opacity: 0; pointer-events: none; transition: opacity 0.3s;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Debug Toggle -->
-    <button class="toggle-debug" onclick="document.getElementById('debug-panel').style.display = document.getElementById('debug-panel').style.display === 'none' ? 'block' : 'none'">🔧 位置調校</button>
-    
-    <div class="debug-panel" id="debug-panel" style="display: none;">
-        <h3>模特兒位置調整</h3>
-        <div class="debug-row">
-            X: <span id="val-x">-1.20</span>
-            <input type="range" id="range-x" min="-5" max="5" step="0.05" value="-1.2">
-        </div>
-        <div class="debug-row">
-            Y: <span id="val-y">0.00</span>
-            <input type="range" id="range-y" min="-2" max="2" step="0.01" value="0.00">
-        </div>
-        <div class="debug-row">
-            Z: <span id="val-z">0.00</span>
-            <input type="range" id="range-z" min="-5" max="5" step="0.05" value="0">
-        </div>
-        <p style="color:#aaa;">* 調整後請記下數值</p>
-    </div>
-
     <div class="game-container">
-        <!-- 歡迎畫面 -->
+        <!-- Canvas 掛載點 -->
+        <div id="canvas-container" style="width:100%; height:100%; background:#000;"></div>
+
+        <!-- 歡迎頁 -->
         <div class="welcome-screen" id="welcome-screen">
-            <div class="welcome-content">
-                <h1>🥽 VR虛擬按摩治療系統</h1>
-                <p>請依照指示按壓發光的穴位點<br>正確按壓才能累積治療進度</p>
-                <button class="enter-btn" onclick="enterSpace(false)">🖥️ 進入體驗</button>
+            <h1 style="color:white; margin-bottom:10px;">VR 虛擬治療系統</h1>
+            <p style="color:white;">(救援模式：已啟用遠端資源)</p>
+            <button class="enter-btn" onclick="startGame()">進入系統</button>
+        </div>
+
+        <!-- UI 層 -->
+        <div class="ui-layer" id="ui-layer" style="display:none;">
+            <div class="status-bar">🏥 艾柏國際醫療空間 (A01)</div>
+
+            <div class="control-panel">
+                <h3>👥 選擇模特兒</h3>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px; margin-bottom:15px;">
+                    <button class="btn" onclick="loadModel('male')">👨 男性</button>
+                    <button class="btn" onclick="loadModel('female')">👩 女性</button>
+                </div>
+
+                <h3>🖐️ 治療手法</h3>
+                <button class="btn technique-btn" onclick="setTechnique(1)">推撫法 Effleurage</button>
+                <button class="btn technique-btn" onclick="setTechnique(2)">揉捏法 Petrissage</button>
+                <button class="btn technique-btn" onclick="setTechnique(3)">摩擦法 Friction</button>
+                <button class="btn technique-btn" onclick="setTechnique(4)">叩擊法 Tapotement</button>
             </div>
-        </div>
 
-        <!-- 3D 畫布 -->
-        <div id="canvas-container">
-            <div class="loading-overlay" id="loading-overlay">
-                <div class="spinner"></div>
-                <div style="margin-top:10px; color:#667eea; font-weight:bold;" id="loading-text">載入中...</div>
-            </div>
-        </div>
-
-        <!-- UI 介面 -->
-        <div class="status-bar">
-            <div class="status-item">🏥 醫療空間 A01</div>
-            <div class="status-item" id="hint-text" style="color: #fa709a;">💡 請選擇模特兒開始</div>
-        </div>
-
-        <div class="control-panel">
-            <div class="panel-section">
-                <div class="panel-title">👥 選擇模特兒</div>
-                <div class="model-selector">
-                    <div class="model-card" onclick="selectModel('male')" id="model-male">
-                        <span class="model-icon">👨</span>男性 (B01)
-                    </div>
-                    <div class="model-card" onclick="selectModel('female')" id="model-female">
-                        <span class="model-icon">👩</span>女性 (B02)
-                    </div>
+            <div class="info-panel">
+                <h3>📊 治療狀況</h3>
+                <p>按壓次數：<span id="hits">0</span></p>
+                <p>準確度：<span id="acc">0%</span></p>
+                <div style="background:#ddd; height:10px; border-radius:5px; margin-top:5px;">
+                    <div id="progress-bar" style="background:#4CAF50; height:100%; width:0%; border-radius:5px;"></div>
                 </div>
             </div>
-            <div class="panel-section">
-                <div class="panel-title">🖐️ 治療手法</div>
-                <div class="technique-list">
-                    <button class="technique-btn" onclick="selectTechnique(1)">🖐️ 推撫法 Effleurage</button>
-                    <button class="technique-btn" onclick="selectTechnique(2)">👐 揉捏法 Petrissage</button>
-                    <button class="technique-btn" onclick="selectTechnique(3)">👆 摩擦法 Friction</button>
-                    <button class="technique-btn" onclick="selectTechnique(4)">✊ 叩擊法 Tapotement</button>
+
+            <div class="debug-panel">
+                <div style="margin-bottom:5px; color:#aaa;">🔧 模特兒位置微調</div>
+                <div class="debug-row">Y軸高度: <span id="val-y">0.00</span></div>
+                <input type="range" id="range-y" min="-2" max="2" step="0.01" value="0.00" oninput="updateHeight(this.value)">
+                <div style="margin-top:5px;">
+                    <button style="padding:2px 5px;" onclick="resetCam()">重置視角</button>
                 </div>
             </div>
-        </div>
 
-        <div class="info-panel">
-            <div class="panel-title">📊 治療評估</div>
-            <div class="progress-item">
-                <div class="progress-label"><span>準確度 (Accuracy)</span><span id="score-val">0%</span></div>
-                <div class="progress-bar"><div class="progress-fill" id="score-bar" style="background: #4CAF50;"></div></div>
-            </div>
-            <div class="progress-item">
-                <div class="progress-label"><span>治療進度 (Progress)</span><span id="progress-val">0%</span></div>
-                <div class="progress-bar"><div class="progress-fill" id="progress-bar"></div></div>
-            </div>
-            <div style="margin-top: 20px; padding: 10px; background: #f8f9fa; border-radius: 10px;">
-                <div style="font-size: 13px; color: #666;">本次療程</div>
-                <div style="display:flex; justify-content:space-between; margin-top:5px;">
-                    <strong>按壓次數: <span id="hit-count">0</span></strong>
-                    <strong>失誤: <span id="miss-count" style="color:red;">0</span></strong>
-                </div>
-            </div>
+            <div class="loading" id="loading-text">載入中...</div>
+            <div class="feedback" id="feedback-text"></div>
         </div>
-
-        <div class="toolbar">
-            <button class="tool-btn" onclick="resetCamera()">🔄 重置視角</button>
-            <button class="tool-btn" onclick="resetTreatment()">🗑️ 重置療程</button>
-        </div>
-
-        <div class="treatment-effect" id="treatment-effect"></div>
     </div>
-
-    <!-- Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <script>
-        let scene, camera, renderer, controls, patientModel;
-        let raycaster = new THREE.Raycaster();
-        let mouse = new THREE.Vector2();
-        let targetPoints = []; 
-        let isGameActive = false;
-        
-        let gameState = {
-            hits: 0,
-            misses: 0,
-            progress: 0,
-            selectedTechnique: null
+        // 設定 GitHub Pages 的基礎路徑，確保跨域也能讀取
+        const BASE_URL = "https://gp01002.github.io/TMS/";
+
+        // 🚨 全域錯誤攔截
+        window.onerror = function(msg, url, line, col, error) {
+            console.error("Global Error:", msg, error);
+            // 忽略某些非致命錯誤
+            if (msg.includes("ResizeObserver")) return false;
+            alert("⚠️ 發生錯誤：\n" + msg + "\n請確認網路連線是否正常。");
+            return false;
         };
 
-        const techniqueNames = { 1: '推撫法', 2: '揉捏法', 3: '摩擦法', 4: '叩擊法' };
+        let scene, camera, renderer, controls, model;
+        let targets = [];
+        let raycaster = new THREE.Raycaster();
+        let mouse = new THREE.Vector2();
+        let activeTechnique = null;
+        let score = { hits: 0, total: 0 };
 
-        function init() {
-            const container = document.getElementById('canvas-container');
+        function startGame() {
+            document.getElementById('welcome-screen').classList.add('hidden');
+            document.getElementById('ui-layer').style.display = 'block';
             
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb); // 設定背景為藍色天空
-
-            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(2, 3, 3);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.shadowMap.enabled = true;
-            container.appendChild(renderer.domElement);
-
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.target.set(0, 0.5, 0);
-
-            // 燈光
-            const ambient = new THREE.AmbientLight(0xffffff, 0.6);
-            scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-            dirLight.position.set(5, 10, 5);
-            dirLight.castShadow = true;
-            scene.add(dirLight);
-
-            // 載入房間
-            loadRoom();
-
-            // 事件監聽
-            window.addEventListener('resize', onResize);
-            renderer.domElement.addEventListener('click', onClick);
-            
-            document.getElementById('range-x').addEventListener('input', updateModelPos);
-            document.getElementById('range-y').addEventListener('input', updateModelPos);
-            document.getElementById('range-z').addEventListener('input', updateModelPos);
-
-            // ✨ 使用 setAnimationLoop 確保渲染循環正常啟動
-            renderer.setAnimationLoop(animate);
+            // 延遲一點點確保 DOM 準備好
+            setTimeout(initThreeJS, 100);
         }
 
-        // ✨ 修復房間消失問題：使用 getCenter 確保房間置中
+        function initThreeJS() {
+            try {
+                const container = document.getElementById('canvas-container');
+                
+                // 1. 建立場景
+                scene = new THREE.Scene();
+                scene.background = new THREE.Color(0x87ceeb); // 天藍色背景
+                
+                // 加入輔助網格 (地板)
+                const grid = new THREE.GridHelper(20, 20);
+                scene.add(grid);
+
+                // 2. 攝影機
+                camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
+                camera.position.set(0, 2, 4); // 拉遠一點
+                camera.lookAt(0, 0, 0);
+
+                // 3. 渲染器
+                renderer = new THREE.WebGLRenderer({ antialias: true });
+                renderer.setSize(container.clientWidth, container.clientHeight);
+                renderer.setPixelRatio(window.devicePixelRatio);
+                container.appendChild(renderer.domElement);
+
+                // 4. 控制器
+                if (typeof THREE.OrbitControls === 'undefined') {
+                    throw new Error("OrbitControls 載入失敗，請檢查網路連線");
+                }
+                controls = new THREE.OrbitControls(camera, renderer.domElement);
+                controls.enableDamping = true;
+
+                // 5. 燈光
+                const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+                scene.add(ambient);
+                const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+                dirLight.position.set(5, 10, 7);
+                scene.add(dirLight);
+
+                // 6. 監聽事件
+                window.addEventListener('resize', onWindowResize);
+                renderer.domElement.addEventListener('click', onCanvasClick);
+
+                // 7. 開始渲染迴圈
+                renderer.setAnimationLoop(animate);
+
+                // 8. 嘗試載入房間 (使用絕對路徑)
+                loadRoom();
+
+            } catch (e) {
+                alert("初始化失敗：" + e.message);
+                console.error(e);
+            }
+        }
+
         function loadRoom() {
             const loader = new THREE.GLTFLoader();
-            loader.load('A01.glb', (gltf) => {
+            // 使用絕對路徑
+            loader.load(BASE_URL + 'A01.glb', (gltf) => {
                 const room = gltf.scene;
-                
-                const box = new THREE.Box3().setFromObject(room);
-                const size = box.getSize(new THREE.Vector3());
-                const center = box.getCenter(new THREE.Vector3());
-                
-                // 自動縮放與置中
-                const scale = 20 / Math.max(size.x, size.y, size.z);
-                room.scale.set(scale, scale, scale);
-                
-                // 將房間中心點移回 (0,0,0)
-                room.position.set(
-                    -center.x * scale, 
-                    -box.min.y * scale, // 底部貼地
-                    -center.z * scale
-                );
-                
+                room.scale.set(20, 20, 20);
+                room.position.set(0, 0, 0);
                 scene.add(room);
-                document.getElementById('loading-overlay').classList.add('hidden');
-            }, undefined, (error) => {
-                console.error("房間載入失敗:", error);
-                document.getElementById('loading-text').innerText = "載入失敗，請檢查檔案";
+            }, undefined, (err) => {
+                console.warn("房間載入失敗，可能是網路問題或檔案路徑錯誤。", err);
             });
         }
 
-        function selectModel(gender) {
-            if (patientModel) {
-                scene.remove(patientModel);
-                targetPoints.forEach(p => scene.remove(p));
-                targetPoints = [];
+        function loadModel(type) {
+            if (model) {
+                scene.remove(model);
+                targets.forEach(t => scene.remove(t));
+                targets = [];
             }
 
-            document.getElementById('loading-overlay').classList.remove('hidden');
-            document.getElementById('loading-text').innerText = "載入模特兒...";
+            document.getElementById('loading-text').classList.add('show');
+            const fileName = type === 'male' ? 'B01.glb' : 'B02.glb';
+            // 使用絕對路徑
+            const url = BASE_URL + fileName;
 
-            document.querySelectorAll('.model-card').forEach(c => c.classList.remove('active'));
-            document.getElementById('model-' + gender).classList.add('active');
-
-            const file = gender === 'male' ? 'B01.glb' : 'B02.glb';
-            
             const loader = new THREE.GLTFLoader();
-            loader.load(file, (gltf) => {
-                patientModel = gltf.scene;
-                
-                // ✨ 預設位置 (使用 Debug 面板數值)
-                const dx = parseFloat(document.getElementById('range-x').value);
-                const dy = parseFloat(document.getElementById('range-y').value);
-                const dz = parseFloat(document.getElementById('range-z').value);
+            loader.load(url, (gltf) => {
+                model = gltf.scene;
+                // 預設位置 (使用滑桿的值)
+                const y = parseFloat(document.getElementById('range-y').value);
+                model.position.set(-1.2, y, 0);
+                model.rotation.set(-Math.PI/2, 0, Math.PI/2);
+                scene.add(model);
 
-                patientModel.position.set(dx, dy, dz); 
-                patientModel.rotation.set(-Math.PI / 2, 0, Math.PI / 2);
-                
-                scene.add(patientModel);
-                
-                // 建立按摩熱點
-                createTargetPoints(patientModel.position);
+                // 建立穴位點
+                createTargets(model.position);
 
-                document.getElementById('loading-overlay').classList.add('hidden');
-                document.getElementById('hint-text').innerText = "💡 請選擇手法並按壓發光部位";
-                isGameActive = true;
+                document.getElementById('loading-text').classList.remove('show');
+                showFeedback("模特兒載入完成");
+            }, undefined, (err) => {
+                document.getElementById('loading-text').classList.remove('show');
+                console.error("Model load error:", err);
+                alert("模特兒載入失敗: " + fileName + "\n請確認檔案是否存在於 GitHub 且網路連線正常。");
             });
         }
 
-        function createTargetPoints(basePos) {
-            const pointsData = [
-                { x: 0, y: 0.2, z: -0.6, name: '肩頸' },
-                { x: 0, y: 0.25, z: 0, name: '背部' },
-                { x: 0, y: 0.2, z: 0.8, name: '腿部' }
+        function createTargets(basePos) {
+            // 建立 3 個互動球
+            const positions = [
+                {x: 0, y: 0.3, z: -0.6}, // 肩頸
+                {x: 0, y: 0.35, z: 0},   // 背
+                {x: 0, y: 0.3, z: 0.8}   // 腿
             ];
 
-            const geometry = new THREE.SphereGeometry(0.25, 32, 32);
-            
-            pointsData.forEach(p => {
-                const material = new THREE.MeshBasicMaterial({ 
-                    color: 0x00ff00, 
-                    transparent: true, 
-                    opacity: 0.4 
-                });
-                
-                const sphere = new THREE.Mesh(geometry, material);
-                
-                sphere.position.set(
-                    basePos.x + p.x, 
-                    basePos.y + p.y + 0.5,
-                    basePos.z + p.z
-                );
-                
-                sphere.userData = { isTarget: true, name: p.name };
-                
-                gsap.to(material, {
-                    opacity: 0.1,
-                    duration: 1,
-                    repeat: -1,
-                    yoyo: true
-                });
+            const geo = new THREE.SphereGeometry(0.2, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
 
-                scene.add(sphere);
-                targetPoints.push(sphere);
+            positions.forEach(p => {
+                const ball = new THREE.Mesh(geo, mat.clone());
+                // 計算絕對位置
+                ball.position.set(basePos.x + p.x, basePos.y + p.y, basePos.z + p.z);
+                
+                // 加入呼吸燈動畫
+                gsap.to(ball.material, { opacity: 0.1, duration: 0.8, yoyo: true, repeat: -1 });
+                
+                scene.add(ball);
+                targets.push(ball);
             });
         }
 
-        function updateModelPos() {
-            if (!patientModel) return;
-            const x = parseFloat(document.getElementById('range-x').value);
-            const y = parseFloat(document.getElementById('range-y').value);
-            const z = parseFloat(document.getElementById('range-z').value);
-            
-            patientModel.position.set(x, y, z);
-            
-            document.getElementById('val-x').innerText = x;
-            document.getElementById('val-y').innerText = y;
-            document.getElementById('val-z').innerText = z;
-
-            if (targetPoints.length > 0) {
-                targetPoints.forEach(p => scene.remove(p));
-                targetPoints = [];
-                createTargetPoints(patientModel.position);
-            }
-        }
-
-        function selectTechnique(id) {
-            gameState.selectedTechnique = id;
-            document.querySelectorAll('.technique-btn').forEach(b => b.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            
-            const name = techniqueNames[id];
-            showFeedback(`已選擇：${name}`, 'info');
-        }
-
-        function onClick(event) {
-            if (!isGameActive || !gameState.selectedTechnique) {
-                if(!gameState.selectedTechnique) showFeedback("⚠️ 請先選擇治療手法", "fail");
-                return;
-            }
-
-            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            raycaster.setFromCamera(mouse, camera);
-
-            const hitTargets = raycaster.intersectObjects(targetPoints);
-            
-            if (hitTargets.length > 0) {
-                const target = hitTargets[0].object;
-                handleSuccess(target.position, target.userData.name);
-                return;
-            }
-
-            if (patientModel) {
-                const hitModel = raycaster.intersectObject(patientModel, true);
-                if (hitModel.length > 0) {
-                    handleMiss(hitModel[0].point);
+        function updateHeight(val) {
+            document.getElementById('val-y').innerText = val;
+            if (model) {
+                model.position.y = parseFloat(val);
+                // 更新球的位置
+                if (targets.length > 0) {
+                    targets.forEach(t => scene.remove(t));
+                    targets = [];
+                    createTargets(model.position);
                 }
             }
         }
 
-        function handleSuccess(pos, partName) {
-            gameState.hits++;
-            gameState.progress += 10;
-            if(gameState.progress > 100) gameState.progress = 100;
-
-            updateUI();
-            playVisualEffect(pos);
-            showFeedback(`✨ Perfect! 成功按壓${partName}`, "success");
+        function setTechnique(id) {
+            activeTechnique = id;
+            document.querySelectorAll('.technique-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.technique-btn')[id-1].classList.add('active');
+            showFeedback("已選擇手法");
         }
 
-        function handleMiss(pos) {
-            gameState.misses++;
-            updateUI();
-            
-            const missMark = new THREE.Mesh(
-                new THREE.RingGeometry(0.05, 0.08, 32),
-                new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide })
-            );
-            missMark.position.copy(pos);
-            missMark.position.y += 0.05;
-            missMark.rotation.x = -Math.PI/2;
-            scene.add(missMark);
-            
-            gsap.to(missMark.scale, {x: 2, y: 2, duration: 0.5, opacity: 0, onComplete: () => scene.remove(missMark)});
-
-            showFeedback("❌ 位置偏移！請按壓發光部位", "fail");
-        }
-
-        function playVisualEffect(pos) {
-            const sphere = new THREE.Mesh(
-                new THREE.SphereGeometry(0.15, 32, 32),
-                new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 })
-            );
-            sphere.position.copy(pos);
-            scene.add(sphere);
-
-            if (gameState.selectedTechnique == 4) {
-                gsap.to(sphere.position, { y: pos.y + 0.3, duration: 0.1, yoyo: true, repeat: 5, onComplete: () => scene.remove(sphere) });
-            } else {
-                gsap.to(sphere.scale, { x: 1.5, z: 1.5, duration: 0.5, yoyo: true, repeat: 1, onComplete: () => scene.remove(sphere) });
+        function onCanvasClick(e) {
+            if (!activeTechnique) {
+                showFeedback("⚠️ 請先選擇手法！");
+                return;
             }
+
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            // 檢查是否點到球
+            const intersects = raycaster.intersectObjects(targets);
+            if (intersects.length > 0) {
+                // 成功
+                score.hits++;
+                score.total++;
+                playEffect(intersects[0].object.position, true);
+                showFeedback("✨ 完美按壓！", true);
+            } else if (model) {
+                // 檢查是否點到人
+                const hitsModel = raycaster.intersectObject(model, true);
+                if (hitsModel.length > 0) {
+                    score.total++;
+                    playEffect(hitsModel[0].point, false);
+                    showFeedback("❌ 位置不對", false);
+                }
+            }
+            updateUI();
         }
 
-        function showFeedback(text, type) {
-            const el = document.getElementById('treatment-effect');
-            el.innerText = text;
-            el.className = `treatment-effect ${type}`;
-            el.style.opacity = 1;
-            void el.offsetWidth;
-            setTimeout(() => { el.style.opacity = 0; }, 1500);
+        function playEffect(pos, isSuccess) {
+            const color = isSuccess ? 0xffff00 : 0xff0000;
+            const eff = new THREE.Mesh(
+                new THREE.RingGeometry(0.1, 0.2, 32),
+                new THREE.MeshBasicMaterial({ color: color, side: THREE.DoubleSide })
+            );
+            eff.position.copy(pos);
+            eff.position.y += 0.05;
+            eff.rotation.x = -Math.PI/2;
+            scene.add(eff);
+            
+            gsap.to(eff.scale, { x:2, y:2, opacity:0, duration:0.5, onComplete:()=>scene.remove(eff)});
         }
 
         function updateUI() {
-            document.getElementById('hit-count').innerText = gameState.hits;
-            document.getElementById('miss-count').innerText = gameState.misses;
-            document.getElementById('progress-val').innerText = gameState.progress + '%';
-            document.getElementById('progress-bar').style.width = gameState.progress + '%';
-
-            const total = gameState.hits + gameState.misses;
-            const acc = total === 0 ? 0 : Math.round((gameState.hits / total) * 100);
-            document.getElementById('score-val').innerText = acc + '%';
-            document.getElementById('score-bar').style.width = acc + '%';
-
-            if(gameState.progress >= 100) {
-                showFeedback("🎉 療程完成！請更換部位或結束", "success");
-            }
+            document.getElementById('hits').innerText = score.hits;
+            const acc = score.total === 0 ? 0 : Math.round((score.hits / score.total) * 100);
+            document.getElementById('acc').innerText = acc + "%";
+            document.getElementById('progress-bar').style.width = acc + "%";
         }
 
-        function enterSpace() {
-            if(scene) return;
-            document.getElementById('welcome-screen').classList.add('hidden');
-            init();
+        function showFeedback(msg, success) {
+            const el = document.getElementById('feedback-text');
+            el.innerText = msg;
+            el.style.opacity = 1;
+            el.style.background = success === true ? "rgba(0,150,0,0.8)" : (success === false ? "rgba(200,0,0,0.8)" : "rgba(0,0,0,0.7)");
+            
+            clearTimeout(window.feedbackTimer);
+            window.feedbackTimer = setTimeout(() => { el.style.opacity = 0; }, 1500);
         }
 
-        function resetCamera() {
+        function resetCam() {
             controls.reset();
         }
 
-        function resetTreatment() {
-            gameState = { hits: 0, misses: 0, progress: 0, selectedTechnique: null };
-            updateUI();
-            showFeedback("療程已重置", "info");
-        }
-
-        function onResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
+        function onWindowResize() {
+            if(camera && renderer) {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            }
         }
 
         function animate() {
-            controls.update();
+            if (controls) controls.update();
             renderer.render(scene, camera);
         }
     </script>
