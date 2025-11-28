@@ -834,30 +834,27 @@
                     patientModel = gltf.scene;
                     
                     // 調整模特兒大小
-                    const modelScale = 3.5; // 稍微縮小，更符合床的比例
+                    const modelScale = 3.5;
                     patientModel.scale.set(modelScale, modelScale, modelScale);
                     
                     // ===== 方向設定 =====
-                    // 讓模特兒平躺，頭朝上（Z軸正方向），腳朝下（Z軸負方向）
+                    // 躺下並旋轉180度，讓頭朝向相機（上方）
                     patientModel.rotation.x = -Math.PI / 2;  // 躺下（面朝上）
-                    patientModel.rotation.z = Math.PI;       // 旋轉180度使頭腳方向正確
+                    patientModel.rotation.z = Math.PI;       // 旋轉180度（頭朝上）✨
                     
                     // ===== 位置設定 =====
-                    // 根據您的截圖，床大約在 Z = -1.5 到 -2.5 之間
-                    // 床的高度大約在 Y = 0.8 到 1.2 之間
                     patientModel.position.set(
-                        0,      // X軸：床的中央（左右居中）
-                        0.9,    // Y軸：床面高度（降低一點避免浮空）
-                        -2.0    // Z軸：床的前後位置（往後移，確保在床上）
+                        0,      // X軸：床的中央
+                        0.9,    // Y軸：床面高度
+                        -2.0    // Z軸：床的位置
                     );
                     
-                    console.log('=== 模特兒已載入 ===');
+                    console.log('=== 模特兒已載入（頭朝上）===');
                     console.log('位置:', patientModel.position);
-                    console.log('旋轉:', patientModel.rotation);
-                    console.log('如果位置不對，請按F12查看控制台');
-                    console.log('可以即時調整：');
-                    console.log('  patientModel.position.y = 1.0  // 調整高度');
-                    console.log('  patientModel.position.z = -2.5 // 調整前後');
+                    console.log('旋轉:', {
+                        x: patientModel.rotation.x,
+                        z: patientModel.rotation.z + ' (180度 - 頭朝上)'
+                    });
                     console.log('==================');
                     
                     patientModel.traverse((child) => {
