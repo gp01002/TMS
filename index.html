@@ -842,20 +842,21 @@
                     patientModel.rotation.z = Math.PI / 2;   // 90度（上下顛倒180度後的正確角度）
                     
                     // ===== 位置設定 =====
-                    // 往左移到藍色床墊上
+                    // 往左移到藍色床墊上，降低高度貼合床面
                     patientModel.position.set(
-                        -1.2,   // X軸：往左移（負值 = 左）✨
-                        0.95,   // Y軸：床面高度（稍微提高一點）
+                        -1.2,   // X軸：往左移到藍色床
+                        0.45,   // Y軸：降低高度（從 0.95 降到 0.45）✨
                         0       // Z軸：房間中央
                     );
                     
-                    console.log('=== 模特兒已載入（放大+旋轉+左移）===');
-                    console.log('位置:', patientModel.position, '← 已往左移到藍色床');
-                    console.log('大小:', modelScale, '← 已放大');
+                    console.log('=== 模特兒已載入（降低高度貼床）===');
+                    console.log('位置:', patientModel.position, '← Y軸降低到 0.45');
+                    console.log('大小:', modelScale);
                     console.log('旋轉:', {
                         x: patientModel.rotation.x + ' (躺下)',
                         z: patientModel.rotation.z + ' (90度)'
                     });
+                    console.log('如果還浮空，試試: patientModel.position.y = 0.3');
                     console.log('==================');
                     
                     patientModel.traverse((child) => {
