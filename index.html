@@ -52,16 +52,16 @@
         .control-panel {
             position: absolute; left: 20px; top: 90px; width: 280px;
             background: rgba(255,255,255,0.98); border-radius: 20px; padding: 20px;
-            max-height: 85vh; overflow-y: auto; pointer-events: auto;
+            max-height: calc(100vh - 360px); overflow-y: auto; pointer-events: auto;
             box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         }
         
         /* 右側：操作指引面板 */
         .learning-panel {
-            position: absolute; right: 20px; top: 90px; width: 380px;
+            position: absolute; right: 20px; top: 90px; width: 360px;
             background: rgba(255,255,255,0.98); border-radius: 20px; padding: 25px;
             pointer-events: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-            max-height: 85vh; overflow-y: auto;
+            max-height: calc(100vh - 110px); overflow-y: auto;
         }
 
         .phase-btn {
@@ -166,11 +166,11 @@
 
         /* Debug 面板 */
         .debug-panel {
-            position: absolute; bottom: 10px; left: 10px; 
+            position: absolute; bottom: 20px; left: 20px; 
             background: rgba(0,0,0,0.9); color: white; 
             padding: 15px; border-radius: 12px; font-size: 12px; 
             pointer-events: auto; width: 260px;
-            max-height: 50vh; overflow-y: auto;
+            max-height: 280px; overflow-y: auto;
             box-shadow: 0 4px 20px rgba(0,0,0,0.5);
         }
         .debug-section { 
