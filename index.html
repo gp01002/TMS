@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艾柏國際芳療 - VR按摩教學系統 (完全校正版)</title>
+    <title>艾柏國際芳療 - 瑞典式腿部按摩VR教學系統 (專業增強版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -13,22 +13,29 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: 'Microsoft JhengHei', sans-serif;
-            background: #333; overflow: hidden;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
         }
         .game-container { width: 100vw; height: 100vh; position: relative; }
         
         /* 歡迎畫面 */
         .welcome-screen {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.98) 0%, rgba(118, 75, 162, 0.98) 100%);
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             z-index: 1000; transition: opacity 0.5s;
         }
         .welcome-screen.hidden { opacity: 0; pointer-events: none; }
+        .welcome-content { text-align: center; color: white; padding: 40px; }
+        .welcome-content h1 { font-size: 48px; margin-bottom: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.3); }
+        .welcome-content p { font-size: 18px; margin-bottom: 30px; line-height: 1.8; }
+        
         .enter-btn {
-            background: white; color: #667eea; border: none; padding: 15px 40px; font-size: 20px;
-            border-radius: 50px; cursor: pointer; font-weight: bold; margin-top: 20px;
+            background: white; color: #667eea; border: none; padding: 20px 60px; 
+            font-size: 24px; border-radius: 50px; cursor: pointer; font-weight: bold; 
+            margin: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.3); transition: all 0.3s;
         }
+        .enter-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
 
         /* 介面層 */
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
@@ -36,78 +43,187 @@
 
         .status-bar {
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(255,255,255,0.95); padding: 10px 30px; border-radius: 50px;
+            background: rgba(255,255,255,0.95); padding: 15px 40px; border-radius: 50px;
             font-weight: bold; color: #333; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            display: flex; gap: 15px; align-items: center;
+            display: flex; gap: 20px; align-items: center; pointer-events: auto;
         }
 
-        /* 左側：階段選擇 */
+        /* 左側：療程階段面板 */
         .control-panel {
-            position: absolute; left: 20px; top: 80px; width: 260px;
-            background: rgba(255,255,255,0.95); border-radius: 15px; padding: 15px;
-            max-height: 80vh; overflow-y: auto; pointer-events: auto;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: absolute; left: 20px; top: 90px; width: 280px;
+            background: rgba(255,255,255,0.98); border-radius: 20px; padding: 20px;
+            max-height: 85vh; overflow-y: auto; pointer-events: auto;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         }
         
-        /* 右側：教學指引 */
+        /* 右側：操作指引面板 */
         .learning-panel {
-            position: absolute; right: 20px; top: 80px; width: 320px;
-            background: rgba(255,255,255,0.95); border-radius: 15px; padding: 20px;
-            pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            position: absolute; right: 20px; top: 90px; width: 380px;
+            background: rgba(255,255,255,0.98); border-radius: 20px; padding: 25px;
+            pointer-events: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+            max-height: 85vh; overflow-y: auto;
         }
 
         .phase-btn {
-            display: block; width: 100%; padding: 12px; margin-bottom: 8px;
-            border: 1px solid #ddd; background: white; border-radius: 10px; cursor: pointer;
-            text-align: left; font-weight: bold; transition: all 0.2s;
+            display: block; width: 100%; padding: 15px; margin-bottom: 10px;
+            border: 2px solid #e0e0e0; background: white; border-radius: 12px; 
+            cursor: pointer; text-align: left; font-weight: bold; transition: all 0.3s;
+            font-size: 14px;
         }
-        .phase-btn:hover { background: #f0f0f0; transform: translateX(3px); }
+        .phase-btn:hover { 
+            background: linear-gradient(90deg, #f0f0f0, #fafafa); 
+            transform: translateX(5px); 
+            border-color: #667eea;
+        }
         .phase-btn.active { 
-            background: linear-gradient(90deg, #667eea, #764ba2); 
+            background: linear-gradient(135deg, #667eea, #764ba2); 
             color: white; border: none; 
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        .phase-btn.completed {
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white; border: none;
         }
 
         .step-card {
-            background: #f8f9fa; border-left: 4px solid #667eea;
-            padding: 15px; margin-bottom: 15px; border-radius: 5px;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            border-left: 5px solid #667eea;
+            padding: 20px; margin-bottom: 20px; border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .step-number { font-size: 14px; color: #667eea; font-weight: bold; margin-bottom: 5px; }
-        .step-desc { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #333; }
-        .step-note { font-size: 13px; color: #666; line-height: 1.5; }
+        .step-number { 
+            font-size: 16px; color: #667eea; font-weight: bold; 
+            margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+        }
+        .step-desc { 
+            font-size: 20px; font-weight: bold; margin-bottom: 10px; 
+            color: #333; line-height: 1.4;
+        }
+        .step-note { 
+            font-size: 14px; color: #555; line-height: 1.6; 
+            background: white; padding: 10px; border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .technique-tag {
+            display: inline-block; background: #667eea; color: white;
+            padding: 4px 12px; border-radius: 20px; font-size: 12px;
+            margin-top: 8px;
+        }
+
+        .progress-bar {
+            width: 100%; height: 8px; background: #e0e0e0; 
+            border-radius: 10px; overflow: hidden; margin: 15px 0;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
+            transition: width 0.5s ease; border-radius: 10px;
+        }
 
         .nav-btn {
-            background: #667eea; color: white; border: none; padding: 10px 20px;
-            border-radius: 25px; cursor: pointer; width: 100%; font-size: 16px; margin-top: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2); 
+            color: white; border: none; padding: 12px 25px;
+            border-radius: 30px; cursor: pointer; font-size: 16px; 
+            font-weight: bold; transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
         }
-        .nav-btn:disabled { background: #ccc; cursor: not-allowed; }
+        .nav-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+        .nav-btn:disabled { 
+            background: #ccc; cursor: not-allowed; 
+            box-shadow: none; transform: none;
+        }
 
-        /* Debug 面板：稍微加寬以容納更多選項 */
-        .debug-panel {
-            position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.85);
-            color: white; padding: 15px; border-radius: 10px; font-size: 12px; pointer-events: auto; width: 240px;
-            max-height: 50vh; overflow-y: auto;
+        /* 按摩動作效果層 */
+        .massage-effect {
+            position: absolute;
+            width: 100px; height: 100px;
+            border: 3px solid rgba(255, 215, 0, 0.8);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: pulse-ring 1s infinite;
         }
-        .debug-section { margin-bottom: 15px; border-bottom: 1px solid #555; padding-bottom: 10px; }
-        .debug-title { font-weight: bold; color: #667eea; margin-bottom: 5px; font-size: 13px; }
-        .debug-row { margin-bottom: 5px; display: flex; justify-content: space-between; align-items: center; }
-        .debug-row label { width: 50px; }
-        .debug-row input { flex: 1; margin-left: 5px; }
+        
+        @keyframes pulse-ring {
+            0% { transform: scale(0.5); opacity: 1; }
+            100% { transform: scale(2); opacity: 0; }
+        }
+
+        /* 手部游標指示 */
+        .hand-cursor {
+            position: fixed;
+            width: 60px; height: 60px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)"><path d="M13,14V10.5C13,9.67157 13.6716,9 14.5,9V9C15.3284,9 16,9.67157 16,10.5V12.5M16,12.5V10.5C16,9.67157 16.6716,9 17.5,9V9C18.3284,9 19,9.67157 19,10.5V12.5M16,12.5V10.5C16,9.67157 16.6716,9 17.5,9V9C18.3284,9 19,9.67157 19,10.5V12.5M12,14V5.5C12,4.67157 12.6716,4 13.5,4V4C14.3284,4 15,4.67157 15,5.5V12.5M10,14V15C10,16.6569 11.3431,18 13,18H16C17.6569,18 19,16.6569 19,15V12.5M7,11C7,10.4477 7.44772,10 8,10H9C9.55228,10 10,10.4477 10,11V14"></path></svg>') no-repeat center;
+            background-size: contain;
+            pointer-events: none;
+            z-index: 10000;
+            display: none;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5));
+        }
+        .hand-cursor.active { display: block; }
+
+        /* Debug 面板 */
+        .debug-panel {
+            position: absolute; bottom: 10px; left: 10px; 
+            background: rgba(0,0,0,0.9); color: white; 
+            padding: 15px; border-radius: 12px; font-size: 12px; 
+            pointer-events: auto; width: 260px;
+            max-height: 50vh; overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .debug-section { 
+            margin-bottom: 15px; border-bottom: 1px solid #444; 
+            padding-bottom: 10px; 
+        }
+        .debug-title { 
+            font-weight: bold; color: #667eea; margin-bottom: 8px; 
+            font-size: 13px; 
+        }
+        .debug-row { 
+            margin-bottom: 8px; display: flex; 
+            justify-content: space-between; align-items: center; 
+        }
+        .debug-row label { width: 55px; font-size: 11px; }
+        .debug-row input { flex: 1; margin-left: 8px; }
+        .debug-row .value { 
+            font-size: 10px; color: #aaa; 
+            min-width: 40px; text-align: right; 
+        }
 
         .loading {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; font-size: 20px; font-weight: bold; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+            color: white; font-size: 24px; font-weight: bold; 
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
             pointer-events: none; display: none;
+            background: rgba(0,0,0,0.7); padding: 20px 40px;
+            border-radius: 15px;
         }
         .loading.show { display: block; }
 
         .feedback {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.8); color: #fff; padding: 15px 30px; border-radius: 30px;
-            font-size: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200;
+            background: rgba(0,0,0,0.85); color: #fff; padding: 20px 40px; 
+            border-radius: 40px; font-size: 24px; opacity: 0; 
+            pointer-events: none; transition: opacity 0.3s; z-index: 200;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            font-weight: bold;
         }
         
-        #bone-status {
-            font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #eee;
+        /* 成就提示 */
+        .achievement {
+            position: absolute; top: 100px; right: 20px;
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white; padding: 15px 25px; border-radius: 15px;
+            font-weight: bold; font-size: 16px;
+            box-shadow: 0 8px 25px rgba(17, 153, 142, 0.4);
+            opacity: 0; pointer-events: none;
+            transition: all 0.5s;
+            transform: translateX(400px);
+        }
+        .achievement.show {
+            opacity: 1; transform: translateX(0);
         }
     </style>
 </head>
@@ -115,139 +231,217 @@
 
     <div class="game-container">
         <div id="canvas-container" style="width:100%; height:100%; background:#000;"></div>
+        
+        <!-- 手部游標 -->
+        <div class="hand-cursor" id="hand-cursor"></div>
 
         <!-- 歡迎頁 -->
         <div class="welcome-screen" id="welcome-screen">
-            <h1 style="color:white; margin-bottom:10px;">VR 按摩教學系統</h1>
-            <p style="color:white; font-size: 18px;">瑞典式腿部按摩檢定流程</p>
-            <button class="enter-btn" onclick="startGame()">開始學習</button>
+            <div class="welcome-content">
+                <h1>🌿 艾柏國際芳療學院</h1>
+                <h2 style="font-size: 36px; margin-bottom: 15px;">瑞典式腿部按摩 VR 教學系統</h2>
+                <p style="font-size: 20px; line-height: 1.8;">
+                    ✨ IFA 國際認證標準流程<br>
+                    🎯 專業按摩手法訓練<br>
+                    🥽 沉浸式互動學習體驗
+                </p>
+                <button class="enter-btn" onclick="startGame()">🎓 開始專業訓練</button>
+            </div>
         </div>
 
         <div class="ui-layer" id="ui-layer" style="display:none;">
             <div class="status-bar">
-                <span>🏫 VR 教室</span>
-                <span id="bone-status">🔍 偵測骨架中...</span>
+                <span>🏫 VR 專業教室</span>
+                <span id="model-status">👤 載入中...</span>
+                <span id="progress-status">📊 進度: 0%</span>
             </div>
 
-            <!-- 左側：流程選擇 -->
+            <!-- 左側：療程階段選擇 -->
             <div class="control-panel">
-                <h3 style="margin-bottom:15px; color:#555;">📋 學習階段</h3>
-                <button class="phase-btn" onclick="setPhase(1)" id="p1">1. 準備與起始安撫</button>
-                <button class="phase-btn" onclick="setPhase(2)" id="p2">2. 左腿按摩操作</button>
-                <button class="phase-btn" onclick="setPhase(3)" id="p3">3. 右腿按摩操作</button>
-                <button class="phase-btn" onclick="setPhase(4)" id="p4">4. 結尾與安撫</button>
+                <h3 style="margin-bottom:18px; color:#667eea; font-size:18px;">📋 療程階段</h3>
                 
-                <hr style="margin: 15px 0; border:0; border-top:1px solid #eee;">
+                <button class="phase-btn" onclick="setPhase(1)" id="p1">
+                    <div style="font-size:16px;">階段一</div>
+                    <div style="font-size:12px; color:#888; margin-top:4px;">準備與起始安撫</div>
+                </button>
                 
-                <div style="font-size:12px; color:#888;">模特兒選擇</div>
-                <div style="display:flex; gap:5px; margin-top:5px;">
-                    <button class="phase-btn" style="padding:8px; text-align:center;" onclick="loadModel('male')">👨 男性</button>
-                    <button class="phase-btn" style="padding:8px; text-align:center;" onclick="loadModel('female')">👩 女性</button>
+                <button class="phase-btn" onclick="setPhase(2)" id="p2">
+                    <div style="font-size:16px;">階段二</div>
+                    <div style="font-size:12px; color:#888; margin-top:4px;">左腿按摩操作</div>
+                </button>
+                
+                <button class="phase-btn" onclick="setPhase(3)" id="p3">
+                    <div style="font-size:16px;">階段三</div>
+                    <div style="font-size:12px; color:#888; margin-top:4px;">右腿按摩操作</div>
+                </button>
+                
+                <button class="phase-btn" onclick="setPhase(4)" id="p4">
+                    <div style="font-size:16px;">階段四</div>
+                    <div style="font-size:12px; color:#888; margin-top:4px;">結尾與安撫</div>
+                </button>
+                
+                <div class="progress-bar" style="margin-top:20px;">
+                    <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
+                </div>
+                <div style="text-align:center; font-size:12px; color:#888; margin-top:8px;">
+                    整體完成度: <span id="completion-percent">0%</span>
+                </div>
+                
+                <hr style="margin: 20px 0; border:0; border-top:2px solid #e0e0e0;">
+                
+                <div style="font-size:13px; color:#555; font-weight:bold; margin-bottom:8px;">🔄 切換模特兒</div>
+                <div style="display:flex; gap:8px;">
+                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('male')">
+                        👨<br><span style="font-size:11px;">男性</span>
+                    </button>
+                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('female')">
+                        👩<br><span style="font-size:11px;">女性</span>
+                    </button>
                 </div>
             </div>
 
-            <!-- 右側：步驟指導 -->
+            <!-- 右側：詳細操作指引 -->
             <div class="learning-panel">
-                <h3 style="margin-bottom:15px; color:#555;">📖 操作指引</h3>
+                <h3 style="margin-bottom:18px; color:#667eea; font-size:18px;">📖 操作指引</h3>
                 
                 <div id="step-display">
                     <div class="step-card">
-                        <div class="step-number" id="step-id">請選擇階段</div>
-                        <div class="step-desc" id="step-text">點選左側選單開始學習</div>
-                        <div class="step-note" id="step-note">--</div>
+                        <div class="step-number" id="step-id">
+                            <span>🎯</span>
+                            <span>請選擇療程階段</span>
+                        </div>
+                        <div class="step-desc" id="step-text">點選左側階段開始專業訓練</div>
+                        <div class="step-note" id="step-note">
+                            💡 提示：從階段一開始，依序完成所有操作步驟
+                        </div>
+                        <div id="technique-display"></div>
                     </div>
                 </div>
 
-                <div style="display:flex; gap:10px;">
-                    <button class="nav-btn" style="background:#888;" onclick="prevStep()">上一步</button>
-                    <button class="nav-btn" onclick="nextStep()">下一步 ➡</button>
+                <div style="display:flex; gap:12px; margin-top:20px;">
+                    <button class="nav-btn" style="background:#888; flex:1;" onclick="prevStep()">
+                        ⬅ 上一步
+                    </button>
+                    <button class="nav-btn" style="flex:1;" onclick="nextStep()">
+                        下一步 ➡
+                    </button>
                 </div>
                 
-                <div style="margin-top:15px; font-size:12px; color:#aaa; text-align:center;">
-                    * VR 模式下請依文字提示操作
+                <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:10px;">
+                    <div style="font-size:13px; color:#555; margin-bottom:8px; font-weight:bold;">
+                        🎮 操作說明
+                    </div>
+                    <div style="font-size:12px; color:#666; line-height:1.8;">
+                        • <strong>左鍵拖曳</strong>：旋轉視角<br>
+                        • <strong>右鍵拖曳</strong>：平移視角<br>
+                        • <strong>滾輪</strong>：縮放距離<br>
+                        • <strong>點擊綠色標記</strong>：執行按摩動作
+                    </div>
                 </div>
             </div>
 
-            <!-- Debug 面板：包含模特兒位置與穴位偏移 -->
+            <!-- Debug 微調面板 -->
             <div class="debug-panel">
                 <div class="debug-section">
-                    <div class="debug-title">🔧 模特兒位置 (Body)</div>
+                    <div class="debug-title">🔧 模特兒位置微調</div>
                     <div class="debug-row">
                         <label>前後 X</label>
-                        <input type="range" id="range-x" min="-5" max="5" step="0.1" value="-0.5" oninput="updatePos()">
+                        <input type="range" id="range-x" min="-3" max="3" step="0.05" value="-1.2" oninput="updatePos()">
+                        <span class="value" id="val-x">-1.2</span>
                     </div>
                     <div class="debug-row">
                         <label>高度 Y</label>
-                        <input type="range" id="range-y" min="0" max="5" step="0.1" value="2.40" oninput="updatePos()">
+                        <input type="range" id="range-y" min="0" max="3" step="0.05" value="0.45" oninput="updatePos()">
+                        <span class="value" id="val-y">0.45</span>
                     </div>
                     <div class="debug-row">
                         <label>左右 Z</label>
-                        <input type="range" id="range-z" min="-5" max="5" step="0.1" value="0" oninput="updatePos()">
+                        <input type="range" id="range-z" min="-3" max="3" step="0.05" value="0" oninput="updatePos()">
+                        <span class="value" id="val-z">0.0</span>
+                    </div>
+                    <div class="debug-row">
+                        <label>大小</label>
+                        <input type="range" id="range-scale" min="0.5" max="2" step="0.1" value="1.0" oninput="updatePos()">
+                        <span class="value" id="val-scale">1.0</span>
                     </div>
                 </div>
 
                 <div class="debug-section">
-                    <div class="debug-title">🎯 穴位點微調 (Targets)</div>
+                    <div class="debug-title">🎯 穴位標記偏移</div>
                     <div class="debug-row">
-                        <label>前後 X</label>
-                        <input type="range" id="t-x" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <label>偏移 X</label>
+                        <input type="range" id="t-x" min="-1" max="1" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <span class="value" id="val-tx">0</span>
                     </div>
                     <div class="debug-row">
-                        <label>高度 Y</label>
-                        <input type="range" id="t-y" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <label>偏移 Y</label>
+                        <input type="range" id="t-y" min="-1" max="1" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <span class="value" id="val-ty">0</span>
                     </div>
                     <div class="debug-row">
-                        <label>左右 Z</label>
-                        <input type="range" id="t-z" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <label>偏移 Z</label>
+                        <input type="range" id="t-z" min="-1" max="1" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <span class="value" id="val-tz">0</span>
                     </div>
                 </div>
 
-                <div style="text-align: center;">
-                    <button style="padding:4px 10px; cursor:pointer;" onclick="resetCam()">重置視角</button>
+                <div style="text-align: center; margin-top:10px;">
+                    <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#667eea; color:white; border:none; font-weight:bold;" onclick="resetCam()">
+                        🔄 重置視角
+                    </button>
                 </div>
             </div>
 
-            <div class="loading" id="loading-text">載入教學資源...</div>
+            <div class="loading" id="loading-text">⏳ 載入教學資源中...</div>
             <div class="feedback" id="feedback-text"></div>
+            <div class="achievement" id="achievement">🏆 階段完成！</div>
         </div>
     </div>
 
     <script>
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
-        // 學習資料庫
+        // 完整的瑞典式腿部按摩學習資料庫
         const learningData = {
             1: [
-                { id: "1.1", text: "在毛巾上俯順至大腿", note: "設定客戶位置，保持接觸。", target: 'legs' },
-                { id: "1.2", text: "由兩側滑下至腳底", note: "動作輕柔流暢。", target: 'feet' },
-                { id: "1.3", text: "將毛巾捲在雙腿之間", note: "確保毛巾覆蓋隱私部位並定位。", target: 'knees' },
-                { id: "1.4", text: "雙腿由阿基里斯腱上游", note: "雙腿同步操作，進行初始長推。", target: 'legs' },
-                { id: "1.5", text: "將右腳覆蓋", note: "確認操作目標為左腳，保持右腳保暖。", target: 'right_leg' },
-                { id: "1.6", text: "上油", note: "均勻塗抹按摩油於雙手。", target: 'hands' },
-                { id: "1.7", text: "大安撫", note: "兩手放在腳底，停留片刻建立連結。", target: 'feet' }
+                { id: "1.1", text: "在毛巾上俯順至大腿", note: "輕柔地將雙手放在毛巾上，從膝蓋處向上俯順至大腿，建立初步接觸與信任感。手法要輕柔、連貫，讓客戶感受到溫暖。", target: 'thighs', technique: "俯順法 Effleurage" },
+                { id: "1.2", text: "由兩側滑下至腳底", note: "雙手沿著腿部兩側，以輕柔流暢的動作向下滑至腳底，保持連續接觸。這個動作幫助客戶放鬆並熟悉觸感。", target: 'feet', technique: "長推法" },
+                { id: "1.3", text: "將毛巾捲在雙腿之間", note: "小心地將毛巾捲起並放置在雙腿之間，確保覆蓋隱私部位。動作要專業、得體，讓客戶感到安心。", target: 'knees', technique: "毛巾處理" },
+                { id: "1.4", text: "雙腿由阿基里斯腱上推", note: "從腳後跟的阿基里斯腱開始，雙手同步向上推撫至大腿，進行初始的長推撫順。力道要均勻、節奏要一致。", target: 'legs', technique: "雙手同步長推" },
+                { id: "1.5", text: "將右腳覆蓋", note: "用另一條毛巾或布巾輕柔地覆蓋右腿，確保保暖。這表示接下來將專注於左腿的按摩操作。", target: 'right_leg', technique: "保暖處理" },
+                { id: "1.6", text: "上油", note: "取適量按摩油於雙手掌心，搓熱後準備施作。油量要適中，不可過多或過少。手的溫度也很重要。", target: 'hands', technique: "油品準備" },
+                { id: "1.7", text: "大安撫", note: "雙手放在腳底，停留片刻，深呼吸，建立與客戶的能量連結。這是療程開始的儀式性動作，非常重要。", target: 'feet', technique: "安撫接觸法" }
             ],
             2: [
-                { id: "2.1", text: "左腿：拇指並排，長推至大腿", note: "由下往上，施力均勻。", target: 'left_leg_long' },
-                { id: "2.2", text: "由兩側回包", note: "回程動作，輕撫滑回。", target: 'left_leg' },
-                { id: "2.3", text: "撥提技巧", note: "由下至上，分段向兩側提拉肌肉。", target: 'left_calf' },
-                { id: "2.4", text: "大腿內外側操作", note: "由內側開始，再操作外側。", target: 'left_thigh' },
-                { id: "2.5", text: "雙手交替向上撫順", note: "使用交替手進行長推，保持連貫。", target: 'left_leg_long' },
-                { id: "2.6", text: "小腿向上長推至委中穴", note: "注意膝蓋後方力道需減輕。", target: 'left_calf' },
-                { id: "2.7", text: "小腿分三等份操作", note: "內、中、外側各一次，來回共三次。", target: 'left_calf' },
-                { id: "2.8", text: "抬腳 90 度，一手托腳盤", note: "準備進行腳底按摩 (請想像將腳抬起)。", target: 'left_foot_lift' } 
+                { id: "2.1", text: "左腿：拇指並排長推至大腿", note: "雙手拇指並排，從腳踝處開始，向上長推至大腿根部。施力要均勻，保持平穩的節奏，感受肌肉的張力。", target: 'left_leg_long', technique: "拇指並排長推法" },
+                { id: "2.2", text: "由兩側回包", note: "長推至頂端後，雙手分別沿腿部兩側輕柔回撫至起始位置。這是回程動作，力道要輕於上推時。", target: 'left_leg', technique: "回程撫順" },
+                { id: "2.3", text: "撥提技巧", note: "從腳踝開始，分段向上，雙手交替向兩側提拉小腿肌肉（腓腸肌），如同揉麵團般。這能深層放鬆肌肉組織。", target: 'left_calf', technique: "撥提法 Petrissage" },
+                { id: "2.4", text: "大腿內外側操作", note: "先操作大腿內側，再操作外側。用掌根或拇指施壓，沿著肌肉紋理推撫。注意內側肌肉較敏感，力道要適中。", target: 'left_thigh', technique: "分區推撫法" },
+                { id: "2.5", text: "雙手交替向上撫順", note: "雙手交替、連續不斷地從腳踝向上推撫至大腿，如同海浪般連綿不絕。保持流暢的節奏感。", target: 'left_leg_long', technique: "交替長推法" },
+                { id: "2.6", text: "小腿向上長推至委中穴", note: "從腳踝開始，向上推至膝蓋後方的委中穴。注意膝窩處力道要減輕，避免造成不適。", target: 'left_calf', technique: "穴位定位長推" },
+                { id: "2.7", text: "小腿分三等份操作", note: "將小腿想像分為內、中、外三等份。依序操作：內→中→外，然後反向：外→中→內，完成一個來回共三次推撫。", target: 'left_calf', technique: "三等份分區法" },
+                { id: "2.8", text: "抬腳 90 度，一手托腳盤", note: "輕柔地將客戶左腳抬起至約90度，一手托住腳掌，準備進行腳底按摩。動作要穩定、支撐要充足。", target: 'left_foot_lift', technique: "抬腳準備" }
             ],
             3: [
-                { id: "3.1", text: "右腿：拇指並排長推大腿", note: "右腿開始，重複左腿基礎動作。", target: 'right_leg_long' },
-                { id: "3.2", text: "由兩側回包", note: "保持接觸。", target: 'right_leg' },
-                { id: "3.4", text: "S 型抓捏", note: "★ 重點技巧：執行 S 型捏法放鬆肌肉。", target: 'right_calf' },
-                { id: "3.5", text: "大腿內外側操作", note: "由內自外。", target: 'right_thigh' },
-                { id: "3.9", text: "抬腳 90 度", note: "一手托腳盤，準備腳底按摩。", target: 'right_foot_lift' },
-                { id: "3.13", text: "握十秒", note: "持續按壓腳掌心十秒，給予安定感。", target: 'right_foot' }
+                { id: "3.1", text: "右腿：拇指並排長推大腿", note: "切換至右腿，重複左腿的基礎動作。從腳踝處雙手拇指並排，均勻向上推撫至大腿根部。", target: 'right_leg_long', technique: "拇指並排長推法" },
+                { id: "3.2", text: "由兩側回包", note: "沿著右腿兩側輕柔回撫至起始位置，保持與客戶的持續接觸，不要中斷。", target: 'right_leg', technique: "回程撫順" },
+                { id: "3.3", text: "撥提由下至上", note: "從腳踝開始，分段向上，雙手交替向兩側提拉右小腿肌肉。手法要深入但不粗暴。", target: 'right_calf', technique: "撥提法" },
+                { id: "3.4", text: "★ S 型抓捏", note: "這是右腿的特殊技巧！雙手呈S型軌跡，交替抓捏小腿肌肉，從下往上推進。力道要適中，節奏要明確。這是考試重點技巧！", target: 'right_calf', technique: "S型抓捏法 (重點)" },
+                { id: "3.5", text: "大腿內外側操作", note: "先內側後外側，用掌根或拇指沿肌肉紋理推撫。右腿的操作要與左腿保持一致性。", target: 'right_thigh', technique: "分區推撫法" },
+                { id: "3.6", text: "雙手交替向上撫順", note: "交替手法連續向上推撫，保持流暢節奏，讓客戶感受到連貫的舒適感。", target: 'right_leg_long', technique: "交替長推法" },
+                { id: "3.7", text: "小腿向上長推至委中穴", note: "向上推至膝蓋後方委中穴，注意力道控制，膝窩處要特別輕柔。", target: 'right_calf', technique: "穴位定位長推" },
+                { id: "3.8", text: "小腿分三等份操作", note: "內→中→外，再外→中→內，完成三次完整推撫。保持每一段的力道一致。", target: 'right_calf', technique: "三等份分區法" },
+                { id: "3.9", text: "抬腳 90 度", note: "一手托住右腳腳盤，準備進行腳底按摩。支撐要穩固、角度要舒適。", target: 'right_foot_lift', technique: "抬腳準備" },
+                { id: "3.10", text: "由湧泉穴順時針畫圈", note: "用拇指在腳底的湧泉穴處，順時針畫圈按摩，經過足弓回到湧泉穴。力道要深入但不刺痛。", target: 'right_foot', technique: "足底穴位按摩" },
+                { id: "3.11", text: "半握拳腳跟往腳趾滑動", note: "以半握拳的方式，從腳跟向腳趾方向滑動按壓。這能有效放鬆足底筋膜。", target: 'right_foot', technique: "足底深層按摩" },
+                { id: "3.12", text: "一手放置腳掌心，肩膀放鬆", note: "一手持續按壓腳掌心，保持自己的姿勢正確、肩膀放鬆。這是檢查施術者姿勢的時刻。", target: 'right_foot', technique: "持續按壓" },
+                { id: "3.13", text: "握十秒", note: "用適當力道持續按壓腳掌心十秒鐘，給予客戶安定感與深層放鬆。這是重要的收尾動作。", target: 'right_foot', technique: "定點持壓法" }
             ],
             4: [
-                { id: "4.1", text: "毛巾捲回中間", note: "準備結束動作。", target: 'knees' },
-                { id: "4.2", text: "大安撫", note: "進行最終的廣泛安撫，涵蓋雙腿。", target: 'legs' },
-                { id: "4.4", text: "蓋上毛巾", note: "完整覆蓋，宣告療程結束。", target: 'legs' }
+                { id: "4.1", text: "毛巾捲回中間", note: "輕柔地將之前分開的毛巾重新捲回雙腿中間的位置，準備進行結束動作。", target: 'knees', technique: "毛巾復位" },
+                { id: "4.2", text: "大安撫", note: "進行最終的廣泛安撫，雙手同時撫順雙腿，從大腿至腳踝，涵蓋整個按摩區域。這是療程的總結動作。", target: 'legs', technique: "總結性安撫法" },
+                { id: "4.3", text: "兩手放在腳底停留", note: "雙手輕放在雙腳底部，停留片刻，深呼吸，感謝這次療程。這是能量收尾的儀式。", target: 'feet', technique: "能量收尾" },
+                { id: "4.4", text: "蓋上毛巾結束", note: "用毛巾完整覆蓋雙腿，動作要輕柔、專業。這宣告整個療程的正式結束，讓客戶靜躺片刻。", target: 'legs', technique: "結束覆蓋" }
             ]
         };
 
@@ -257,13 +451,19 @@
         let raycaster = new THREE.Raycaster();
         let mouse = new THREE.Vector2();
         let targets = [];
+        let completedSteps = new Set();
+        let phaseCompletion = {1: 0, 2: 0, 3: 0, 4: 0};
         
         // 穴位點手動偏移量
         let targetAdjust = {x: 0, y: 0, z: 0};
+        
+        // 手部游標
+        let handCursor;
 
         function startGame() {
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('ui-layer').style.display = 'block';
+            handCursor = document.getElementById('hand-cursor');
             setTimeout(initThreeJS, 100);
         }
 
@@ -273,11 +473,12 @@
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87ceeb);
             
-            const grid = new THREE.GridHelper(20, 20);
+            // 地面格線
+            const grid = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
             scene.add(grid);
 
             camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(0, 8, 5);
+            camera.position.set(2, 3, 3);
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -287,15 +488,23 @@
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.minDistance = 2;
+            controls.maxDistance = 15;
 
-            const ambient = new THREE.AmbientLight(0xffffff, 0.7);
+            // 照明系統
+            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
             dirLight.position.set(5, 10, 7);
             scene.add(dirLight);
+            const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+            fillLight.position.set(-5, 5, -5);
+            scene.add(fillLight);
 
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('click', onCanvasClick);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
             renderer.setAnimationLoop(animate);
 
             loadRoom();
@@ -309,6 +518,8 @@
                 const room = gltf.scene;
                 room.scale.set(20, 20, 20);
                 scene.add(room);
+            }, undefined, (error) => {
+                console.error('載入房間失敗:', error);
             });
         }
 
@@ -316,32 +527,29 @@
             if (model) scene.remove(model);
             
             document.getElementById('loading-text').classList.add('show');
+            document.getElementById('model-status').innerText = '👤 載入模特兒中...';
+            
             const url = BASE_URL + (type === 'male' ? 'B01.glb' : 'B02.glb');
 
             const loader = new THREE.GLTFLoader();
             loader.load(url, (gltf) => {
                 model = gltf.scene;
+                
+                // 設定模特兒位置和旋轉
                 updatePos(); 
                 model.rotation.set(-Math.PI/2, 0, Math.PI/2);
+                
                 scene.add(model);
                 
-                let hasBones = false;
-                model.traverse((o) => {
-                    if (o.isBone) hasBones = true;
-                });
-
-                const statusEl = document.getElementById('bone-status');
-                if (hasBones) {
-                    statusEl.innerText = "✅ 偵測到骨架";
-                    statusEl.style.background = "#d4edda";
-                    statusEl.style.color = "#155724";
-                } else {
-                    statusEl.innerText = "❌ 無骨架";
-                    statusEl.style.background = "#f8d7da";
-                    statusEl.style.color = "#721c24";
-                }
-
+                document.getElementById('model-status').innerText = '✅ 模特兒已就位';
+                document.getElementById('model-status').style.background = '#d4edda';
+                document.getElementById('model-status').style.color = '#155724';
+                
                 updateTargets();
+                document.getElementById('loading-text').classList.remove('show');
+            }, undefined, (error) => {
+                console.error('載入模特兒失敗:', error);
+                document.getElementById('model-status').innerText = '❌ 載入失敗';
                 document.getElementById('loading-text').classList.remove('show');
             });
         }
@@ -351,60 +559,121 @@
                 const x = parseFloat(document.getElementById('range-x').value);
                 const y = parseFloat(document.getElementById('range-y').value);
                 const z = parseFloat(document.getElementById('range-z').value);
+                const scale = parseFloat(document.getElementById('range-scale').value);
+                
                 model.position.set(x, y, z);
+                model.scale.set(scale, scale, scale);
+                
+                // 更新顯示數值
+                document.getElementById('val-x').innerText = x.toFixed(2);
+                document.getElementById('val-y').innerText = y.toFixed(2);
+                document.getElementById('val-z').innerText = z.toFixed(2);
+                document.getElementById('val-scale').innerText = scale.toFixed(1);
+                
                 updateTargets();
             }
         }
 
-        // 讀取穴位點微調滑桿
         function updateTargetOffset() {
              targetAdjust.x = parseFloat(document.getElementById('t-x').value);
              targetAdjust.y = parseFloat(document.getElementById('t-y').value);
              targetAdjust.z = parseFloat(document.getElementById('t-z').value);
+             
+             document.getElementById('val-tx').innerText = targetAdjust.x.toFixed(2);
+             document.getElementById('val-ty').innerText = targetAdjust.y.toFixed(2);
+             document.getElementById('val-tz').innerText = targetAdjust.z.toFixed(2);
+             
              updateTargets();
         }
 
         function updateTargets() {
             if (!model) return;
-            if (targets.length > 0) targets.forEach(t => scene.remove(t));
+            
+            // 清除舊的標記
+            if (targets.length > 0) {
+                targets.forEach(t => scene.remove(t));
+            }
             targets = [];
 
-            const currentStep = learningData[currentPhase][currentStepIndex];
+            const currentStep = learningData[currentPhase]?.[currentStepIndex];
             if (!currentStep) return;
+            
             const targetType = currentStep.target || 'legs';
-
             const basePos = model.position;
             let positions = [];
 
+            // 根據不同部位設定標記位置
             switch(targetType) {
                 case 'left_leg': 
                 case 'left_leg_long':
-                    positions = [{x: 0.5, y: 0.5, z: 0.3}, {x: 1.0, y: 0.4, z: 0.3}]; break;
+                    positions = [
+                        {x: 0.3, y: 0.3, z: 0.25},  // 小腿
+                        {x: 0.7, y: 0.3, z: 0.25}   // 大腿
+                    ]; 
+                    break;
                 case 'right_leg': 
                 case 'right_leg_long':
-                    positions = [{x: 0.5, y: 0.5, z: -0.3}, {x: 1.0, y: 0.4, z: -0.3}]; break;
+                    positions = [
+                        {x: 0.3, y: 0.3, z: -0.25},
+                        {x: 0.7, y: 0.3, z: -0.25}
+                    ]; 
+                    break;
                 case 'left_thigh':
-                    positions = [{x: 0.2, y: 0.5, z: 0.3}]; break;
+                    positions = [{x: 0.15, y: 0.3, z: 0.25}]; 
+                    break;
                 case 'right_thigh':
-                    positions = [{x: 0.2, y: 0.5, z: -0.3}]; break;
+                    positions = [{x: 0.15, y: 0.3, z: -0.25}]; 
+                    break;
                 case 'left_calf':
-                    positions = [{x: 1.0, y: 0.4, z: 0.3}]; break;
+                    positions = [{x: 0.65, y: 0.3, z: 0.25}]; 
+                    break;
                 case 'right_calf':
-                    positions = [{x: 1.0, y: 0.4, z: -0.3}]; break;
+                    positions = [{x: 0.65, y: 0.3, z: -0.25}]; 
+                    break;
                 case 'feet':
-                    positions = [{x: 1.4, y: 0.4, z: 0.3}, {x: 1.4, y: 0.4, z: -0.3}]; break;
+                    positions = [
+                        {x: 1.0, y: 0.25, z: 0.25},
+                        {x: 1.0, y: 0.25, z: -0.25}
+                    ]; 
+                    break;
                 case 'left_foot_lift':
-                    positions = [{x: 1.4, y: 1.0, z: 0.3}]; break; 
+                    positions = [{x: 1.0, y: 0.7, z: 0.25}]; 
+                    break; 
                 case 'right_foot_lift':
-                    positions = [{x: 1.4, y: 1.0, z: -0.3}]; break; 
+                    positions = [{x: 1.0, y: 0.7, z: -0.25}]; 
+                    break;
+                case 'right_foot':
+                    positions = [{x: 1.0, y: 0.25, z: -0.25}]; 
+                    break;
                 case 'knees':
-                    positions = [{x: 0.8, y: 0.5, z: 0}]; break;
+                    positions = [{x: 0.5, y: 0.3, z: 0}]; 
+                    break;
+                case 'thighs':
+                    positions = [
+                        {x: 0.2, y: 0.3, z: 0.25},
+                        {x: 0.2, y: 0.3, z: -0.25}
+                    ];
+                    break;
+                case 'hands':
+                    positions = [{x: 0.5, y: 0.6, z: 0}]; 
+                    break;
+                case 'legs':
+                    positions = [
+                        {x: 0.4, y: 0.3, z: 0.25},
+                        {x: 0.4, y: 0.3, z: -0.25}
+                    ];
+                    break;
                 default: 
-                    positions = [{x: 0.5, y: 0.5, z: 0.3}, {x: 0.5, y: 0.5, z: -0.3}];
+                    positions = [{x: 0.5, y: 0.3, z: 0}];
             }
 
-            const geo = new THREE.SphereGeometry(0.15, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
+            // 創建標記球體
+            const geo = new THREE.SphereGeometry(0.12, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ 
+                color: 0x00ff00, 
+                transparent: true, 
+                opacity: 0.6 
+            });
 
             positions.forEach(p => {
                 const ball = new THREE.Mesh(geo, mat.clone());
@@ -416,7 +685,22 @@
                     basePos.z + p.z + targetAdjust.z
                 );
                 
-                gsap.to(ball.material, { opacity: 0.1, duration: 0.8, yoyo: true, repeat: -1 });
+                // 脈動動畫
+                gsap.to(ball.material, { 
+                    opacity: 0.2, 
+                    duration: 0.8, 
+                    yoyo: true, 
+                    repeat: -1 
+                });
+                gsap.to(ball.scale, {
+                    x: 1.3,
+                    y: 1.3,
+                    z: 1.3,
+                    duration: 0.8,
+                    yoyo: true,
+                    repeat: -1
+                });
+                
                 scene.add(ball);
                 targets.push(ball);
             });
@@ -425,17 +709,38 @@
         function setPhase(p) {
             currentPhase = p;
             currentStepIndex = 0;
-            document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
+            
+            // 更新按鈕狀態
+            document.querySelectorAll('.phase-btn').forEach((b, i) => {
+                b.classList.remove('active');
+                if (phaseCompletion[i + 1] === 100) {
+                    b.classList.add('completed');
+                } else {
+                    b.classList.remove('completed');
+                }
+            });
             document.getElementById('p' + p).classList.add('active');
+            
             updateStepDisplay();
+            updateProgress();
         }
 
         function nextStep() {
-            if (currentStepIndex < learningData[currentPhase].length - 1) {
+            const currentPhaseSteps = learningData[currentPhase];
+            if (currentStepIndex < currentPhaseSteps.length - 1) {
                 currentStepIndex++;
                 updateStepDisplay();
             } else {
-                showFeedback("階段完成！請選擇下一階段");
+                // 階段完成
+                phaseCompletion[currentPhase] = 100;
+                updateProgress();
+                showAchievement(`🎉 階段${currentPhase}完成！`);
+                
+                if (currentPhase < 4) {
+                    showFeedback(`階段${currentPhase}完成！請選擇下一階段`, true);
+                } else {
+                    showFeedback("🏆 恭喜！完成全部療程訓練！", true);
+                }
             }
         }
 
@@ -448,11 +753,56 @@
 
         function updateStepDisplay() {
             const step = learningData[currentPhase][currentStepIndex];
-            document.getElementById('step-id').innerText = `STEP ${step.id}`;
+            if (!step) return;
+            
+            document.getElementById('step-id').innerHTML = `
+                <span>🎯</span>
+                <span>STEP ${step.id}</span>
+            `;
             document.getElementById('step-text').innerText = step.text;
-            document.getElementById('step-note').innerText = step.note;
+            document.getElementById('step-note').innerText = `💡 ${step.note}`;
+            
+            // 顯示手法標籤
+            if (step.technique) {
+                document.getElementById('technique-display').innerHTML = `
+                    <div class="technique-tag">✨ ${step.technique}</div>
+                `;
+            } else {
+                document.getElementById('technique-display').innerHTML = '';
+            }
+            
             updateTargets(); 
-            showFeedback(`步驟 ${step.id}`);
+            
+            // 計算當前階段進度
+            const totalSteps = learningData[currentPhase].length;
+            const progress = Math.round((currentStepIndex / (totalSteps - 1)) * 100);
+            phaseCompletion[currentPhase] = progress;
+            updateProgress();
+        }
+
+        function updateProgress() {
+            // 計算總體完成度
+            const totalCompletion = Object.values(phaseCompletion).reduce((a, b) => a + b, 0) / 4;
+            document.getElementById('completion-percent').innerText = Math.round(totalCompletion) + '%';
+            document.getElementById('progress-fill').style.width = totalCompletion + '%';
+            document.getElementById('progress-status').innerText = `📊 進度: ${Math.round(totalCompletion)}%`;
+        }
+
+        function onMouseMove(e) {
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            const intersects = raycaster.intersectObjects(targets);
+            if (intersects.length > 0) {
+                handCursor.classList.add('active');
+                handCursor.style.left = e.clientX + 'px';
+                handCursor.style.top = e.clientY + 'px';
+                document.body.style.cursor = 'pointer';
+            } else {
+                handCursor.classList.remove('active');
+                document.body.style.cursor = 'default';
+            }
         }
 
         function onCanvasClick(e) {
@@ -463,32 +813,132 @@
             const intersects = raycaster.intersectObjects(targets);
             if (intersects.length > 0) {
                 const pt = intersects[0].object.position;
-                playEffect(pt);
-                showFeedback("✅ 正確！", true);
+                playMassageEffect(pt);
+                
+                const step = learningData[currentPhase][currentStepIndex];
+                showFeedback(`✅ 完成: ${step.text}`, true);
+                
+                // 標記為已完成
+                const stepKey = `${currentPhase}-${currentStepIndex}`;
+                completedSteps.add(stepKey);
+                
+                // 自動前進到下一步
+                setTimeout(() => {
+                    nextStep();
+                }, 1500);
             }
         }
 
-        function playEffect(pos) {
+        function playMassageEffect(pos) {
+            // 創建多層效果
+            
+            // 1. 光環擴散
             const ring = new THREE.Mesh(
-                new THREE.RingGeometry(0.1, 0.2, 32),
-                new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })
+                new THREE.RingGeometry(0.08, 0.15, 32),
+                new THREE.MeshBasicMaterial({ 
+                    color: 0xffff00, 
+                    side: THREE.DoubleSide,
+                    transparent: true
+                })
             );
             ring.position.copy(pos);
             ring.rotation.x = -Math.PI/2;
             scene.add(ring);
-            gsap.to(ring.scale, {x:3, y:3, opacity:0, duration:0.5, onComplete:()=>scene.remove(ring)});
+            
+            gsap.to(ring.scale, {
+                x: 4, 
+                y: 4, 
+                duration: 1.2, 
+                ease: "power2.out"
+            });
+            gsap.to(ring.material, {
+                opacity: 0, 
+                duration: 1.2,
+                onComplete: () => scene.remove(ring)
+            });
+            
+            // 2. 粒子爆發效果
+            for (let i = 0; i < 8; i++) {
+                const particle = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.03, 8, 8),
+                    new THREE.MeshBasicMaterial({ 
+                        color: 0x00ff88,
+                        transparent: true
+                    })
+                );
+                particle.position.copy(pos);
+                scene.add(particle);
+                
+                const angle = (Math.PI * 2 / 8) * i;
+                const distance = 0.5;
+                gsap.to(particle.position, {
+                    x: pos.x + Math.cos(angle) * distance,
+                    z: pos.z + Math.sin(angle) * distance,
+                    y: pos.y + 0.3,
+                    duration: 0.8,
+                    ease: "power2.out"
+                });
+                gsap.to(particle.material, {
+                    opacity: 0,
+                    duration: 0.8,
+                    onComplete: () => scene.remove(particle)
+                });
+            }
+            
+            // 3. 中心光點
+            const centerLight = new THREE.Mesh(
+                new THREE.SphereGeometry(0.15, 16, 16),
+                new THREE.MeshBasicMaterial({ 
+                    color: 0xffffff,
+                    transparent: true,
+                    opacity: 0.8
+                })
+            );
+            centerLight.position.copy(pos);
+            scene.add(centerLight);
+            
+            gsap.to(centerLight.scale, {
+                x: 0.1,
+                y: 0.1,
+                z: 0.1,
+                duration: 0.6
+            });
+            gsap.to(centerLight.material, {
+                opacity: 0,
+                duration: 0.6,
+                onComplete: () => scene.remove(centerLight)
+            });
         }
 
         function showFeedback(msg, isSuccess) {
             const el = document.getElementById('feedback-text');
             el.innerText = msg;
             el.style.opacity = 1;
-            el.style.background = isSuccess ? "rgba(0,150,0,0.8)" : "rgba(0,0,0,0.8)";
+            el.style.background = isSuccess ? 
+                "linear-gradient(135deg, rgba(17, 153, 142, 0.95), rgba(56, 239, 125, 0.95))" : 
+                "rgba(0,0,0,0.85)";
+            
             clearTimeout(window.fbTimer);
-            window.fbTimer = setTimeout(() => { el.style.opacity = 0; }, 1500);
+            window.fbTimer = setTimeout(() => { 
+                el.style.opacity = 0; 
+            }, 2000);
         }
 
-        function resetCam() { controls.reset(); }
+        function showAchievement(msg) {
+            const el = document.getElementById('achievement');
+            el.innerText = msg;
+            el.classList.add('show');
+            
+            setTimeout(() => {
+                el.classList.remove('show');
+            }, 3000);
+        }
+
+        function resetCam() { 
+            controls.reset();
+            camera.position.set(2, 3, 3);
+            camera.lookAt(0, 0, 0);
+        }
         
         function onWindowResize() {
             if(camera && renderer) {
