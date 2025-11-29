@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艾柏國際芳療 - VR按摩教學系統 (瑞典式腿部)</title>
+    <title>艾柏國際芳療 - VR按摩教學系統 (骨架偵測版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -38,6 +38,7 @@
             position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
             background: rgba(255,255,255,0.95); padding: 10px 30px; border-radius: 50px;
             font-weight: bold; color: #333; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+            display: flex; gap: 15px; align-items: center;
         }
 
         /* 左側：階段選擇 */
@@ -83,10 +84,11 @@
         /* Debug 面板 */
         .debug-panel {
             position: absolute; bottom: 10px; left: 10px; background: rgba(0,0,0,0.8);
-            color: white; padding: 10px; border-radius: 5px; font-size: 12px; pointer-events: auto;
+            color: white; padding: 10px; border-radius: 5px; font-size: 12px; pointer-events: auto; width: 220px;
         }
-        .debug-row { margin-bottom: 5px; }
-        .debug-row input { width: 150px; }
+        .debug-row { margin-bottom: 5px; display: flex; justify-content: space-between; }
+        .debug-row label { width: 40px; }
+        .debug-row input { flex: 1; margin-left: 10px; }
 
         .loading {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -99,6 +101,10 @@
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             background: rgba(0,0,0,0.8); color: #fff; padding: 15px 30px; border-radius: 30px;
             font-size: 20px; opacity: 0; pointer-events: none; transition: opacity 0.3s; z-index: 200;
+        }
+        
+        #bone-status {
+            font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #eee;
         }
     </style>
 </head>
@@ -115,7 +121,10 @@
         </div>
 
         <div class="ui-layer" id="ui-layer" style="display:none;">
-            <div class="status-bar">🏫 瑞典式按摩 VR 教室</div>
+            <div class="status-bar">
+                <span>🏫 VR 教室</span>
+                <span id="bone-status">🔍 偵測骨架中...</span>
+            </div>
 
             <!-- 左側：流程選擇 -->
             <div class="control-panel">
@@ -156,14 +165,29 @@
                 </div>
             </div>
 
-            <!-- Debug 面板 -->
+            <!-- Debug 面板：預設值已更新 -->
             <div class="debug-panel">
-                <div style="margin-bottom:5px; color:#aaa;">🔧 高度校正</div>
-                <div class="debug-row">Y軸: <span id="val-y">2.50</span></div>
-                <!-- ✨ 預設值改為 2.50 -->
-                <input type="range" id="range-y" min="0" max="10" step="0.1" value="2.50" oninput="updateHeight(this.value)">
-                <div style="margin-top:5px;">
-                    <button style="padding:2px 5px;" onclick="resetCam()">重置視角</button>
+                <div style="margin-bottom:5px; color:#aaa;">🔧 位置校正</div>
+                
+                <div class="debug-row">
+                    <label>X前後</label>
+                    <!-- ✨ 預設值改為 -0.8 (讓頭部出來一點) -->
+                    <input type="range" id="range-x" min="-5" max="5" step="0.1" value="-0.8" oninput="updatePos()">
+                </div>
+                
+                <div class="debug-row">
+                    <label>Y高度</label>
+                    <!-- ✨ 預設值改為 2.30 -->
+                    <input type="range" id="range-y" min="0" max="10" step="0.1" value="2.30" oninput="updatePos()">
+                </div>
+
+                <div class="debug-row">
+                    <label>Z左右</label>
+                    <input type="range" id="range-z" min="-5" max="5" step="0.1" value="0" oninput="updatePos()">
+                </div>
+
+                <div style="margin-top:5px; text-align: center;">
+                    <button style="padding:4px 10px; cursor:pointer;" onclick="resetCam()">重置視角</button>
                 </div>
             </div>
 
@@ -178,35 +202,36 @@
         // ✨ 學習資料庫
         const learningData = {
             1: [
-                { id: "1.1", text: "在毛巾上俯順至大腿", note: "設定客戶位置，保持接觸。" },
-                { id: "1.2", text: "由兩側滑下至腳底", note: "動作輕柔流暢。" },
-                { id: "1.3", text: "將毛巾捲在雙腿之間", note: "確保毛巾覆蓋隱私部位並定位。" },
-                { id: "1.4", text: "雙腿由阿基里斯腱上游", note: "雙腿同步操作，進行初始長推。" },
-                { id: "1.5", text: "將右腳覆蓋", note: "確認操作目標為左腳，保持右腳保暖。" },
-                { id: "1.6", text: "上油", note: "均勻塗抹按摩油於雙手。" },
-                { id: "1.7", text: "大安撫", note: "兩手放在腳底，停留片刻建立連結。" }
+                { id: "1.1", text: "在毛巾上俯順至大腿", note: "設定客戶位置，保持接觸。", target: 'legs' },
+                { id: "1.2", text: "由兩側滑下至腳底", note: "動作輕柔流暢。", target: 'feet' },
+                { id: "1.3", text: "將毛巾捲在雙腿之間", note: "確保毛巾覆蓋隱私部位並定位。", target: 'knees' },
+                { id: "1.4", text: "雙腿由阿基里斯腱上游", note: "雙腿同步操作，進行初始長推。", target: 'legs' },
+                { id: "1.5", text: "將右腳覆蓋", note: "確認操作目標為左腳，保持右腳保暖。", target: 'right_leg' },
+                { id: "1.6", text: "上油", note: "均勻塗抹按摩油於雙手。", target: 'hands' },
+                { id: "1.7", text: "大安撫", note: "兩手放在腳底，停留片刻建立連結。", target: 'feet' }
             ],
             2: [
-                { id: "2.1", text: "雙手拇指並排，長推至大腿", note: "由下往上，施力均勻。" },
-                { id: "2.2", text: "由兩側回包", note: "回程動作，輕撫滑回。" },
-                { id: "2.3", text: "撥提技巧", note: "由下至上，分段向兩側提拉肌肉。" },
-                { id: "2.4", text: "大腿內外側操作", note: "由內側開始，再操作外側。" },
-                { id: "2.5", text: "雙手交替向上撫順", note: "使用交替手進行長推，保持連貫。" },
-                { id: "2.6", text: "小腿向上長推至委中穴", note: "注意膝蓋後方力道需減輕。" },
-                { id: "2.7", text: "小腿分三等份操作", note: "內、中、外側各一次，來回共三次。" },
-                { id: "2.8", text: "抬腳 90 度，一手托腳盤", note: "準備進行腳底按摩。" }
+                { id: "2.1", text: "左腿：拇指並排，長推至大腿", note: "由下往上，施力均勻。", target: 'left_leg_long' },
+                { id: "2.2", text: "由兩側回包", note: "回程動作，輕撫滑回。", target: 'left_leg' },
+                { id: "2.3", text: "撥提技巧", note: "由下至上，分段向兩側提拉肌肉。", target: 'left_calf' },
+                { id: "2.4", text: "大腿內外側操作", note: "由內側開始，再操作外側。", target: 'left_thigh' },
+                { id: "2.5", text: "雙手交替向上撫順", note: "使用交替手進行長推，保持連貫。", target: 'left_leg_long' },
+                { id: "2.6", text: "小腿向上長推至委中穴", note: "注意膝蓋後方力道需減輕。", target: 'left_calf' },
+                { id: "2.7", text: "小腿分三等份操作", note: "內、中、外側各一次，來回共三次。", target: 'left_calf' },
+                { id: "2.8", text: "抬腳 90 度，一手托腳盤", note: "準備進行腳底按摩 (請想像將腳抬起)。", target: 'left_foot_lift' } 
             ],
             3: [
-                { id: "3.1", text: "雙手拇指並排長推大腿", note: "右腿開始，重複左腿基礎動作。" },
-                { id: "3.2", text: "由兩側回包", note: "保持接觸。" },
-                { id: "3.4", text: "S 型抓捏", note: "★ 重點技巧：執行 S 型捏法放鬆肌肉。" },
-                { id: "3.5", text: "大腿內外側操作", note: "由內自外。" },
-                { id: "3.13", text: "握十秒", note: "持續按壓腳掌心十秒，給予安定感。" }
+                { id: "3.1", text: "右腿：拇指並排長推大腿", note: "右腿開始，重複左腿基礎動作。", target: 'right_leg_long' },
+                { id: "3.2", text: "由兩側回包", note: "保持接觸。", target: 'right_leg' },
+                { id: "3.4", text: "S 型抓捏", note: "★ 重點技巧：執行 S 型捏法放鬆肌肉。", target: 'right_calf' },
+                { id: "3.5", text: "大腿內外側操作", note: "由內自外。", target: 'right_thigh' },
+                { id: "3.9", text: "抬腳 90 度", note: "一手托腳盤，準備腳底按摩。", target: 'right_foot_lift' },
+                { id: "3.13", text: "握十秒", note: "持續按壓腳掌心十秒，給予安定感。", target: 'right_foot' }
             ],
             4: [
-                { id: "4.1", text: "毛巾捲回中間", note: "準備結束動作。" },
-                { id: "4.2", text: "大安撫", note: "進行最終的廣泛安撫，涵蓋雙腿。" },
-                { id: "4.4", text: "蓋上毛巾", note: "完整覆蓋，宣告療程結束。" }
+                { id: "4.1", text: "毛巾捲回中間", note: "準備結束動作。", target: 'knees' },
+                { id: "4.2", text: "大安撫", note: "進行最終的廣泛安撫，涵蓋雙腿。", target: 'legs' },
+                { id: "4.4", text: "蓋上毛巾", note: "完整覆蓋，宣告療程結束。", target: 'legs' }
             ]
         };
 
@@ -217,7 +242,6 @@
         let mouse = new THREE.Vector2();
         let targets = [];
 
-        // 初始化
         function startGame() {
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('ui-layer').style.display = 'block';
@@ -234,7 +258,7 @@
             scene.add(grid);
 
             camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(0, 8, 5); // 視角拉高方便看全身
+            camera.position.set(0, 8, 5);
             camera.lookAt(0, 0, 0);
 
             renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -256,9 +280,7 @@
             renderer.setAnimationLoop(animate);
 
             loadRoom();
-            // 預設載入男性模特兒
             loadModel('male');
-            // 預設進入第一階段
             setPhase(1);
         }
 
@@ -280,53 +302,113 @@
             const loader = new THREE.GLTFLoader();
             loader.load(url, (gltf) => {
                 model = gltf.scene;
-                // ✨ 預設高度設為 2.5
-                const y = parseFloat(document.getElementById('range-y').value);
-                model.position.set(-1.2, y, 0);
+                updatePos(); 
                 model.rotation.set(-Math.PI/2, 0, Math.PI/2);
                 scene.add(model);
                 
-                // 產生互動點 (示意)
-                createTargets(model.position);
+                // ✨ 骨架檢查邏輯
+                let hasBones = false;
+                model.traverse((o) => {
+                    if (o.isBone) {
+                        hasBones = true;
+                        // console.log("Found bone:", o.name); // 除錯用
+                    }
+                });
 
+                const statusEl = document.getElementById('bone-status');
+                if (hasBones) {
+                    statusEl.innerText = "✅ 偵測到骨架 (可製作動畫)";
+                    statusEl.style.background = "#d4edda";
+                    statusEl.style.color = "#155724";
+                } else {
+                    statusEl.innerText = "❌ 無骨架 (靜態模型)";
+                    statusEl.style.background = "#f8d7da";
+                    statusEl.style.color = "#721c24";
+                }
+
+                updateTargets();
                 document.getElementById('loading-text').classList.remove('show');
             });
         }
 
-        function createTargets(basePos) {
+        function updatePos() {
+            if (model) {
+                const x = parseFloat(document.getElementById('range-x').value);
+                const y = parseFloat(document.getElementById('range-y').value);
+                const z = parseFloat(document.getElementById('range-z').value);
+                model.position.set(x, y, z);
+                updateTargets();
+            }
+        }
+
+        // ✨ 智慧型目標點生成
+        function updateTargets() {
+            if (!model) return;
             if (targets.length > 0) targets.forEach(t => scene.remove(t));
             targets = [];
 
-            // 根據當前步驟簡單顯示幾個重點部位 (示意)
-            const positions = [
-                {x: 0, y: 0.5, z: -0.6}, // 頭頸
-                {x: 0, y: 0.5, z: 0},    // 背/腰
-                {x: 0, y: 0.5, z: 0.8},  // 腿
-                {x: 0, y: 0.5, z: 1.2}   // 腳底
-            ];
+            const currentStep = learningData[currentPhase][currentStepIndex];
+            if (!currentStep) return;
+            const targetType = currentStep.target || 'legs';
 
-            const geo = new THREE.SphereGeometry(0.2, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.4 });
+            const basePos = model.position;
+            let positions = [];
+
+            switch(targetType) {
+                case 'left_leg': 
+                case 'left_leg_long':
+                    positions = [
+                        {x: 0.5, y: 0.5, z: 0.3}, {x: 1.0, y: 0.4, z: 0.3} 
+                    ]; 
+                    break;
+                case 'right_leg': 
+                case 'right_leg_long':
+                    positions = [
+                        {x: 0.5, y: 0.5, z: -0.3}, {x: 1.0, y: 0.4, z: -0.3} 
+                    ]; 
+                    break;
+                case 'left_thigh':
+                    positions = [{x: 0.2, y: 0.5, z: 0.3}]; break;
+                case 'right_thigh':
+                    positions = [{x: 0.2, y: 0.5, z: -0.3}]; break;
+                case 'left_calf':
+                    positions = [{x: 1.0, y: 0.4, z: 0.3}]; break;
+                case 'right_calf':
+                    positions = [{x: 1.0, y: 0.4, z: -0.3}]; break;
+                case 'feet':
+                    positions = [{x: 1.4, y: 0.4, z: 0.3}, {x: 1.4, y: 0.4, z: -0.3}]; break;
+                case 'left_foot_lift':
+                    positions = [{x: 1.4, y: 1.0, z: 0.3}]; break; // ✨ 抬高提示
+                case 'right_foot_lift':
+                    positions = [{x: 1.4, y: 1.0, z: -0.3}]; break; // ✨ 抬高提示
+                case 'knees':
+                    positions = [{x: 0.8, y: 0.5, z: 0}]; break;
+                default: 
+                    positions = [{x: 0.5, y: 0.5, z: 0.3}, {x: 0.5, y: 0.5, z: -0.3}];
+            }
+
+            const geo = new THREE.SphereGeometry(0.15, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.5 });
 
             positions.forEach(p => {
                 const ball = new THREE.Mesh(geo, mat.clone());
-                ball.position.set(basePos.x + p.x, basePos.y + p.y, basePos.z + p.z);
+                ball.position.set(
+                    basePos.x + p.x, 
+                    basePos.y + p.y, 
+                    basePos.z + p.z
+                );
                 
-                gsap.to(ball.material, { opacity: 0.1, duration: 1, yoyo: true, repeat: -1 });
+                gsap.to(ball.material, { opacity: 0.1, duration: 0.8, yoyo: true, repeat: -1 });
                 scene.add(ball);
                 targets.push(ball);
             });
         }
 
-        // --- 教學流程控制 ---
         function setPhase(p) {
             currentPhase = p;
             currentStepIndex = 0;
-            
-            // UI 更新
             document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
             document.getElementById('p' + p).classList.add('active');
-            
             updateStepDisplay();
         }
 
@@ -335,7 +417,7 @@
                 currentStepIndex++;
                 updateStepDisplay();
             } else {
-                showFeedback("此階段已完成！請選擇下一階段");
+                showFeedback("階段完成！請選擇下一階段");
             }
         }
 
@@ -351,21 +433,11 @@
             document.getElementById('step-id').innerText = `STEP ${step.id}`;
             document.getElementById('step-text').innerText = step.text;
             document.getElementById('step-note').innerText = step.note;
-            
-            // 播放特效提示換步驟
+            updateTargets(); 
             showFeedback(`步驟 ${step.id}`);
         }
 
-        function updateHeight(val) {
-            document.getElementById('val-y').innerText = parseFloat(val).toFixed(2);
-            if (model) {
-                model.position.y = parseFloat(val);
-                createTargets(model.position); // 更新球的位置
-            }
-        }
-
         function onCanvasClick(e) {
-            // 點擊互動邏輯 (簡化版：點擊任意處都算練習一次)
             mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
@@ -374,7 +446,7 @@
             if (intersects.length > 0) {
                 const pt = intersects[0].object.position;
                 playEffect(pt);
-                showFeedback("✅ 動作正確");
+                showFeedback("✅ 正確！", true);
             }
         }
 
@@ -384,16 +456,16 @@
                 new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide })
             );
             ring.position.copy(pos);
-            ring.position.y += 0.1;
             ring.rotation.x = -Math.PI/2;
             scene.add(ring);
             gsap.to(ring.scale, {x:3, y:3, opacity:0, duration:0.5, onComplete:()=>scene.remove(ring)});
         }
 
-        function showFeedback(msg) {
+        function showFeedback(msg, isSuccess) {
             const el = document.getElementById('feedback-text');
             el.innerText = msg;
             el.style.opacity = 1;
+            el.style.background = isSuccess ? "rgba(0,150,0,0.8)" : "rgba(0,0,0,0.8)";
             clearTimeout(window.fbTimer);
             window.fbTimer = setTimeout(() => { el.style.opacity = 0; }, 1500);
         }
