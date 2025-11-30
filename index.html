@@ -402,34 +402,9 @@
                     </div>
                 </div>
 
-                <div class="debug-section">
-                    <div class="debug-title">🎯 互動點偏移</div>
-                    <div class="debug-row">
-                        <label>偏移 X</label>
-                        <input type="range" id="target-x" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
-                        <span class="value" id="val-tx">0</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>偏移 Y</label>
-                        <input type="range" id="target-y" min="-2" max="2" step="0.05" value="-0.5" oninput="updateTargetOffset()">
-                        <span class="value" id="val-ty">-0.5</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>偏移 Z</label>
-                        <input type="range" id="target-z" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
-                        <span class="value" id="val-tz">0</span>
-                    </div>
-                </div>
-
                 <div style="text-align: center; margin-top:10px;">
                     <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#667eea; color:white; border:none; font-weight:bold; margin:4px;" onclick="resetCam()">
                         🔄 重置視角
-                    </button>
-                    <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#11998e; color:white; border:none; font-weight:bold; margin:4px;" onclick="testInteraction()">
-                        🧪 測試互動
-                    </button>
-                    <button id="lock-btn" style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#ff6b6b; color:white; border:none; font-weight:bold; margin:4px;" onclick="toggleCameraLock()">
-                        🔒 鎖定畫面
                     </button>
                 </div>
             </div>
@@ -527,7 +502,7 @@
         let pressStartTime = 0;
         let isPressing = false;
         let sequenceProgress = 0;
-        let targetOffset = {x: 0, y: 0, z: 0}; // 互動點偏移量
+        let targetOffset = {x: 0, y: 0, z: 0}; // 固定偏移量，不再手動調整
         let cameraLocked = false; // 畫面鎖定狀態
 
         function startGame() {
