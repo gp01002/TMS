@@ -393,6 +393,25 @@
                     </div>
                 </div>
 
+                <div class="debug-section">
+                    <div class="debug-title">🎯 互動點偏移</div>
+                    <div class="debug-row">
+                        <label>偏移 X</label>
+                        <input type="range" id="target-x" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <span class="value" id="val-tx">0</span>
+                    </div>
+                    <div class="debug-row">
+                        <label>偏移 Y</label>
+                        <input type="range" id="target-y" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <span class="value" id="val-ty">0</span>
+                    </div>
+                    <div class="debug-row">
+                        <label>偏移 Z</label>
+                        <input type="range" id="target-z" min="-2" max="2" step="0.05" value="0" oninput="updateTargetOffset()">
+                        <span class="value" id="val-tz">0</span>
+                    </div>
+                </div>
+
                 <div style="text-align: center; margin-top:10px;">
                     <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#667eea; color:white; border:none; font-weight:bold;" onclick="resetCam()">
                         🔄 重置視角
@@ -493,6 +512,7 @@
         let pressStartTime = 0;
         let isPressing = false;
         let sequenceProgress = 0;
+        let targetOffset = {x: 0, y: 0, z: 0}; // 互動點偏移量
 
         function startGame() {
             document.getElementById('welcome-screen').classList.add('hidden');
@@ -598,6 +618,18 @@
             }
         }
 
+        function updateTargetOffset() {
+            targetOffset.x = parseFloat(document.getElementById('target-x').value);
+            targetOffset.y = parseFloat(document.getElementById('target-y').value);
+            targetOffset.z = parseFloat(document.getElementById('target-z').value);
+            
+            document.getElementById('val-tx').innerText = targetOffset.x.toFixed(2);
+            document.getElementById('val-ty').innerText = targetOffset.y.toFixed(2);
+            document.getElementById('val-tz').innerText = targetOffset.z.toFixed(2);
+            
+            updateTargets();
+        }
+
         function updateTargets() {
             if (!model) return;
             
@@ -626,9 +658,9 @@
                 const path = step.dragPath;
                 path.forEach((p, i) => {
                     const ball = createTargetBall(
-                        basePos.x + p.x,
-                        basePos.y + p.y,
-                        basePos.z + p.z,
+                        basePos.x + p.x + targetOffset.x,
+                        basePos.y + p.y + targetOffset.y,
+                        basePos.z + p.z + targetOffset.z,
                         i === 0 ? 0x00ff00 : 0xffd700 // 起點綠色，終點金色
                     );
                     scene.add(ball);
@@ -642,9 +674,9 @@
                 // 按壓模式：創建單個大球
                 const pos = getTargetPosition(step.target);
                 const ball = createTargetBall(
-                    basePos.x + pos.x,
-                    basePos.y + pos.y,
-                    basePos.z + pos.z,
+                    basePos.x + pos.x + targetOffset.x,
+                    basePos.y + pos.y + targetOffset.y,
+                    basePos.z + pos.z + targetOffset.z,
                     0x11998e,
                     0.15
                 );
@@ -656,9 +688,9 @@
                 step.sequence.forEach((targetType, i) => {
                     const pos = getSequencePosition(targetType);
                     const ball = createTargetBall(
-                        basePos.x + pos.x,
-                        basePos.y + pos.y,
-                        basePos.z + pos.z,
+                        basePos.x + pos.x + targetOffset.x,
+                        basePos.y + pos.y + targetOffset.y,
+                        basePos.z + pos.z + targetOffset.z,
                         i === sequenceProgress ? 0x00ff00 : 0x888888
                     );
                     scene.add(ball);
@@ -669,9 +701,9 @@
                 // 點擊模式：創建單個球
                 const pos = getTargetPosition(step.target);
                 const ball = createTargetBall(
-                    basePos.x + pos.x,
-                    basePos.y + pos.y,
-                    basePos.z + pos.z,
+                    basePos.x + pos.x + targetOffset.x,
+                    basePos.y + pos.y + targetOffset.y,
+                    basePos.z + pos.z + targetOffset.z,
                     0x00ff00
                 );
                 scene.add(ball);
@@ -707,18 +739,18 @@
 
         function createPathLine(path, basePos) {
             const points = path.map(p => new THREE.Vector3(
-                basePos.x + p.x,
-                basePos.y + p.y,
-                basePos.z + p.z
+                basePos.x + p.x + targetOffset.x,
+                basePos.y + p.y + targetOffset.y,
+                basePos.z + p.z + targetOffset.z
             ));
             
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
             const material = new THREE.LineDashedMaterial({
                 color: 0xffff00,
-                linewidth: 2,
+                linewidth: 3,
                 scale: 1,
-                dashSize: 0.1,
-                gapSize: 0.05,
+                dashSize: 0.15,
+                gapSize: 0.08,
             });
             
             const line = new THREE.Line(geometry, material);
@@ -825,13 +857,19 @@
             const step = learningData[currentPhase][currentStepIndex];
             if (!step) return;
             
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            // 計算滑鼠位置
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+            
             raycaster.setFromCamera(mouse, camera);
             
             const intersects = raycaster.intersectObjects(targets.filter(t => t.isMesh));
             
             if (intersects.length > 0) {
+                // 禁用相機控制避免衝突
+                controls.enabled = false;
+                
                 if (step.interactionMode === 'drag') {
                     isDragging = true;
                     dragStartTime = Date.now();
@@ -841,21 +879,29 @@
                 } else if (step.interactionMode === 'press') {
                     isPressing = true;
                     pressStartTime = Date.now();
-                    document.getElementById('press-circle').classList.add('show');
+                    
+                    // 顯示按壓圈在滑鼠位置
+                    const circle = document.getElementById('press-circle');
+                    circle.style.left = e.clientX - 40 + 'px';
+                    circle.style.top = e.clientY - 40 + 'px';
+                    circle.classList.add('show');
                     updatePressCircle();
                     
                 } else if (step.interactionMode === 'sequence') {
                     handleSequenceClick(intersects[0].object);
+                    setTimeout(() => { controls.enabled = true; }, 100);
                     
                 } else if (step.interactionMode === 'click') {
                     handleSimpleClick(intersects[0].point);
+                    setTimeout(() => { controls.enabled = true; }, 100);
                 }
             }
         }
 
         function onMouseMove(e) {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
             
             if (isDragging) {
                 raycaster.setFromCamera(mouse, camera);
@@ -868,6 +914,9 @@
 
         function onMouseUp(e) {
             const step = learningData[currentPhase][currentStepIndex];
+            
+            // 重新啟用相機控制
+            controls.enabled = true;
             
             if (isDragging) {
                 isDragging = false;
