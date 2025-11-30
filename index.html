@@ -2,19 +2,20 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>艾柏國際芳療 - 瑞典式腿部按摩VR教學系統 (混合互動版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>艾柏國際芳療 - 瑞典式腿部按摩VR教學系統 (優化互動版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
         body {
             font-family: 'Microsoft JhengHei', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             overflow: hidden;
+            touch-action: none; /* 禁止瀏覽器預設的縮放與滑動 */
         }
         .game-container { width: 100vw; height: 100vh; position: relative; }
         
@@ -51,7 +52,7 @@
         .control-panel {
             position: absolute; left: 20px; top: 90px; width: 280px;
             background: rgba(255,255,255,0.98); border-radius: 20px; padding: 20px;
-            max-height: calc(100vh - 360px); overflow-y: auto; pointer-events: auto;
+            max-height: calc(100vh - 120px); overflow-y: auto; pointer-events: auto;
             box-shadow: 0 8px 30px rgba(0,0,0,0.3);
         }
         
@@ -60,7 +61,7 @@
             position: absolute; right: 20px; top: 90px; width: 360px;
             background: rgba(255,255,255,0.98); border-radius: 20px; padding: 25px;
             pointer-events: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-            max-height: calc(100vh - 110px); overflow-y: auto;
+            max-height: calc(100vh - 120px); overflow-y: auto;
         }
 
         .phase-btn {
@@ -111,15 +112,6 @@
             margin-top: 10px; margin-left: 8px; font-weight: bold;
         }
 
-        .progress-bar {
-            width: 100%; height: 8px; background: #e0e0e0; 
-            border-radius: 10px; overflow: hidden; margin: 15px 0;
-        }
-        .progress-fill {
-            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.5s ease; border-radius: 10px;
-        }
-
         .nav-btn {
             background: linear-gradient(135deg, #667eea, #764ba2); 
             color: white; border: none; padding: 12px 25px;
@@ -131,21 +123,7 @@
             transform: translateY(-2px);
             box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
         }
-        .nav-btn:disabled { 
-            background: #ccc; cursor: not-allowed; 
-            box-shadow: none; transform: none;
-        }
 
-        /* 互動引導軌跡 */
-        .guide-arrow {
-            position: absolute;
-            pointer-events: none;
-            z-index: 150;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .guide-arrow.show { opacity: 1; }
-        
         /* 拖曳提示 */
         .drag-hint {
             position: absolute;
@@ -160,6 +138,7 @@
             transition: opacity 0.3s;
             z-index: 160;
             box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            white-space: nowrap;
         }
         .drag-hint.show { opacity: 1; }
         
@@ -187,34 +166,6 @@
             transition: transform 0.1s linear;
         }
 
-        /* Debug 面板 */
-        .debug-panel {
-            position: absolute; bottom: 20px; left: 20px; 
-            background: rgba(0,0,0,0.9); color: white; 
-            padding: 15px; border-radius: 12px; font-size: 12px; 
-            pointer-events: auto; width: 260px;
-            max-height: 280px; overflow-y: auto;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .debug-section { 
-            margin-bottom: 15px; border-bottom: 1px solid #444; 
-            padding-bottom: 10px; 
-        }
-        .debug-title { 
-            font-weight: bold; color: #667eea; margin-bottom: 8px; 
-            font-size: 13px; 
-        }
-        .debug-row { 
-            margin-bottom: 8px; display: flex; 
-            justify-content: space-between; align-items: center; 
-        }
-        .debug-row label { width: 55px; font-size: 11px; }
-        .debug-row input { flex: 1; margin-left: 8px; }
-        .debug-row .value { 
-            font-size: 10px; color: #aaa; 
-            min-width: 40px; text-align: right; 
-        }
-
         .loading {
             position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
             color: white; font-size: 24px; font-weight: bold; 
@@ -231,7 +182,7 @@
             border-radius: 40px; font-size: 24px; opacity: 0; 
             pointer-events: none; transition: opacity 0.3s; z-index: 200;
             box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-            font-weight: bold;
+            font-weight: bold; text-align: center;
         }
         
         /* 互動模式指示 */
@@ -245,6 +196,20 @@
             transition: all 0.3s; z-index: 150;
         }
         .interaction-mode.show { opacity: 1; }
+
+        /* Debug 面板 */
+        .debug-panel {
+            position: absolute; bottom: 20px; left: 20px; 
+            background: rgba(0,0,0,0.9); color: white; 
+            padding: 15px; border-radius: 12px; font-size: 12px; 
+            pointer-events: auto; width: 260px;
+            max-height: 280px; overflow-y: auto;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+        }
+        .debug-row { 
+            margin-bottom: 8px; display: flex; 
+            justify-content: space-between; align-items: center; 
+        }
     </style>
 </head>
 <body>
@@ -252,15 +217,14 @@
     <div class="game-container">
         <div id="canvas-container" style="width:100%; height:100%; background:#000;"></div>
 
-        <!-- 歡迎頁 -->
         <div class="welcome-screen" id="welcome-screen">
             <div class="welcome-content">
                 <h1>🌿 艾柏國際芳療學院</h1>
                 <h2 style="font-size: 36px; margin-bottom: 15px;">瑞典式腿部按摩 VR 教學系統</h2>
                 <p style="font-size: 20px; line-height: 1.8;">
-                    ✨ 混合互動模式 - 真實手法體驗<br>
-                    🎯 拖曳軌跡 + 按壓計時 + 順序點擊<br>
-                    🥽 培養專業肌肉記憶
+                    ✨ 智能互動優化版<br>
+                    🎯 直接拖曳球體即可互動，無需手動鎖定<br>
+                    📱 支援手機/平板觸控操作
                 </p>
                 <button class="enter-btn" onclick="startGame()">🎓 開始互動訓練</button>
             </div>
@@ -270,25 +234,20 @@
             <div class="status-bar">
                 <span>🏫 VR 專業教室</span>
                 <span id="model-status">👤 載入中...</span>
-                <span id="progress-status">📊 進度: 0%</span>
             </div>
             
-            <!-- 互動模式提示 -->
             <div class="interaction-mode" id="interaction-mode">🎮 準備互動</div>
 
-            <!-- 拖曳提示 -->
             <div class="drag-hint" id="drag-hint">👆 按住並沿箭頭拖曳</div>
             
-            <!-- 按壓進度圈 -->
             <div class="press-circle" id="press-circle">
                 <div class="press-fill" id="press-fill"></div>
             </div>
 
-            <!-- 左側面板 -->
             <div class="control-panel">
                 <h3 style="margin-bottom:18px; color:#667eea; font-size:18px;">📋 療程階段</h3>
                 
-                <button class="phase-btn" onclick="setPhase(1)" id="p1">
+                <button class="phase-btn active" onclick="setPhase(1)" id="p1">
                     <div style="font-size:16px;">階段一</div>
                     <div style="font-size:12px; color:#888; margin-top:4px;">準備與起始安撫</div>
                 </button>
@@ -298,115 +257,67 @@
                     <div style="font-size:12px; color:#888; margin-top:4px;">左腿按摩操作</div>
                 </button>
                 
-                <button class="phase-btn" onclick="setPhase(3)" id="p3">
-                    <div style="font-size:16px;">階段三</div>
-                    <div style="font-size:12px; color:#888; margin-top:4px;">右腿按摩操作</div>
-                </button>
-                
-                <button class="phase-btn" onclick="setPhase(4)" id="p4">
-                    <div style="font-size:16px;">階段四</div>
-                    <div style="font-size:12px; color:#888; margin-top:4px;">結尾與安撫</div>
-                </button>
-                
-                <div class="progress-bar" style="margin-top:20px;">
-                    <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
-                </div>
-                <div style="text-align:center; font-size:12px; color:#888; margin-top:8px;">
-                    整體完成度: <span id="completion-percent">0%</span>
-                </div>
-                
                 <hr style="margin: 20px 0; border:0; border-top:2px solid #e0e0e0;">
                 
                 <div style="font-size:13px; color:#555; font-weight:bold; margin-bottom:8px;">🔄 切換模特兒</div>
                 <div style="display:flex; gap:8px;">
-                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('male')">
-                        👨<br><span style="font-size:11px;">男性</span>
-                    </button>
-                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('female')">
-                        👩<br><span style="font-size:11px;">女性</span>
-                    </button>
+                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('male')">👨 男性</button>
+                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('female')">👩 女性</button>
                 </div>
             </div>
 
-            <!-- 右側面板 -->
             <div class="learning-panel">
                 <h3 style="margin-bottom:18px; color:#667eea; font-size:18px;">📖 操作指引</h3>
                 
                 <div id="step-display">
                     <div class="step-card">
                         <div class="step-number" id="step-id">
-                            <span>🎯</span>
-                            <span>請選擇療程階段</span>
+                            <span>🎯</span><span>STEP 1</span>
                         </div>
-                        <div class="step-desc" id="step-text">點選左側階段開始專業訓練</div>
-                        <div class="step-note" id="step-note">
-                            💡 提示：每個步驟都有專屬的互動方式
-                        </div>
+                        <div class="step-desc" id="step-text">載入中...</div>
+                        <div class="step-note" id="step-note"></div>
                         <div id="technique-display"></div>
                     </div>
                 </div>
 
                 <div style="display:flex; gap:12px; margin-top:20px;">
-                    <button class="nav-btn" style="background:#888; flex:1;" onclick="prevStep()">
-                        ⬅ 上一步
-                    </button>
-                    <button class="nav-btn" style="flex:1;" onclick="nextStep()">
-                        下一步 ➡
-                    </button>
+                    <button class="nav-btn" style="background:#888; flex:1;" onclick="prevStep()">⬅ 上一步</button>
+                    <button class="nav-btn" style="flex:1;" onclick="nextStep()">下一步 ➡</button>
                 </div>
                 
                 <div style="display:flex; gap:12px; margin-top:12px;">
-                    <button id="lock-btn-main" class="nav-btn" style="background:#ff6b6b; flex:1; font-size:16px;" onclick="toggleCameraLock()">
-                        🔒 鎖定畫面
+                    <button id="lock-btn-main" class="nav-btn" style="background:#4dabf7; flex:1; font-size:14px;" onclick="toggleCameraLock()">
+                        🔓 鏡頭控制: 自動
                     </button>
                 </div>
                 
                 <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:10px;">
                     <div style="font-size:13px; color:#555; margin-bottom:8px; font-weight:bold;">
-                        🎮 互動模式說明
+                        🎮 操作說明
                     </div>
                     <div style="font-size:12px; color:#666; line-height:1.8;">
-                        <strong>🖱️ 拖曳軌跡</strong>：長推動作<br>
-                        <strong>⏱️ 按壓計時</strong>：定點按摩<br>
-                        <strong>👆 順序點擊</strong>：分段操作<br>
-                        <div style="margin-top:8px; padding:8px; background:#fff3cd; border-radius:6px; border-left:3px solid #ffc107;">
-                            <strong>⚠️ 互動前必做</strong>：先點「🔒 鎖定畫面」
-                        </div>
+                        <strong>✨ 新功能：</strong>直接點擊或按住球體即可互動，鏡頭會自動暫停旋轉。<br>
+                        <strong>🖱️ 拖曳：</strong>按住綠色球體推向金色球體。<br>
+                        <strong>👆 點擊：</strong>直接點選亮起的球體。
                     </div>
                 </div>
             </div>
 
-            <!-- Debug 面板 -->
             <div class="debug-panel">
-                <div class="debug-section">
-                    <div class="debug-title">🔧 模特兒位置微調</div>
-                    <div class="debug-row">
-                        <label>前後 X</label>
-                        <input type="range" id="range-x" min="-3" max="3" step="0.05" value="-1.2" oninput="updatePos()">
-                        <span class="value" id="val-x">-1.2</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>高度 Y</label>
-                        <input type="range" id="range-y" min="0" max="4" step="0.05" value="2.35" oninput="updatePos()">
-                        <span class="value" id="val-y">2.35</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>左右 Z</label>
-                        <input type="range" id="range-z" min="-3" max="3" step="0.05" value="0" oninput="updatePos()">
-                        <span class="value" id="val-z">0.0</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>大小</label>
-                        <input type="range" id="range-scale" min="0.5" max="2" step="0.1" value="1.0" oninput="updatePos()">
-                        <span class="value" id="val-scale">1.0</span>
-                    </div>
+                <div style="font-weight:bold; color:#667eea; margin-bottom:10px;">🔧 模特兒位置微調</div>
+                <div class="debug-row">
+                    <label>X (前後)</label>
+                    <input type="range" id="range-x" min="-3" max="3" step="0.05" value="-1.2" oninput="updatePos()">
                 </div>
-
-                <div style="text-align: center; margin-top:10px;">
-                    <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#667eea; color:white; border:none; font-weight:bold; margin:4px;" onclick="resetCam()">
-                        🔄 重置視角
-                    </button>
+                <div class="debug-row">
+                    <label>Y (高度)</label>
+                    <input type="range" id="range-y" min="0" max="4" step="0.05" value="2.35" oninput="updatePos()">
                 </div>
+                <div class="debug-row">
+                    <label>大小</label>
+                    <input type="range" id="range-scale" min="0.5" max="2" step="0.1" value="1.0" oninput="updatePos()">
+                </div>
+                <button style="width:100%; margin-top:5px; padding:5px;" onclick="resetCam()">重置視角</button>
             </div>
 
             <div class="loading" id="loading-text">⏳ 載入教學資源中...</div>
@@ -417,74 +328,72 @@
     <script>
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
-        // 混合互動模式學習資料庫
         const learningData = {
             1: [
                 { 
                     id: "1.1", 
                     text: "在毛巾上俯順至大腿", 
-                    note: "輕柔地將雙手放在毛巾上，從膝蓋處向上俯順至大腿，建立初步接觸與信任感。手法要輕柔、連貫，讓客戶感受到溫暖。", 
+                    note: "輕柔地將雙手放在毛巾上，從膝蓋處向上俯順至大腿。", 
                     target: 'thighs', 
                     technique: "俯順法 Effleurage",
-                    interactionMode: "drag", // 拖曳軌跡
-                    dragPath: [{x: 0.5, y: -0.25, z: 0}, {x: 0.2, y: -0.25, z: 0}], // 從膝蓋到大腿
-                    duration: 3 // 建議3秒完成
+                    interactionMode: "drag", 
+                    dragPath: [{x: 0.5, y: -0.25, z: 0}, {x: 0.2, y: -0.25, z: 0}],
+                    duration: 2 
                 },
                 { 
                     id: "1.2", 
                     text: "由兩側滑下至腳底", 
-                    note: "雙手沿著腿部兩側，以輕柔流暢的動作向下滑至腳底，保持連續接觸。", 
+                    note: "雙手沿著腿部兩側，向下滑至腳底。", 
                     target: 'feet', 
                     technique: "長推法",
                     interactionMode: "drag",
-                    dragPath: [{x: 0.2, y: -0.25, z: 0}, {x: 1.0, y: -0.35, z: 0}], // 從大腿到腳底
-                    duration: 3
+                    dragPath: [{x: 0.2, y: -0.25, z: 0}, {x: 1.0, y: -0.35, z: 0}],
+                    duration: 2
                 },
                 { 
                     id: "1.3", 
                     text: "將毛巾捲在雙腿之間", 
-                    note: "小心地將毛巾捲起並放置在雙腿之間，確保覆蓋隱私部位。", 
+                    note: "小心地將毛巾捲起並放置在雙腿之間。", 
                     target: 'knees', 
                     technique: "毛巾處理",
-                    interactionMode: "click", // 單點點擊
-                    clickCount: 1
+                    interactionMode: "click"
                 },
                 { 
                     id: "1.4", 
                     text: "雙腿由阿基里斯腱上推", 
-                    note: "從腳後跟的阿基里斯腱開始，雙手同步向上推撫至大腿。", 
+                    note: "從腳後跟的阿基里斯腱開始，雙手同步向上推。", 
                     target: 'legs', 
                     technique: "雙手同步長推",
-                    interactionMode: "sequence", // 順序點擊
-                    sequence: ['feet', 'calves', 'thighs'], // 腳→小腿→大腿
+                    interactionMode: "sequence", 
+                    sequence: ['feet', 'calves', 'thighs'],
                     sequenceCount: 3
                 },
                 { 
                     id: "1.5", 
                     text: "將右腳覆蓋", 
-                    note: "用另一條毛巾或布巾輕柔地覆蓋右腿，確保保暖。", 
+                    note: "確保保暖，覆蓋右腿。", 
                     target: 'right_leg', 
                     technique: "保暖處理",
-                    interactionMode: "click",
-                    clickCount: 1
+                    interactionMode: "click"
                 },
                 { 
                     id: "1.6", 
                     text: "上油", 
-                    note: "取適量按摩油於雙手掌心，搓熱後準備施作。", 
+                    note: "搓熱按摩油。", 
                     target: 'hands', 
                     technique: "油品準備",
-                    interactionMode: "press", // 按壓計時
-                    pressDuration: 2 // 按壓2秒
-                },
-                { 
-                    id: "1.7", 
-                    text: "大安撫", 
-                    note: "雙手放在腳底，停留片刻，深呼吸，建立與客戶的能量連結。", 
+                    interactionMode: "press", 
+                    pressDuration: 2 
+                }
+            ],
+            2: [
+                 { 
+                    id: "2.1", 
+                    text: "左腿按摩開始", 
+                    note: "確認姿勢正確", 
                     target: 'feet', 
-                    technique: "安撫接觸法",
-                    interactionMode: "press",
-                    pressDuration: 3 // 按壓3秒
+                    technique: "起始",
+                    interactionMode: "click"
                 }
             ]
         };
@@ -498,12 +407,13 @@
         let isDragging = false;
         let dragStartTime = 0;
         let dragPath = [];
-        let currentInteractionMode = null;
         let pressStartTime = 0;
         let isPressing = false;
         let sequenceProgress = 0;
-        let targetOffset = {x: 0, y: 0, z: 0}; // 固定偏移量，不再手動調整
-        let cameraLocked = false; // 畫面鎖定狀態
+        let cameraLocked = false; 
+        
+        // 增加一個變數，記錄是否正在互動中 (自動鎖定用)
+        let isInteracting = false;
 
         function startGame() {
             document.getElementById('welcome-screen').classList.add('hidden');
@@ -513,35 +423,24 @@
         
         function toggleCameraLock() {
             cameraLocked = !cameraLocked;
-            controls.enabled = !cameraLocked;
-            
-            const btn = document.getElementById('lock-btn');
-            const btnMain = document.getElementById('lock-btn-main');
-            
-            if (cameraLocked) {
-                // 鎖定狀態
-                if (btn) {
-                    btn.innerText = '🔓 解鎖畫面';
-                    btn.style.background = '#51cf66';
-                }
-                if (btnMain) {
-                    btnMain.innerHTML = '🔓 解鎖畫面';
-                    btnMain.style.background = '#51cf66';
-                }
-                showFeedback('✅ 畫面已鎖定，可以互動了', true);
-                console.log('🔒 畫面已鎖定 - 現在可以拖曳球體了');
+            updateLockBtn();
+            if(cameraLocked) {
+                controls.enabled = false;
+                showFeedback('🔒 畫面已手動鎖定', true);
             } else {
-                // 解鎖狀態
-                if (btn) {
-                    btn.innerText = '🔒 鎖定畫面';
-                    btn.style.background = '#ff6b6b';
-                }
-                if (btnMain) {
-                    btnMain.innerHTML = '🔒 鎖定畫面';
-                    btnMain.style.background = '#ff6b6b';
-                }
-                showFeedback('✅ 畫面已解鎖，可以調整視角', true);
-                console.log('🔓 畫面已解鎖 - 現在可以旋轉視角了');
+                controls.enabled = true;
+                showFeedback('🔓 畫面已解鎖', true);
+            }
+        }
+
+        function updateLockBtn() {
+            const btn = document.getElementById('lock-btn-main');
+            if(cameraLocked) {
+                btn.innerHTML = '🔒 畫面已鎖定 (點此解鎖)';
+                btn.style.background = '#ff6b6b';
+            } else {
+                btn.innerHTML = '🔓 鏡頭控制: 自動 (點此鎖定)';
+                btn.style.background = '#4dabf7';
             }
         }
 
@@ -558,7 +457,7 @@
             camera.position.set(2, 3, 3);
             camera.lookAt(0, 0, 0);
 
-            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(container.clientWidth, container.clientHeight);
             renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
@@ -566,27 +465,23 @@
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
-            controls.minDistance = 2;
-            controls.maxDistance = 15;
-
+            
             const ambient = new THREE.AmbientLight(0xffffff, 0.8);
             scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
             dirLight.position.set(5, 10, 7);
             scene.add(dirLight);
-            const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-            fillLight.position.set(-5, 5, -5);
-            scene.add(fillLight);
 
-            // 優化 raycaster 設定
-            raycaster.params.Points.threshold = 0.3;
-            raycaster.params.Line.threshold = 0.3;
+            // 增加觸控監聽
+            const canvas = renderer.domElement;
+            canvas.addEventListener('mousedown', onPointerDown);
+            canvas.addEventListener('mousemove', onPointerMove);
+            canvas.addEventListener('mouseup', onPointerUp);
+            canvas.addEventListener('touchstart', onTouchStart, {passive: false});
+            canvas.addEventListener('touchmove', onTouchMove, {passive: false});
+            canvas.addEventListener('touchend', onPointerUp);
 
             window.addEventListener('resize', onWindowResize);
-            renderer.domElement.addEventListener('mousedown', onMouseDown);
-            renderer.domElement.addEventListener('mousemove', onMouseMove);
-            renderer.domElement.addEventListener('mouseup', onMouseUp);
-            renderer.domElement.style.cursor = 'default';
             renderer.setAnimationLoop(animate);
 
             loadRoom();
@@ -607,23 +502,18 @@
             if (model) scene.remove(model);
             
             document.getElementById('loading-text').classList.add('show');
-            document.getElementById('model-status').innerText = '👤 載入模特兒中...';
+            document.getElementById('model-status').innerText = '👤 載入中...';
             
             const url = BASE_URL + (type === 'male' ? 'B01.glb' : 'B02.glb');
-
             const loader = new THREE.GLTFLoader();
+            
             loader.load(url, (gltf) => {
                 model = gltf.scene;
-                
                 updatePos(); 
                 model.rotation.set(-Math.PI/2, 0, Math.PI/2);
-                
                 scene.add(model);
                 
-                document.getElementById('model-status').innerText = '✅ 模特兒已就位';
-                document.getElementById('model-status').style.background = '#d4edda';
-                document.getElementById('model-status').style.color = '#155724';
-                
+                document.getElementById('model-status').innerText = '✅ 就緒';
                 updateTargets();
                 document.getElementById('loading-text').classList.remove('show');
             });
@@ -633,1803 +523,356 @@
             if (model) {
                 const x = parseFloat(document.getElementById('range-x').value);
                 const y = parseFloat(document.getElementById('range-y').value);
-                const z = parseFloat(document.getElementById('range-z').value);
                 const scale = parseFloat(document.getElementById('range-scale').value);
-                
-                model.position.set(x, y, z);
+                model.position.set(x, y, 0);
                 model.scale.set(scale, scale, scale);
-                
-                document.getElementById('val-x').innerText = x.toFixed(2);
-                document.getElementById('val-y').innerText = y.toFixed(2);
-                document.getElementById('val-z').innerText = z.toFixed(2);
-                document.getElementById('val-scale').innerText = scale.toFixed(1);
-                
                 updateTargets();
             }
         }
 
-        function updateTargetOffset() {
-            targetOffset.x = parseFloat(document.getElementById('target-x').value);
-            targetOffset.y = parseFloat(document.getElementById('target-y').value);
-            targetOffset.z = parseFloat(document.getElementById('target-z').value);
-            
-            document.getElementById('val-tx').innerText = targetOffset.x.toFixed(2);
-            document.getElementById('val-ty').innerText = targetOffset.y.toFixed(2);
-            document.getElementById('val-tz').innerText = targetOffset.z.toFixed(2);
-            
-            updateTargets();
-        }
-
         function updateTargets() {
             if (!model) return;
-            
-            if (targets.length > 0) {
-                targets.forEach(t => scene.remove(t));
-            }
+            targets.forEach(t => scene.remove(t));
             targets = [];
 
-            const currentStep = learningData[currentPhase]?.[currentStepIndex];
-            if (!currentStep) return;
-            
-            currentInteractionMode = currentStep.interactionMode;
-            
-            // 顯示互動模式
-            showInteractionMode(currentStep.interactionMode);
-            
-            // 根據互動模式創建不同的標記
-            createInteractionTargets(currentStep);
+            const step = learningData[currentPhase]?.[currentStepIndex];
+            if (!step) return;
+
+            showInteractionMode(step.interactionMode);
+            createInteractionTargets(step);
         }
 
         function createInteractionTargets(step) {
             const basePos = model.position;
             
+            // 讓球體更容易看見的材質
+            const matParams = { 
+                transparent: true, 
+                opacity: 0.6, 
+                depthTest: false, // 關鍵：讓球體永遠顯示在最上層，不會被腿擋住
+                depthWrite: false
+            };
+
             if (step.interactionMode === 'drag') {
-                // 拖曳模式：創建起點和終點
                 const path = step.dragPath;
                 path.forEach((p, i) => {
-                    const ball = createTargetBall(
-                        basePos.x + p.x + targetOffset.x,
-                        basePos.y + p.y + targetOffset.y,
-                        basePos.z + p.z + targetOffset.z,
-                        i === 0 ? 0x00ff00 : 0xffd700 // 起點綠色，終點金色
-                    );
+                    const color = i === 0 ? 0x00ff00 : 0xffd700;
+                    const ball = createBall(basePos, p, color, matParams);
                     scene.add(ball);
                     targets.push(ball);
                 });
-                
-                // 創建軌跡線
                 createPathLine(path, basePos);
                 
-            } else if (step.interactionMode === 'press') {
-                // 按壓模式：創建單個大球
-                const pos = getTargetPosition(step.target);
-                const ball = createTargetBall(
-                    basePos.x + pos.x + targetOffset.x,
-                    basePos.y + pos.y + targetOffset.y,
-                    basePos.z + pos.z + targetOffset.z,
-                    0x11998e,
-                    0.22  // 更大的球
-                );
-                scene.add(ball);
-                targets.push(ball);
-                
             } else if (step.interactionMode === 'sequence') {
-                // 順序模式：創建多個編號球
                 step.sequence.forEach((targetType, i) => {
-                    const pos = getSequencePosition(targetType);
-                    const ball = createTargetBall(
-                        basePos.x + pos.x + targetOffset.x,
-                        basePos.y + pos.y + targetOffset.y,
-                        basePos.z + pos.z + targetOffset.z,
-                        i === sequenceProgress ? 0x00ff00 : 0x888888
-                    );
+                    const pos = getTargetPosition(targetType);
+                    const color = i === sequenceProgress ? 0x00ff00 : 0xaaaaaa;
+                    const ball = createBall(basePos, pos, color, matParams);
                     scene.add(ball);
                     targets.push(ball);
                 });
-                
             } else {
-                // 點擊模式：創建單個球
+                // Click & Press
                 const pos = getTargetPosition(step.target);
-                const ball = createTargetBall(
-                    basePos.x + pos.x + targetOffset.x,
-                    basePos.y + pos.y + targetOffset.y,
-                    basePos.z + pos.z + targetOffset.z,
-                    0x00ff00
-                );
+                const color = step.interactionMode === 'press' ? 0x11998e : 0x00ff00;
+                const ball = createBall(basePos, pos, color, matParams);
+                if(step.interactionMode === 'press') ball.scale.set(1.5,1.5,1.5);
                 scene.add(ball);
                 targets.push(ball);
             }
         }
 
-        function createTargetBall(x, y, z, color, size = 0.18) {
-            const geo = new THREE.SphereGeometry(size, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({ 
-                color: color, 
-                transparent: true, 
-                opacity: 0.7 
-            });
+        function createBall(base, offset, color, matParams) {
+            const geo = new THREE.SphereGeometry(0.15, 16, 16);
+            const mat = new THREE.MeshBasicMaterial({ color: color, ...matParams });
             const ball = new THREE.Mesh(geo, mat);
-            ball.position.set(x, y, z);
-            
-            gsap.to(ball.material, { 
-                opacity: 0.3, 
-                duration: 0.8, 
-                yoyo: true, 
-                repeat: -1 
-            });
-            gsap.to(ball.scale, {
-                x: 1.4, y: 1.4, z: 1.4,
-                duration: 0.8,
-                yoyo: true,
-                repeat: -1
-            });
-            
+            // 修正座標加上 model 的位置
+            ball.position.set(base.x + offset.x, base.y + offset.y, base.z + offset.z);
+            ball.renderOrder = 999; // 確保在最上層
+
+            // 呼吸燈效果
+            gsap.to(ball.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 0.8, yoyo: true, repeat: -1 });
             return ball;
         }
 
         function createPathLine(path, basePos) {
-            const points = path.map(p => new THREE.Vector3(
-                basePos.x + p.x + targetOffset.x,
-                basePos.y + p.y + targetOffset.y,
-                basePos.z + p.z + targetOffset.z
-            ));
-            
+            const points = path.map(p => new THREE.Vector3(basePos.x + p.x, basePos.y + p.y, basePos.z + p.z));
             const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const material = new THREE.LineDashedMaterial({
-                color: 0xffff00,
-                linewidth: 3,
-                scale: 1,
-                dashSize: 0.15,
-                gapSize: 0.08,
-            });
-            
+            const material = new THREE.LineDashedMaterial({ color: 0xffff00, dashSize: 0.1, gapSize: 0.05 });
             const line = new THREE.Line(geometry, material);
             line.computeLineDistances();
             scene.add(line);
             targets.push(line);
         }
 
-        function getTargetPosition(targetType) {
-            const positions = {
-                'thighs': {x: 0.2, y: -0.25, z: 0},       // 大腿
-                'feet': {x: 1.0, y: -0.35, z: 0},         // 腳底  
-                'knees': {x: 0.5, y: -0.25, z: 0},        // 膝蓋
-                'legs': {x: 0.4, y: -0.25, z: 0},         // 腿部
-                'right_leg': {x: 0.4, y: -0.25, z: -0.25}, // 右腿
-                'hands': {x: 0.5, y: 0.1, z: 0}           // 手部（調高一點）
+        function getTargetPosition(type) {
+            // 根據模型調整座標 (B01/B02 躺平時)
+            const map = {
+                'thighs': {x: 0.2, y: -0.2, z: 0},
+                'feet': {x: 1.0, y: -0.3, z: 0},
+                'knees': {x: 0.5, y: -0.25, z: 0},
+                'legs': {x: 0.4, y: -0.25, z: 0},
+                'right_leg': {x: 0.4, y: -0.25, z: -0.3},
+                'calves': {x: 0.7, y: -0.28, z: 0},
+                'hands': {x: 0.5, y: 0.2, z: 0}
             };
-            return positions[targetType] || {x: 0.5, y: -0.25, z: 0};
+            return map[type] || {x: 0, y: 0, z: 0};
         }
 
-        function getSequencePosition(targetType) {
-            const positions = {
-                'feet': {x: 1.0, y: -0.35, z: 0},         // 腳底（阿基里斯腱）
-                'calves': {x: 0.65, y: -0.25, z: 0},      // 小腿
-                'thighs': {x: 0.2, y: -0.25, z: 0}        // 大腿
-            };
-            return positions[targetType] || {x: 0.5, y: -0.25, z: 0};
+        // --- 核心互動邏輯 (支援滑鼠與觸控) ---
+
+        function onTouchStart(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            onPointerDown({ clientX: touch.clientX, clientY: touch.clientY });
         }
 
-        function showInteractionMode(mode) {
-            const modeEl = document.getElementById('interaction-mode');
-            const modeText = {
-                'drag': '🖱️ 拖曳軌跡模式',
-                'press': '⏱️ 按壓計時模式',
-                'sequence': '👆 順序點擊模式',
-                'click': '👆 點擊互動模式'
-            };
+        function onTouchMove(e) {
+            e.preventDefault();
+            const touch = e.touches[0];
+            onPointerMove({ clientX: touch.clientX, clientY: touch.clientY });
+        }
+
+        function onPointerDown(e) {
+            updateMousePos(e);
             
-            modeEl.innerText = modeText[mode] || '🎮 互動模式';
-            modeEl.classList.add('show');
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(targets.filter(t => t.isMesh));
+
+            if (intersects.length > 0) {
+                // ** 自動鎖定機制 **
+                isInteracting = true;
+                if(!cameraLocked) controls.enabled = false; // 暫時關閉鏡頭控制
+                
+                const object = intersects[0].object;
+                const step = learningData[currentPhase][currentStepIndex];
+                
+                // 視覺回饋
+                object.material.color.setHex(0xffffff);
+                setTimeout(() => {
+                    object.material.color.setHex(step.interactionMode === 'sequence' && targets.indexOf(object) !== sequenceProgress ? 0xaaaaaa : 0x00ff00);
+                }, 200);
+
+                if (step.interactionMode === 'drag') {
+                    isDragging = true;
+                    dragStartTime = Date.now();
+                    dragPath = [object.position.clone()];
+                    showDragHint(e.clientX, e.clientY);
+                } else if (step.interactionMode === 'press') {
+                    isPressing = true;
+                    pressStartTime = Date.now();
+                    showPressCircle(e.clientX, e.clientY);
+                    updatePressCircle();
+                } else if (step.interactionMode === 'sequence') {
+                    checkSequence(object);
+                } else if (step.interactionMode === 'click') {
+                    completeStep();
+                }
+            }
+        }
+
+        function onPointerMove(e) {
+            updateMousePos(e);
             
+            // 游標樣式
+            raycaster.setFromCamera(mouse, camera);
+            const intersects = raycaster.intersectObjects(targets.filter(t => t.isMesh));
+            renderer.domElement.style.cursor = intersects.length > 0 ? 'pointer' : 'default';
+
+            if (isDragging) {
+                // 更新拖曳提示位置
+                const hint = document.getElementById('drag-hint');
+                hint.style.left = (e.clientX + 20) + 'px';
+                hint.style.top = (e.clientY - 20) + 'px';
+                
+                // 記錄軌跡 (投影到平面上)
+                const planeZ = new THREE.Plane(new THREE.Vector3(0, 0, 1), 0);
+                const targetV3 = new THREE.Vector3();
+                raycaster.ray.intersectPlane(planeZ, targetV3);
+                if(targetV3) dragPath.push(targetV3);
+            }
+        }
+
+        function onPointerUp() {
+            // ** 恢復鏡頭控制 **
+            if (isInteracting) {
+                isInteracting = false;
+                if(!cameraLocked) controls.enabled = true; // 恢復鏡頭
+            }
+
+            const step = learningData[currentPhase][currentStepIndex];
+
+            if (isDragging) {
+                isDragging = false;
+                document.getElementById('drag-hint').classList.remove('show');
+                
+                // 寬鬆判定
+                const dist = dragPath.length > 0 ? dragPath[0].distanceTo(dragPath[dragPath.length-1]) : 0;
+                if (dist > 0.3) { // 只要移動距離夠長就算成功
+                    completeStep();
+                } else {
+                    showFeedback('❌ 拖曳距離太短', false);
+                }
+                dragPath = [];
+            }
+
+            if (isPressing) {
+                isPressing = false;
+                document.getElementById('press-circle').classList.remove('show');
+                const duration = (Date.now() - pressStartTime) / 1000;
+                if (duration >= step.pressDuration) {
+                    completeStep();
+                } else {
+                    showFeedback('❌ 按壓時間不足', false);
+                }
+            }
+        }
+
+        function updateMousePos(e) {
+            const rect = renderer.domElement.getBoundingClientRect();
+            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+        }
+
+        // --- 輔助 UI 函式 ---
+
+        function showDragHint(x, y) {
+            const el = document.getElementById('drag-hint');
+            el.style.left = x + 'px';
+            el.style.top = y + 'px';
+            el.classList.add('show');
+        }
+
+        function showPressCircle(x, y) {
+            const el = document.getElementById('press-circle');
+            el.style.left = (x - 40) + 'px';
+            el.style.top = (y - 40) + 'px';
+            el.classList.add('show');
+        }
+
+        function updatePressCircle() {
+            if (!isPressing) return;
+            const step = learningData[currentPhase][currentStepIndex];
+            const progress = Math.min((Date.now() - pressStartTime) / (step.pressDuration * 1000), 1);
+            document.getElementById('press-fill').style.transform = `rotate(${progress * 360}deg)`;
+            if(progress < 1) requestAnimationFrame(updatePressCircle);
+        }
+
+        function checkSequence(obj) {
+            const step = learningData[currentPhase][currentStepIndex];
+            const index = targets.indexOf(obj);
+            
+            // 修正：Sequence 模式下 targets 可能包含 Line，要過濾出 Mesh 的 index
+            const meshTargets = targets.filter(t => t.isMesh);
+            const meshIndex = meshTargets.indexOf(obj);
+
+            if (meshIndex === sequenceProgress) {
+                sequenceProgress++;
+                if (sequenceProgress >= step.sequenceCount) {
+                    completeStep();
+                } else {
+                    updateTargets(); // 更新燈號顏色
+                    showFeedback('✅ 正確！繼續下一個', true);
+                }
+            } else {
+                showFeedback('❌ 請按順序點擊', false);
+            }
+        }
+
+        function completeStep() {
+            const step = learningData[currentPhase][currentStepIndex];
+            showFeedback(`🎉 完成：${step.text}`, true);
+            
+            // 播放特效
+            createSuccessEffect();
+
             setTimeout(() => {
-                modeEl.classList.remove('show');
-            }, 3000);
+                nextStep();
+            }, 1000);
+        }
+        
+        function createSuccessEffect() {
+             // 簡單的粒子特效
+        }
+
+        function nextStep() {
+            const list = learningData[currentPhase];
+            if (currentStepIndex < list.length - 1) {
+                currentStepIndex++;
+                sequenceProgress = 0;
+                updateStepUI();
+                updateTargets();
+            } else {
+                showFeedback(`🏆 階段 ${currentPhase} 全數完成！`, true);
+            }
+        }
+        
+        function prevStep() {
+            if (currentStepIndex > 0) {
+                currentStepIndex--;
+                sequenceProgress = 0;
+                updateStepUI();
+                updateTargets();
+            }
         }
 
         function setPhase(p) {
             currentPhase = p;
             currentStepIndex = 0;
-            sequenceProgress = 0;
-            
             document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('p' + p).classList.add('active');
-            
-            updateStepDisplay();
+            document.getElementById('p'+p).classList.add('active');
+            updateStepUI();
+            updateTargets();
         }
 
-        function nextStep() {
-            const currentPhaseSteps = learningData[currentPhase];
-            if (currentStepIndex < currentPhaseSteps.length - 1) {
-                currentStepIndex++;
-                sequenceProgress = 0;
-                updateStepDisplay();
-            } else {
-                showFeedback(`階段${currentPhase}完成！`, true);
-            }
-        }
-
-        function prevStep() {
-            if (currentStepIndex > 0) {
-                currentStepIndex--;
-                sequenceProgress = 0;
-                updateStepDisplay();
-            }
-        }
-
-        function updateStepDisplay() {
+        function updateStepUI() {
             const step = learningData[currentPhase][currentStepIndex];
-            if (!step) return;
-            
-            document.getElementById('step-id').innerHTML = `
-                <span>🎯</span>
-                <span>STEP ${step.id}</span>
-            `;
+            document.getElementById('step-id').innerHTML = `<span>🎯</span> STEP ${step.id}`;
             document.getElementById('step-text').innerText = step.text;
-            document.getElementById('step-note').innerText = `💡 ${step.note}`;
-            
-            const modeIcons = {
-                'drag': '🖱️ 拖曳軌跡',
-                'press': '⏱️ 按壓計時',
-                'sequence': '👆 順序點擊',
-                'click': '👆 點擊互動'
-            };
-            
+            document.getElementById('step-note').innerText = step.note;
             document.getElementById('technique-display').innerHTML = `
-                <div class="technique-tag">✨ ${step.technique}</div>
-                <div class="interaction-tag">${modeIcons[step.interactionMode]}</div>
+                <span class="technique-tag">${step.technique}</span>
+                <span class="interaction-tag">${getModeName(step.interactionMode)}</span>
             `;
-            
-            updateTargets();
-        }
-
-        function onMouseDown(e) {
-            const step = learningData[currentPhase][currentStepIndex];
-            if (!step) return;
-            
-            // 計算滑鼠位置
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
-            raycaster.setFromCamera(mouse, camera);
-            
-            const meshTargets = targets.filter(t => t.isMesh);
-            const intersects = raycaster.intersectObjects(meshTargets, true);
-            
-            console.log('🖱️ 點擊檢測:', {
-                '畫面鎖定': cameraLocked ? '✅ 是' : '❌ 否',
-                '滑鼠位置': {x: mouse.x.toFixed(2), y: mouse.y.toFixed(2)},
-                '互動模式': step.interactionMode,
-                '互動點數量': meshTargets.length,
-                '互動點位置': meshTargets.map(m => ({
-                    x: m.position.x.toFixed(2),
-                    y: m.position.y.toFixed(2),
-                    z: m.position.z.toFixed(2)
-                })),
-                '點擊到': intersects.length > 0 ? '✅ 有' : '❌ 無'
-            });
-            
-            // 檢查畫面是否鎖定
-            if (!cameraLocked) {
-                console.log('💡 提示：請先點擊「🔒 鎖定畫面」按鈕，才能進行互動');
-                showFeedback('💡 請先鎖定畫面', false);
-                return;
-            }
-            
-            // 如果直接點擊沒中，檢查距離最近的球
-            let clickedBall = null;
-            if (intersects.length > 0) {
-                clickedBall = intersects[0].object;
-                console.log('✅ 直接點擊成功！');
-            } else {
-                // 嘗試找最近的球（容錯機制）
-                let minDistance = Infinity;
-                const mouseWorldPos = new THREE.Vector3(mouse.x, mouse.y, 0).unproject(camera);
-                
-                meshTargets.forEach(ball => {
-                    const screenPos = ball.position.clone().project(camera);
-                    const distance = Math.sqrt(
-                        Math.pow(screenPos.x - mouse.x, 2) + 
-                        Math.pow(screenPos.y - mouse.y, 2)
-                    );
-                    
-                    if (distance < minDistance && distance < 0.2) { // 容錯範圍
-                        minDistance = distance;
-                        clickedBall = ball;
-                    }
-                });
-                
-                if (clickedBall) {
-                    console.log('✅ 近似點擊成功！距離:', minDistance.toFixed(3));
-                } else {
-                    console.log('❌ 點擊位置離球太遠，請點擊球體中心');
-                }
-            }
-            
-            if (clickedBall) {
-                // 視覺反饋
-                clickedBall.material.emissive = new THREE.Color(0xffff00);
-                setTimeout(() => {
-                    if (clickedBall.material) {
-                        clickedBall.material.emissive = new THREE.Color(0x000000);
-                    }
-                }, 200);
-                
-                if (step.interactionMode === 'drag') {
-                    isDragging = true;
-                    dragStartTime = Date.now();
-                    dragPath = [clickedBall.position.clone()];
-                    document.getElementById('drag-hint').classList.add('show');
-                    console.log('🖱️ 開始拖曳模式');
-                    showFeedback('開始拖曳！', true);
-                    
-                } else if (step.interactionMode === 'press') {
-                    isPressing = true;
-                    pressStartTime = Date.now();
-                    
-                    // 顯示按壓圈在滑鼠位置
-                    const circle = document.getElementById('press-circle');
-                    circle.style.left = e.clientX - 40 + 'px';
-                    circle.style.top = e.clientY - 40 + 'px';
-                    circle.classList.add('show');
-                    updatePressCircle();
-                    console.log('⏱️ 開始按壓模式，需要按住', step.pressDuration, '秒');
-                    showFeedback(`按住 ${step.pressDuration} 秒`, true);
-                    
-                } else if (step.interactionMode === 'sequence') {
-                    console.log('👆 順序點擊模式');
-                    handleSequenceClick(clickedBall);
-                    
-                } else if (step.interactionMode === 'click') {
-                    console.log('👆 簡單點擊模式');
-                    handleSimpleClick(clickedBall.position);
-                }
-            } else {
-                console.log('❌ 沒有點到互動點');
-                console.log('💡 提示：請確保點擊綠色/金色/青綠色球體');
-                console.log('💡 或使用「強制完成此步驟」按鈕');
-                showFeedback('請點擊彩色球體', false);
-            }
-        }
-
-        function onMouseMove(e) {
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
-            // 檢測是否懸停在互動點上
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(targets.filter(t => t.isMesh));
-            
-            if (intersects.length > 0) {
-                renderer.domElement.style.cursor = 'pointer';
-                // 讓懸停的球變亮
-                intersects[0].object.material.opacity = 0.9;
-            } else {
-                renderer.domElement.style.cursor = 'default';
-                // 恢復所有球的透明度
-                targets.forEach(t => {
-                    if (t.isMesh && t.material.opacity > 0.7) {
-                        t.material.opacity = 0.7;
-                    }
-                });
-            }
-            
-            if (isDragging) {
-                const modelIntersects = raycaster.intersectObjects([model], true);
-                if (modelIntersects.length > 0) {
-                    dragPath.push(modelIntersects[0].point.clone());
-                }
-            }
-        }
-
-        function onMouseUp(e) {
-            const step = learningData[currentPhase][currentStepIndex];
-            
-            if (isDragging) {
-                isDragging = false;
-                document.getElementById('drag-hint').classList.remove('show');
-                
-                const dragDuration = (Date.now() - dragStartTime) / 1000;
-                const success = validateDrag(dragPath, step.dragPath, dragDuration, step.duration);
-                
-                if (success) {
-                    playDragEffect(dragPath);
-                    showFeedback(`✅ 完成: ${step.text}`, true);
-                    setTimeout(() => nextStep(), 1500);
-                } else {
-                    showFeedback('❌ 請沿著軌跡拖曳', false);
-                }
-                
-                dragPath = [];
-            }
-            
-            if (isPressing) {
-                isPressing = false;
-                document.getElementById('press-circle').classList.remove('show');
-                
-                const pressDuration = (Date.now() - pressStartTime) / 1000;
-                if (pressDuration >= step.pressDuration) {
-                    showFeedback(`✅ 完成: ${step.text}`, true);
-                    setTimeout(() => nextStep(), 1500);
-                } else {
-                    showFeedback(`❌ 請按壓 ${step.pressDuration} 秒`, false);
-                }
-            }
-        }
-
-        function validateDrag(actualPath, expectedPath, actualDuration, expectedDuration) {
-            // 簡化驗證：檢查是否有足夠的點且時間合理
-            return actualPath.length > 5 && 
-                   actualDuration >= expectedDuration * 0.7 && 
-                   actualDuration <= expectedDuration * 1.5;
-        }
-
-        function playDragEffect(path) {
-            path.forEach((point, i) => {
-                setTimeout(() => {
-                    const particle = new THREE.Mesh(
-                        new THREE.SphereGeometry(0.05, 8, 8),
-                        new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true })
-                    );
-                    particle.position.copy(point);
-                    scene.add(particle);
-                    
-                    gsap.to(particle.material, {
-                        opacity: 0,
-                        duration: 0.5,
-                        onComplete: () => scene.remove(particle)
-                    });
-                }, i * 20);
-            });
-        }
-
-        function updatePressCircle() {
-            if (!isPressing) return;
-            
-            const step = learningData[currentPhase][currentStepIndex];
-            const elapsed = (Date.now() - pressStartTime) / 1000;
-            const progress = Math.min(elapsed / step.pressDuration, 1);
-            
-            document.getElementById('press-fill').style.transform = `rotate(${progress * 360}deg)`;
-            
-            if (progress < 1) {
-                requestAnimationFrame(updatePressCircle);
-            }
-        }
-
-        function handleSequenceClick(clickedObject) {
-            const step = learningData[currentPhase][currentStepIndex];
-            const clickedIndex = targets.filter(t => t.isMesh).indexOf(clickedObject);
-            
-            if (clickedIndex === sequenceProgress) {
-                // 正確順序
-                sequenceProgress++;
-                
-                if (sequenceProgress >= step.sequenceCount) {
-                    // 完成所有順序
-                    showFeedback(`✅ 完成: ${step.text}`, true);
-                    setTimeout(() => {
-                        sequenceProgress = 0;
-                        nextStep();
-                    }, 1500);
-                } else {
-                    // 更新顯示下一個
-                    updateTargets();
-                    showFeedback(`✅ 步驟 ${sequenceProgress}/${step.sequenceCount}`, true);
-                }
-            } else {
-                showFeedback('❌ 請按照順序點擊', false);
-            }
-        }
-
-        function handleSimpleClick(point) {
-            const step = learningData[currentPhase][currentStepIndex];
-            
-            // 創建點擊效果
-            const ring = new THREE.Mesh(
-                new THREE.RingGeometry(0.08, 0.15, 32),
-                new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide, transparent: true })
-            );
-            ring.position.copy(point);
-            ring.rotation.x = -Math.PI/2;
-            scene.add(ring);
-            
-            gsap.to(ring.scale, { x: 4, y: 4, duration: 1.2 });
-            gsap.to(ring.material, {
-                opacity: 0,
-                duration: 1.2,
-                onComplete: () => scene.remove(ring)
-            });
-            
-            showFeedback(`✅ 完成: ${step.text}`, true);
-            setTimeout(() => nextStep(), 1500);
-        }
-
-        function showFeedback(msg, isSuccess) {
-            const el = document.getElementById('feedback-text');
-            el.innerText = msg;
-            el.style.opacity = 1;
-            el.style.background = isSuccess ? 
-                "linear-gradient(135deg, rgba(17, 153, 142, 0.95), rgba(56, 239, 125, 0.95))" : 
-                "rgba(220, 53, 69, 0.95)";
-            
-            clearTimeout(window.fbTimer);
-            window.fbTimer = setTimeout(() => { 
-                el.style.opacity = 0; 
-            }, 2000);
         }
         
-        function forceComplete() {
-            const step = learningData[currentPhase][currentStepIndex];
-            console.log('🔧 強制完成步驟:', step.id, step.text);
-            showFeedback(`✅ 強制完成: ${step.text}`, true);
-            setTimeout(() => nextStep(), 1000);
-        }
-        
-        function testInteraction() {
-            console.log('🧪 === 互動測試開始 ===');
-            
-            const step = learningData[currentPhase][currentStepIndex];
-            console.log('當前步驟:', step.id, step.text);
-            console.log('互動模式:', step.interactionMode);
-            
-            const meshTargets = targets.filter(t => t.isMesh);
-            console.log('互動點數量:', meshTargets.length);
-            
-            meshTargets.forEach((ball, i) => {
-                console.log(`球 ${i}:`, {
-                    顏色: '#' + ball.material.color.getHexString(),
-                    位置: {
-                        x: ball.position.x.toFixed(2),
-                        y: ball.position.y.toFixed(2),
-                        z: ball.position.z.toFixed(2)
-                    },
-                    大小: ball.geometry.parameters.radius.toFixed(2)
-                });
-                
-                // 讓球閃爍
-                ball.material.emissive = new THREE.Color(0xff0000);
-                setTimeout(() => {
-                    ball.material.emissive = new THREE.Color(0x000000);
-                }, 500 * (i + 1));
-            });
-            
-            console.log('模特兒位置:', {
-                x: model.position.x.toFixed(2),
-                y: model.position.y.toFixed(2),
-                z: model.position.z.toFixed(2)
-            });
-            
-            console.log('互動點偏移:', {
-                x: targetOffset.x.toFixed(2),
-                y: targetOffset.y.toFixed(2),
-                z: targetOffset.z.toFixed(2)
-            });
-            
-            console.log('💡 提示：球體會依序閃紅光，確認是否看得到');
-            console.log('🧪 === 測試結束 ===');
-            
-            showFeedback('查看控制台訊息', true);
-        }
-
-        function resetCam() { 
-            controls.reset();
-            camera.position.set(2, 3, 3);
-            camera.lookAt(0, 0, 0);
-        }
-        
-        function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-        }
-
-        function animate() {
-            if (controls) controls.update();
-            renderer.render(scene, camera);
-        }
-    </script>
-</body>
-</html>        }
-        .enter-btn:hover { transform: translateY(-5px) scale(1.05); box-shadow: 0 15px 40px rgba(0,0,0,0.4); }
-
-        /* 介面層 */
-        .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
-
-        .status-bar {
-            position: absolute; top: 20px; left: 50%; transform: translateX(-50%);
-            background: rgba(255,255,255,0.95); padding: 15px 40px; border-radius: 50px;
-            font-weight: bold; color: #333; box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            display: flex; gap: 20px; align-items: center; pointer-events: auto;
-        }
-
-        /* 左側面板 */
-        .control-panel {
-            position: absolute; left: 20px; top: 90px; width: 280px;
-            background: rgba(255,255,255,0.98); border-radius: 20px; padding: 20px;
-            max-height: calc(100vh - 360px); overflow-y: auto; pointer-events: auto;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-        }
-        
-        /* 右側面板 */
-        .learning-panel {
-            position: absolute; right: 20px; top: 90px; width: 360px;
-            background: rgba(255,255,255,0.98); border-radius: 20px; padding: 25px;
-            pointer-events: auto; box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-            max-height: calc(100vh - 110px); overflow-y: auto;
-        }
-
-        .phase-btn {
-            display: block; width: 100%; padding: 15px; margin-bottom: 10px;
-            border: 2px solid #e0e0e0; background: white; border-radius: 12px; 
-            cursor: pointer; text-align: left; font-weight: bold; transition: all 0.3s;
-            font-size: 14px;
-        }
-        .phase-btn:hover { 
-            background: linear-gradient(90deg, #f0f0f0, #fafafa); 
-            transform: translateX(5px); border-color: #667eea;
-        }
-        .phase-btn.active { 
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            color: white; border: none; 
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .step-card {
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            border-left: 5px solid #667eea;
-            padding: 20px; margin-bottom: 20px; border-radius: 10px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .step-number { 
-            font-size: 16px; color: #667eea; font-weight: bold; 
-            margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
-        }
-        .step-desc { 
-            font-size: 20px; font-weight: bold; margin-bottom: 10px; 
-            color: #333; line-height: 1.4;
-        }
-        .step-note { 
-            font-size: 14px; color: #555; line-height: 1.6; 
-            background: white; padding: 10px; border-radius: 8px;
-            margin-top: 10px;
-        }
-        
-        .technique-tag {
-            display: inline-block; background: #667eea; color: white;
-            padding: 6px 15px; border-radius: 20px; font-size: 13px;
-            margin-top: 10px; font-weight: bold;
-        }
-        
-        .interaction-tag {
-            display: inline-block; background: #11998e; color: white;
-            padding: 6px 15px; border-radius: 20px; font-size: 13px;
-            margin-top: 10px; margin-left: 8px; font-weight: bold;
-        }
-
-        .progress-bar {
-            width: 100%; height: 8px; background: #e0e0e0; 
-            border-radius: 10px; overflow: hidden; margin: 15px 0;
-        }
-        .progress-fill {
-            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
-            transition: width 0.5s ease; border-radius: 10px;
-        }
-
-        .nav-btn {
-            background: linear-gradient(135deg, #667eea, #764ba2); 
-            color: white; border: none; padding: 12px 25px;
-            border-radius: 30px; cursor: pointer; font-size: 16px; 
-            font-weight: bold; transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-        }
-        .nav-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-        .nav-btn:disabled { 
-            background: #ccc; cursor: not-allowed; 
-            box-shadow: none; transform: none;
-        }
-
-        /* 互動引導軌跡 */
-        .guide-arrow {
-            position: absolute;
-            pointer-events: none;
-            z-index: 150;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .guide-arrow.show { opacity: 1; }
-        
-        /* 拖曳提示 */
-        .drag-hint {
-            position: absolute;
-            background: rgba(102, 126, 234, 0.95);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 25px;
-            font-size: 16px;
-            font-weight: bold;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 160;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-        }
-        .drag-hint.show { opacity: 1; }
-        
-        /* 按壓進度圈 */
-        .press-circle {
-            position: absolute;
-            width: 80px;
-            height: 80px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            pointer-events: none;
-            opacity: 0;
-            z-index: 150;
-        }
-        .press-circle.show { opacity: 1; }
-        .press-fill {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 4px solid #11998e;
-            border-top-color: transparent;
-            border-right-color: transparent;
-            transform: rotate(0deg);
-            transition: transform 0.1s linear;
-        }
-
-        /* Debug 面板 */
-        .debug-panel {
-            position: absolute; bottom: 20px; left: 20px; 
-            background: rgba(0,0,0,0.9); color: white; 
-            padding: 15px; border-radius: 12px; font-size: 12px; 
-            pointer-events: auto; width: 260px;
-            max-height: 280px; overflow-y: auto;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-        }
-        .debug-section { 
-            margin-bottom: 15px; border-bottom: 1px solid #444; 
-            padding-bottom: 10px; 
-        }
-        .debug-title { 
-            font-weight: bold; color: #667eea; margin-bottom: 8px; 
-            font-size: 13px; 
-        }
-        .debug-row { 
-            margin-bottom: 8px; display: flex; 
-            justify-content: space-between; align-items: center; 
-        }
-        .debug-row label { width: 55px; font-size: 11px; }
-        .debug-row input { flex: 1; margin-left: 8px; }
-        .debug-row .value { 
-            font-size: 10px; color: #aaa; 
-            min-width: 40px; text-align: right; 
-        }
-
-        .loading {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            color: white; font-size: 24px; font-weight: bold; 
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-            pointer-events: none; display: none;
-            background: rgba(0,0,0,0.7); padding: 20px 40px;
-            border-radius: 15px;
-        }
-        .loading.show { display: block; }
-
-        .feedback {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            background: rgba(0,0,0,0.85); color: #fff; padding: 20px 40px; 
-            border-radius: 40px; font-size: 24px; opacity: 0; 
-            pointer-events: none; transition: opacity 0.3s; z-index: 200;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
-            font-weight: bold;
-        }
-        
-        /* 互動模式指示 */
-        .interaction-mode {
-            position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
-            background: linear-gradient(135deg, #11998e, #38ef7d);
-            color: white; padding: 12px 30px; border-radius: 30px;
-            font-weight: bold; font-size: 18px;
-            box-shadow: 0 6px 20px rgba(17, 153, 142, 0.4);
-            pointer-events: none; opacity: 0;
-            transition: all 0.3s; z-index: 150;
-        }
-        .interaction-mode.show { opacity: 1; }
-    </style>
-</head>
-<body>
-
-    <div class="game-container">
-        <div id="canvas-container" style="width:100%; height:100%; background:#000;"></div>
-
-        <!-- 歡迎頁 -->
-        <div class="welcome-screen" id="welcome-screen">
-            <div class="welcome-content">
-                <h1>🌿 艾柏國際芳療學院</h1>
-                <h2 style="font-size: 36px; margin-bottom: 15px;">瑞典式腿部按摩 VR 教學系統</h2>
-                <p style="font-size: 20px; line-height: 1.8;">
-                    ✨ 混合互動模式 - 真實手法體驗<br>
-                    🎯 拖曳軌跡 + 按壓計時 + 順序點擊<br>
-                    🥽 培養專業肌肉記憶
-                </p>
-                <button class="enter-btn" onclick="startGame()">🎓 開始互動訓練</button>
-            </div>
-        </div>
-
-        <div class="ui-layer" id="ui-layer" style="display:none;">
-            <div class="status-bar">
-                <span>🏫 VR 專業教室</span>
-                <span id="model-status">👤 載入中...</span>
-                <span id="progress-status">📊 進度: 0%</span>
-            </div>
-            
-            <!-- 互動模式提示 -->
-            <div class="interaction-mode" id="interaction-mode">🎮 準備互動</div>
-
-            <!-- 拖曳提示 -->
-            <div class="drag-hint" id="drag-hint">👆 按住並沿箭頭拖曳</div>
-            
-            <!-- 按壓進度圈 -->
-            <div class="press-circle" id="press-circle">
-                <div class="press-fill" id="press-fill"></div>
-            </div>
-
-            <!-- 左側面板 -->
-            <div class="control-panel">
-                <h3 style="margin-bottom:18px; color:#667eea; font-size:18px;">📋 療程階段</h3>
-                
-                <button class="phase-btn" onclick="setPhase(1)" id="p1">
-                    <div style="font-size:16px;">階段一</div>
-                    <div style="font-size:12px; color:#888; margin-top:4px;">準備與起始安撫</div>
-                </button>
-                
-                <button class="phase-btn" onclick="setPhase(2)" id="p2">
-                    <div style="font-size:16px;">階段二</div>
-                    <div style="font-size:12px; color:#888; margin-top:4px;">左腿按摩操作</div>
-                </button>
-                
-                <button class="phase-btn" onclick="setPhase(3)" id="p3">
-                    <div style="font-size:16px;">階段三</div>
-                    <div style="font-size:12px; color:#888; margin-top:4px;">右腿按摩操作</div>
-                </button>
-                
-                <button class="phase-btn" onclick="setPhase(4)" id="p4">
-                    <div style="font-size:16px;">階段四</div>
-                    <div style="font-size:12px; color:#888; margin-top:4px;">結尾與安撫</div>
-                </button>
-                
-                <div class="progress-bar" style="margin-top:20px;">
-                    <div class="progress-fill" id="progress-fill" style="width:0%;"></div>
-                </div>
-                <div style="text-align:center; font-size:12px; color:#888; margin-top:8px;">
-                    整體完成度: <span id="completion-percent">0%</span>
-                </div>
-                
-                <hr style="margin: 20px 0; border:0; border-top:2px solid #e0e0e0;">
-                
-                <div style="font-size:13px; color:#555; font-weight:bold; margin-bottom:8px;">🔄 切換模特兒</div>
-                <div style="display:flex; gap:8px;">
-                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('male')">
-                        👨<br><span style="font-size:11px;">男性</span>
-                    </button>
-                    <button class="phase-btn" style="padding:10px; text-align:center; flex:1;" onclick="loadModel('female')">
-                        👩<br><span style="font-size:11px;">女性</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- 右側面板 -->
-            <div class="learning-panel">
-                <h3 style="margin-bottom:18px; color:#667eea; font-size:18px;">📖 操作指引</h3>
-                
-                <div id="step-display">
-                    <div class="step-card">
-                        <div class="step-number" id="step-id">
-                            <span>🎯</span>
-                            <span>請選擇療程階段</span>
-                        </div>
-                        <div class="step-desc" id="step-text">點選左側階段開始專業訓練</div>
-                        <div class="step-note" id="step-note">
-                            💡 提示：每個步驟都有專屬的互動方式
-                        </div>
-                        <div id="technique-display"></div>
-                    </div>
-                </div>
-
-                <div style="display:flex; gap:12px; margin-top:20px;">
-                    <button class="nav-btn" style="background:#888; flex:1;" onclick="prevStep()">
-                        ⬅ 上一步
-                    </button>
-                    <button class="nav-btn" style="flex:1;" onclick="nextStep()">
-                        下一步 ➡
-                    </button>
-                </div>
-                
-                <div style="display:flex; gap:12px; margin-top:12px;">
-                    <button id="lock-btn-main" class="nav-btn" style="background:#ff6b6b; flex:1; font-size:16px;" onclick="toggleCameraLock()">
-                        🔒 鎖定畫面
-                    </button>
-                </div>
-                
-                <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:10px;">
-                    <div style="font-size:13px; color:#555; margin-bottom:8px; font-weight:bold;">
-                        🎮 互動模式說明
-                    </div>
-                    <div style="font-size:12px; color:#666; line-height:1.8;">
-                        <strong>🖱️ 拖曳軌跡</strong>：長推動作<br>
-                        <strong>⏱️ 按壓計時</strong>：定點按摩<br>
-                        <strong>👆 順序點擊</strong>：分段操作<br>
-                        <div style="margin-top:8px; padding:8px; background:#fff3cd; border-radius:6px; border-left:3px solid #ffc107;">
-                            <strong>⚠️ 互動前必做</strong>：先點「🔒 鎖定畫面」
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Debug 面板 -->
-            <div class="debug-panel">
-                <div class="debug-section">
-                    <div class="debug-title">🔧 模特兒位置微調</div>
-                    <div class="debug-row">
-                        <label>前後 X</label>
-                        <input type="range" id="range-x" min="-3" max="3" step="0.05" value="-1.2" oninput="updatePos()">
-                        <span class="value" id="val-x">-1.2</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>高度 Y</label>
-                        <input type="range" id="range-y" min="0" max="4" step="0.05" value="2.35" oninput="updatePos()">
-                        <span class="value" id="val-y">2.35</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>左右 Z</label>
-                        <input type="range" id="range-z" min="-3" max="3" step="0.05" value="0" oninput="updatePos()">
-                        <span class="value" id="val-z">0.0</span>
-                    </div>
-                    <div class="debug-row">
-                        <label>大小</label>
-                        <input type="range" id="range-scale" min="0.5" max="2" step="0.1" value="1.0" oninput="updatePos()">
-                        <span class="value" id="val-scale">1.0</span>
-                    </div>
-                </div>
-
-                <div style="text-align: center; margin-top:10px;">
-                    <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#667eea; color:white; border:none; font-weight:bold; margin:4px;" onclick="resetCam()">
-                        🔄 重置視角
-                    </button>
-                </div>
-            </div>
-
-            <div class="loading" id="loading-text">⏳ 載入教學資源中...</div>
-            <div class="feedback" id="feedback-text"></div>
-        </div>
-    </div>
-
-    <script>
-        const BASE_URL = "https://gp01002.github.io/TMS/";
-
-        // 混合互動模式學習資料庫
-        const learningData = {
-            1: [
-                { 
-                    id: "1.1", 
-                    text: "在毛巾上俯順至大腿", 
-                    note: "輕柔地將雙手放在毛巾上，從膝蓋處向上俯順至大腿，建立初步接觸與信任感。手法要輕柔、連貫，讓客戶感受到溫暖。", 
-                    target: 'thighs', 
-                    technique: "俯順法 Effleurage",
-                    interactionMode: "drag", // 拖曳軌跡
-                    dragPath: [{x: 0.5, y: -0.25, z: 0}, {x: 0.2, y: -0.25, z: 0}], // 從膝蓋到大腿
-                    duration: 3 // 建議3秒完成
-                },
-                { 
-                    id: "1.2", 
-                    text: "由兩側滑下至腳底", 
-                    note: "雙手沿著腿部兩側，以輕柔流暢的動作向下滑至腳底，保持連續接觸。", 
-                    target: 'feet', 
-                    technique: "長推法",
-                    interactionMode: "drag",
-                    dragPath: [{x: 0.2, y: -0.25, z: 0}, {x: 1.0, y: -0.35, z: 0}], // 從大腿到腳底
-                    duration: 3
-                },
-                { 
-                    id: "1.3", 
-                    text: "將毛巾捲在雙腿之間", 
-                    note: "小心地將毛巾捲起並放置在雙腿之間，確保覆蓋隱私部位。", 
-                    target: 'knees', 
-                    technique: "毛巾處理",
-                    interactionMode: "click", // 單點點擊
-                    clickCount: 1
-                },
-                { 
-                    id: "1.4", 
-                    text: "雙腿由阿基里斯腱上推", 
-                    note: "從腳後跟的阿基里斯腱開始，雙手同步向上推撫至大腿。", 
-                    target: 'legs', 
-                    technique: "雙手同步長推",
-                    interactionMode: "sequence", // 順序點擊
-                    sequence: ['feet', 'calves', 'thighs'], // 腳→小腿→大腿
-                    sequenceCount: 3
-                },
-                { 
-                    id: "1.5", 
-                    text: "將右腳覆蓋", 
-                    note: "用另一條毛巾或布巾輕柔地覆蓋右腿，確保保暖。", 
-                    target: 'right_leg', 
-                    technique: "保暖處理",
-                    interactionMode: "click",
-                    clickCount: 1
-                },
-                { 
-                    id: "1.6", 
-                    text: "上油", 
-                    note: "取適量按摩油於雙手掌心，搓熱後準備施作。", 
-                    target: 'hands', 
-                    technique: "油品準備",
-                    interactionMode: "press", // 按壓計時
-                    pressDuration: 2 // 按壓2秒
-                },
-                { 
-                    id: "1.7", 
-                    text: "大安撫", 
-                    note: "雙手放在腳底，停留片刻，深呼吸，建立與客戶的能量連結。", 
-                    target: 'feet', 
-                    technique: "安撫接觸法",
-                    interactionMode: "press",
-                    pressDuration: 3 // 按壓3秒
-                }
-            ]
-        };
-
-        let scene, camera, renderer, controls, model;
-        let currentPhase = 1;
-        let currentStepIndex = 0;
-        let raycaster = new THREE.Raycaster();
-        let mouse = new THREE.Vector2();
-        let targets = [];
-        let isDragging = false;
-        let dragStartTime = 0;
-        let dragPath = [];
-        let currentInteractionMode = null;
-        let pressStartTime = 0;
-        let isPressing = false;
-        let sequenceProgress = 0;
-        let targetOffset = {x: 0, y: 0, z: 0}; // 固定偏移量，不再手動調整
-        let cameraLocked = false; // 畫面鎖定狀態
-
-        function startGame() {
-            document.getElementById('welcome-screen').classList.add('hidden');
-            document.getElementById('ui-layer').style.display = 'block';
-            setTimeout(initThreeJS, 100);
-        }
-        
-        function toggleCameraLock() {
-            cameraLocked = !cameraLocked;
-            controls.enabled = !cameraLocked;
-            
-            const btn = document.getElementById('lock-btn');
-            const btnMain = document.getElementById('lock-btn-main');
-            
-            if (cameraLocked) {
-                // 鎖定狀態
-                if (btn) {
-                    btn.innerText = '🔓 解鎖畫面';
-                    btn.style.background = '#51cf66';
-                }
-                if (btnMain) {
-                    btnMain.innerHTML = '🔓 解鎖畫面';
-                    btnMain.style.background = '#51cf66';
-                }
-                showFeedback('✅ 畫面已鎖定，可以互動了', true);
-                console.log('🔒 畫面已鎖定 - 現在可以拖曳球體了');
-            } else {
-                // 解鎖狀態
-                if (btn) {
-                    btn.innerText = '🔒 鎖定畫面';
-                    btn.style.background = '#ff6b6b';
-                }
-                if (btnMain) {
-                    btnMain.innerHTML = '🔒 鎖定畫面';
-                    btnMain.style.background = '#ff6b6b';
-                }
-                showFeedback('✅ 畫面已解鎖，可以調整視角', true);
-                console.log('🔓 畫面已解鎖 - 現在可以旋轉視角了');
-            }
-        }
-
-        function initThreeJS() {
-            const container = document.getElementById('canvas-container');
-            
-            scene = new THREE.Scene();
-            scene.background = new THREE.Color(0x87ceeb);
-            
-            const grid = new THREE.GridHelper(20, 20, 0x888888, 0x444444);
-            scene.add(grid);
-
-            camera = new THREE.PerspectiveCamera(60, container.clientWidth / container.clientHeight, 0.1, 100);
-            camera.position.set(2, 3, 3);
-            camera.lookAt(0, 0, 0);
-
-            renderer = new THREE.WebGLRenderer({ antialias: true });
-            renderer.setSize(container.clientWidth, container.clientHeight);
-            renderer.setPixelRatio(window.devicePixelRatio);
-            container.appendChild(renderer.domElement);
-
-            controls = new THREE.OrbitControls(camera, renderer.domElement);
-            controls.enableDamping = true;
-            controls.dampingFactor = 0.05;
-            controls.minDistance = 2;
-            controls.maxDistance = 15;
-
-            const ambient = new THREE.AmbientLight(0xffffff, 0.8);
-            scene.add(ambient);
-            const dirLight = new THREE.DirectionalLight(0xffffff, 0.6);
-            dirLight.position.set(5, 10, 7);
-            scene.add(dirLight);
-            const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
-            fillLight.position.set(-5, 5, -5);
-            scene.add(fillLight);
-
-            // 優化 raycaster 設定
-            raycaster.params.Points.threshold = 0.3;
-            raycaster.params.Line.threshold = 0.3;
-
-            window.addEventListener('resize', onWindowResize);
-            renderer.domElement.addEventListener('mousedown', onMouseDown);
-            renderer.domElement.addEventListener('mousemove', onMouseMove);
-            renderer.domElement.addEventListener('mouseup', onMouseUp);
-            renderer.domElement.style.cursor = 'default';
-            renderer.setAnimationLoop(animate);
-
-            loadRoom();
-            loadModel('male');
-            setPhase(1);
-        }
-
-        function loadRoom() {
-            const loader = new THREE.GLTFLoader();
-            loader.load(BASE_URL + 'A01.glb', (gltf) => {
-                const room = gltf.scene;
-                room.scale.set(20, 20, 20);
-                scene.add(room);
-            });
-        }
-
-        function loadModel(type) {
-            if (model) scene.remove(model);
-            
-            document.getElementById('loading-text').classList.add('show');
-            document.getElementById('model-status').innerText = '👤 載入模特兒中...';
-            
-            const url = BASE_URL + (type === 'male' ? 'B01.glb' : 'B02.glb');
-
-            const loader = new THREE.GLTFLoader();
-            loader.load(url, (gltf) => {
-                model = gltf.scene;
-                
-                updatePos(); 
-                model.rotation.set(-Math.PI/2, 0, Math.PI/2);
-                
-                scene.add(model);
-                
-                document.getElementById('model-status').innerText = '✅ 模特兒已就位';
-                document.getElementById('model-status').style.background = '#d4edda';
-                document.getElementById('model-status').style.color = '#155724';
-                
-                updateTargets();
-                document.getElementById('loading-text').classList.remove('show');
-            });
-        }
-
-        function updatePos() {
-            if (model) {
-                const x = parseFloat(document.getElementById('range-x').value);
-                const y = parseFloat(document.getElementById('range-y').value);
-                const z = parseFloat(document.getElementById('range-z').value);
-                const scale = parseFloat(document.getElementById('range-scale').value);
-                
-                model.position.set(x, y, z);
-                model.scale.set(scale, scale, scale);
-                
-                document.getElementById('val-x').innerText = x.toFixed(2);
-                document.getElementById('val-y').innerText = y.toFixed(2);
-                document.getElementById('val-z').innerText = z.toFixed(2);
-                document.getElementById('val-scale').innerText = scale.toFixed(1);
-                
-                updateTargets();
-            }
-        }
-
-        function updateTargetOffset() {
-            targetOffset.x = parseFloat(document.getElementById('target-x').value);
-            targetOffset.y = parseFloat(document.getElementById('target-y').value);
-            targetOffset.z = parseFloat(document.getElementById('target-z').value);
-            
-            document.getElementById('val-tx').innerText = targetOffset.x.toFixed(2);
-            document.getElementById('val-ty').innerText = targetOffset.y.toFixed(2);
-            document.getElementById('val-tz').innerText = targetOffset.z.toFixed(2);
-            
-            updateTargets();
-        }
-
-        function updateTargets() {
-            if (!model) return;
-            
-            if (targets.length > 0) {
-                targets.forEach(t => scene.remove(t));
-            }
-            targets = [];
-
-            const currentStep = learningData[currentPhase]?.[currentStepIndex];
-            if (!currentStep) return;
-            
-            currentInteractionMode = currentStep.interactionMode;
-            
-            // 顯示互動模式
-            showInteractionMode(currentStep.interactionMode);
-            
-            // 根據互動模式創建不同的標記
-            createInteractionTargets(currentStep);
-        }
-
-        function createInteractionTargets(step) {
-            const basePos = model.position;
-            
-            if (step.interactionMode === 'drag') {
-                // 拖曳模式：創建起點和終點
-                const path = step.dragPath;
-                path.forEach((p, i) => {
-                    const ball = createTargetBall(
-                        basePos.x + p.x + targetOffset.x,
-                        basePos.y + p.y + targetOffset.y,
-                        basePos.z + p.z + targetOffset.z,
-                        i === 0 ? 0x00ff00 : 0xffd700 // 起點綠色，終點金色
-                    );
-                    scene.add(ball);
-                    targets.push(ball);
-                });
-                
-                // 創建軌跡線
-                createPathLine(path, basePos);
-                
-            } else if (step.interactionMode === 'press') {
-                // 按壓模式：創建單個大球
-                const pos = getTargetPosition(step.target);
-                const ball = createTargetBall(
-                    basePos.x + pos.x + targetOffset.x,
-                    basePos.y + pos.y + targetOffset.y,
-                    basePos.z + pos.z + targetOffset.z,
-                    0x11998e,
-                    0.22  // 更大的球
-                );
-                scene.add(ball);
-                targets.push(ball);
-                
-            } else if (step.interactionMode === 'sequence') {
-                // 順序模式：創建多個編號球
-                step.sequence.forEach((targetType, i) => {
-                    const pos = getSequencePosition(targetType);
-                    const ball = createTargetBall(
-                        basePos.x + pos.x + targetOffset.x,
-                        basePos.y + pos.y + targetOffset.y,
-                        basePos.z + pos.z + targetOffset.z,
-                        i === sequenceProgress ? 0x00ff00 : 0x888888
-                    );
-                    scene.add(ball);
-                    targets.push(ball);
-                });
-                
-            } else {
-                // 點擊模式：創建單個球
-                const pos = getTargetPosition(step.target);
-                const ball = createTargetBall(
-                    basePos.x + pos.x + targetOffset.x,
-                    basePos.y + pos.y + targetOffset.y,
-                    basePos.z + pos.z + targetOffset.z,
-                    0x00ff00
-                );
-                scene.add(ball);
-                targets.push(ball);
-            }
-        }
-
-        function createTargetBall(x, y, z, color, size = 0.18) {
-            const geo = new THREE.SphereGeometry(size, 16, 16);
-            const mat = new THREE.MeshBasicMaterial({ 
-                color: color, 
-                transparent: true, 
-                opacity: 0.7 
-            });
-            const ball = new THREE.Mesh(geo, mat);
-            ball.position.set(x, y, z);
-            
-            gsap.to(ball.material, { 
-                opacity: 0.3, 
-                duration: 0.8, 
-                yoyo: true, 
-                repeat: -1 
-            });
-            gsap.to(ball.scale, {
-                x: 1.4, y: 1.4, z: 1.4,
-                duration: 0.8,
-                yoyo: true,
-                repeat: -1
-            });
-            
-            return ball;
-        }
-
-        function createPathLine(path, basePos) {
-            const points = path.map(p => new THREE.Vector3(
-                basePos.x + p.x + targetOffset.x,
-                basePos.y + p.y + targetOffset.y,
-                basePos.z + p.z + targetOffset.z
-            ));
-            
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const material = new THREE.LineDashedMaterial({
-                color: 0xffff00,
-                linewidth: 3,
-                scale: 1,
-                dashSize: 0.15,
-                gapSize: 0.08,
-            });
-            
-            const line = new THREE.Line(geometry, material);
-            line.computeLineDistances();
-            scene.add(line);
-            targets.push(line);
-        }
-
-        function getTargetPosition(targetType) {
-            const positions = {
-                'thighs': {x: 0.2, y: -0.25, z: 0},       // 大腿
-                'feet': {x: 1.0, y: -0.35, z: 0},         // 腳底  
-                'knees': {x: 0.5, y: -0.25, z: 0},        // 膝蓋
-                'legs': {x: 0.4, y: -0.25, z: 0},         // 腿部
-                'right_leg': {x: 0.4, y: -0.25, z: -0.25}, // 右腿
-                'hands': {x: 0.5, y: 0.1, z: 0}           // 手部（調高一點）
-            };
-            return positions[targetType] || {x: 0.5, y: -0.25, z: 0};
-        }
-
-        function getSequencePosition(targetType) {
-            const positions = {
-                'feet': {x: 1.0, y: -0.35, z: 0},         // 腳底（阿基里斯腱）
-                'calves': {x: 0.65, y: -0.25, z: 0},      // 小腿
-                'thighs': {x: 0.2, y: -0.25, z: 0}        // 大腿
-            };
-            return positions[targetType] || {x: 0.5, y: -0.25, z: 0};
+        function getModeName(mode) {
+            return {
+                'drag': '🖱️ 拖曳互動',
+                'press': '⏱️ 長按互動',
+                'sequence': '👆 順序點擊',
+                'click': '👆 點擊'
+            }[mode] || '互動';
         }
 
         function showInteractionMode(mode) {
-            const modeEl = document.getElementById('interaction-mode');
-            const modeText = {
-                'drag': '🖱️ 拖曳軌跡模式',
-                'press': '⏱️ 按壓計時模式',
-                'sequence': '👆 順序點擊模式',
-                'click': '👆 點擊互動模式'
-            };
-            
-            modeEl.innerText = modeText[mode] || '🎮 互動模式';
-            modeEl.classList.add('show');
-            
-            setTimeout(() => {
-                modeEl.classList.remove('show');
-            }, 3000);
+            const el = document.getElementById('interaction-mode');
+            el.innerText = getModeName(mode);
+            el.classList.add('show');
+            setTimeout(() => el.classList.remove('show'), 2000);
         }
 
-        function setPhase(p) {
-            currentPhase = p;
-            currentStepIndex = 0;
-            sequenceProgress = 0;
-            
-            document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById('p' + p).classList.add('active');
-            
-            updateStepDisplay();
-        }
-
-        function nextStep() {
-            const currentPhaseSteps = learningData[currentPhase];
-            if (currentStepIndex < currentPhaseSteps.length - 1) {
-                currentStepIndex++;
-                sequenceProgress = 0;
-                updateStepDisplay();
-            } else {
-                showFeedback(`階段${currentPhase}完成！`, true);
-            }
-        }
-
-        function prevStep() {
-            if (currentStepIndex > 0) {
-                currentStepIndex--;
-                sequenceProgress = 0;
-                updateStepDisplay();
-            }
-        }
-
-        function updateStepDisplay() {
-            const step = learningData[currentPhase][currentStepIndex];
-            if (!step) return;
-            
-            document.getElementById('step-id').innerHTML = `
-                <span>🎯</span>
-                <span>STEP ${step.id}</span>
-            `;
-            document.getElementById('step-text').innerText = step.text;
-            document.getElementById('step-note').innerText = `💡 ${step.note}`;
-            
-            const modeIcons = {
-                'drag': '🖱️ 拖曳軌跡',
-                'press': '⏱️ 按壓計時',
-                'sequence': '👆 順序點擊',
-                'click': '👆 點擊互動'
-            };
-            
-            document.getElementById('technique-display').innerHTML = `
-                <div class="technique-tag">✨ ${step.technique}</div>
-                <div class="interaction-tag">${modeIcons[step.interactionMode]}</div>
-            `;
-            
-            updateTargets();
-        }
-
-        function onMouseDown(e) {
-            const step = learningData[currentPhase][currentStepIndex];
-            if (!step) return;
-            
-            // 計算滑鼠位置
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
-            raycaster.setFromCamera(mouse, camera);
-            
-            const meshTargets = targets.filter(t => t.isMesh);
-            const intersects = raycaster.intersectObjects(meshTargets, true);
-            
-            console.log('🖱️ 點擊檢測:', {
-                '畫面鎖定': cameraLocked ? '✅ 是' : '❌ 否',
-                '滑鼠位置': {x: mouse.x.toFixed(2), y: mouse.y.toFixed(2)},
-                '互動模式': step.interactionMode,
-                '互動點數量': meshTargets.length,
-                '互動點位置': meshTargets.map(m => ({
-                    x: m.position.x.toFixed(2),
-                    y: m.position.y.toFixed(2),
-                    z: m.position.z.toFixed(2)
-                })),
-                '點擊到': intersects.length > 0 ? '✅ 有' : '❌ 無'
-            });
-            
-            // 檢查畫面是否鎖定
-            if (!cameraLocked) {
-                console.log('💡 提示：請先點擊「🔒 鎖定畫面」按鈕，才能進行互動');
-                showFeedback('💡 請先鎖定畫面', false);
-                return;
-            }
-            
-            // 如果直接點擊沒中，檢查距離最近的球
-            let clickedBall = null;
-            if (intersects.length > 0) {
-                clickedBall = intersects[0].object;
-                console.log('✅ 直接點擊成功！');
-            } else {
-                // 嘗試找最近的球（容錯機制）
-                let minDistance = Infinity;
-                const mouseWorldPos = new THREE.Vector3(mouse.x, mouse.y, 0).unproject(camera);
-                
-                meshTargets.forEach(ball => {
-                    const screenPos = ball.position.clone().project(camera);
-                    const distance = Math.sqrt(
-                        Math.pow(screenPos.x - mouse.x, 2) + 
-                        Math.pow(screenPos.y - mouse.y, 2)
-                    );
-                    
-                    if (distance < minDistance && distance < 0.2) { // 容錯範圍
-                        minDistance = distance;
-                        clickedBall = ball;
-                    }
-                });
-                
-                if (clickedBall) {
-                    console.log('✅ 近似點擊成功！距離:', minDistance.toFixed(3));
-                } else {
-                    console.log('❌ 點擊位置離球太遠，請點擊球體中心');
-                }
-            }
-            
-            if (clickedBall) {
-                // 視覺反饋
-                clickedBall.material.emissive = new THREE.Color(0xffff00);
-                setTimeout(() => {
-                    if (clickedBall.material) {
-                        clickedBall.material.emissive = new THREE.Color(0x000000);
-                    }
-                }, 200);
-                
-                if (step.interactionMode === 'drag') {
-                    isDragging = true;
-                    dragStartTime = Date.now();
-                    dragPath = [clickedBall.position.clone()];
-                    document.getElementById('drag-hint').classList.add('show');
-                    console.log('🖱️ 開始拖曳模式');
-                    showFeedback('開始拖曳！', true);
-                    
-                } else if (step.interactionMode === 'press') {
-                    isPressing = true;
-                    pressStartTime = Date.now();
-                    
-                    // 顯示按壓圈在滑鼠位置
-                    const circle = document.getElementById('press-circle');
-                    circle.style.left = e.clientX - 40 + 'px';
-                    circle.style.top = e.clientY - 40 + 'px';
-                    circle.classList.add('show');
-                    updatePressCircle();
-                    console.log('⏱️ 開始按壓模式，需要按住', step.pressDuration, '秒');
-                    showFeedback(`按住 ${step.pressDuration} 秒`, true);
-                    
-                } else if (step.interactionMode === 'sequence') {
-                    console.log('👆 順序點擊模式');
-                    handleSequenceClick(clickedBall);
-                    
-                } else if (step.interactionMode === 'click') {
-                    console.log('👆 簡單點擊模式');
-                    handleSimpleClick(clickedBall.position);
-                }
-            } else {
-                console.log('❌ 沒有點到互動點');
-                console.log('💡 提示：請確保點擊綠色/金色/青綠色球體');
-                console.log('💡 或使用「強制完成此步驟」按鈕');
-                showFeedback('請點擊彩色球體', false);
-            }
-        }
-
-        function onMouseMove(e) {
-            const rect = renderer.domElement.getBoundingClientRect();
-            mouse.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-            mouse.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
-            
-            // 檢測是否懸停在互動點上
-            raycaster.setFromCamera(mouse, camera);
-            const intersects = raycaster.intersectObjects(targets.filter(t => t.isMesh));
-            
-            if (intersects.length > 0) {
-                renderer.domElement.style.cursor = 'pointer';
-                // 讓懸停的球變亮
-                intersects[0].object.material.opacity = 0.9;
-            } else {
-                renderer.domElement.style.cursor = 'default';
-                // 恢復所有球的透明度
-                targets.forEach(t => {
-                    if (t.isMesh && t.material.opacity > 0.7) {
-                        t.material.opacity = 0.7;
-                    }
-                });
-            }
-            
-            if (isDragging) {
-                const modelIntersects = raycaster.intersectObjects([model], true);
-                if (modelIntersects.length > 0) {
-                    dragPath.push(modelIntersects[0].point.clone());
-                }
-            }
-        }
-
-        function onMouseUp(e) {
-            const step = learningData[currentPhase][currentStepIndex];
-            
-            if (isDragging) {
-                isDragging = false;
-                document.getElementById('drag-hint').classList.remove('show');
-                
-                const dragDuration = (Date.now() - dragStartTime) / 1000;
-                const success = validateDrag(dragPath, step.dragPath, dragDuration, step.duration);
-                
-                if (success) {
-                    playDragEffect(dragPath);
-                    showFeedback(`✅ 完成: ${step.text}`, true);
-                    setTimeout(() => nextStep(), 1500);
-                } else {
-                    showFeedback('❌ 請沿著軌跡拖曳', false);
-                }
-                
-                dragPath = [];
-            }
-            
-            if (isPressing) {
-                isPressing = false;
-                document.getElementById('press-circle').classList.remove('show');
-                
-                const pressDuration = (Date.now() - pressStartTime) / 1000;
-                if (pressDuration >= step.pressDuration) {
-                    showFeedback(`✅ 完成: ${step.text}`, true);
-                    setTimeout(() => nextStep(), 1500);
-                } else {
-                    showFeedback(`❌ 請按壓 ${step.pressDuration} 秒`, false);
-                }
-            }
-        }
-
-        function validateDrag(actualPath, expectedPath, actualDuration, expectedDuration) {
-            // 簡化驗證：檢查是否有足夠的點且時間合理
-            return actualPath.length > 5 && 
-                   actualDuration >= expectedDuration * 0.7 && 
-                   actualDuration <= expectedDuration * 1.5;
-        }
-
-        function playDragEffect(path) {
-            path.forEach((point, i) => {
-                setTimeout(() => {
-                    const particle = new THREE.Mesh(
-                        new THREE.SphereGeometry(0.05, 8, 8),
-                        new THREE.MeshBasicMaterial({ color: 0x00ff88, transparent: true })
-                    );
-                    particle.position.copy(point);
-                    scene.add(particle);
-                    
-                    gsap.to(particle.material, {
-                        opacity: 0,
-                        duration: 0.5,
-                        onComplete: () => scene.remove(particle)
-                    });
-                }, i * 20);
-            });
-        }
-
-        function updatePressCircle() {
-            if (!isPressing) return;
-            
-            const step = learningData[currentPhase][currentStepIndex];
-            const elapsed = (Date.now() - pressStartTime) / 1000;
-            const progress = Math.min(elapsed / step.pressDuration, 1);
-            
-            document.getElementById('press-fill').style.transform = `rotate(${progress * 360}deg)`;
-            
-            if (progress < 1) {
-                requestAnimationFrame(updatePressCircle);
-            }
-        }
-
-        function handleSequenceClick(clickedObject) {
-            const step = learningData[currentPhase][currentStepIndex];
-            const clickedIndex = targets.filter(t => t.isMesh).indexOf(clickedObject);
-            
-            if (clickedIndex === sequenceProgress) {
-                // 正確順序
-                sequenceProgress++;
-                
-                if (sequenceProgress >= step.sequenceCount) {
-                    // 完成所有順序
-                    showFeedback(`✅ 完成: ${step.text}`, true);
-                    setTimeout(() => {
-                        sequenceProgress = 0;
-                        nextStep();
-                    }, 1500);
-                } else {
-                    // 更新顯示下一個
-                    updateTargets();
-                    showFeedback(`✅ 步驟 ${sequenceProgress}/${step.sequenceCount}`, true);
-                }
-            } else {
-                showFeedback('❌ 請按照順序點擊', false);
-            }
-        }
-
-        function handleSimpleClick(point) {
-            const step = learningData[currentPhase][currentStepIndex];
-            
-            // 創建點擊效果
-            const ring = new THREE.Mesh(
-                new THREE.RingGeometry(0.08, 0.15, 32),
-                new THREE.MeshBasicMaterial({ color: 0xffff00, side: THREE.DoubleSide, transparent: true })
-            );
-            ring.position.copy(point);
-            ring.rotation.x = -Math.PI/2;
-            scene.add(ring);
-            
-            gsap.to(ring.scale, { x: 4, y: 4, duration: 1.2 });
-            gsap.to(ring.material, {
-                opacity: 0,
-                duration: 1.2,
-                onComplete: () => scene.remove(ring)
-            });
-            
-            showFeedback(`✅ 完成: ${step.text}`, true);
-            setTimeout(() => nextStep(), 1500);
-        }
-
-        function showFeedback(msg, isSuccess) {
+        function showFeedback(msg, success) {
             const el = document.getElementById('feedback-text');
             el.innerText = msg;
+            el.style.background = success ? 'rgba(40, 167, 69, 0.9)' : 'rgba(220, 53, 69, 0.9)';
             el.style.opacity = 1;
-            el.style.background = isSuccess ? 
-                "linear-gradient(135deg, rgba(17, 153, 142, 0.95), rgba(56, 239, 125, 0.95))" : 
-                "rgba(220, 53, 69, 0.95)";
-            
             clearTimeout(window.fbTimer);
-            window.fbTimer = setTimeout(() => { 
-                el.style.opacity = 0; 
-            }, 2000);
-        }
-        
-        function forceComplete() {
-            const step = learningData[currentPhase][currentStepIndex];
-            console.log('🔧 強制完成步驟:', step.id, step.text);
-            showFeedback(`✅ 強制完成: ${step.text}`, true);
-            setTimeout(() => nextStep(), 1000);
-        }
-        
-        function testInteraction() {
-            console.log('🧪 === 互動測試開始 ===');
-            
-            const step = learningData[currentPhase][currentStepIndex];
-            console.log('當前步驟:', step.id, step.text);
-            console.log('互動模式:', step.interactionMode);
-            
-            const meshTargets = targets.filter(t => t.isMesh);
-            console.log('互動點數量:', meshTargets.length);
-            
-            meshTargets.forEach((ball, i) => {
-                console.log(`球 ${i}:`, {
-                    顏色: '#' + ball.material.color.getHexString(),
-                    位置: {
-                        x: ball.position.x.toFixed(2),
-                        y: ball.position.y.toFixed(2),
-                        z: ball.position.z.toFixed(2)
-                    },
-                    大小: ball.geometry.parameters.radius.toFixed(2)
-                });
-                
-                // 讓球閃爍
-                ball.material.emissive = new THREE.Color(0xff0000);
-                setTimeout(() => {
-                    ball.material.emissive = new THREE.Color(0x000000);
-                }, 500 * (i + 1));
-            });
-            
-            console.log('模特兒位置:', {
-                x: model.position.x.toFixed(2),
-                y: model.position.y.toFixed(2),
-                z: model.position.z.toFixed(2)
-            });
-            
-            console.log('互動點偏移:', {
-                x: targetOffset.x.toFixed(2),
-                y: targetOffset.y.toFixed(2),
-                z: targetOffset.z.toFixed(2)
-            });
-            
-            console.log('💡 提示：球體會依序閃紅光，確認是否看得到');
-            console.log('🧪 === 測試結束 ===');
-            
-            showFeedback('查看控制台訊息', true);
+            window.fbTimer = setTimeout(() => el.style.opacity = 0, 1500);
         }
 
-        function resetCam() { 
-            controls.reset();
-            camera.position.set(2, 3, 3);
-            camera.lookAt(0, 0, 0);
-        }
-        
         function onWindowResize() {
-            if(camera && renderer) {
-                camera.aspect = window.innerWidth / window.innerHeight;
-                camera.updateProjectionMatrix();
-                renderer.setSize(window.innerWidth, window.innerHeight);
-            }
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function resetCam() {
+            controls.reset();
         }
 
         function animate() {
-            if (controls) controls.update();
+            controls.update();
             renderer.render(scene, camera);
         }
     </script>
