@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V5.6 骨架偵測修復版)</title>
+    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V6.8 穩定防呆版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -75,6 +75,7 @@
             color: #8ec5fc; font-size: 11px; cursor: pointer; transition: all 0.2s;
         }
         .pose-btn:hover { background: rgba(102, 126, 234, 0.5); }
+        .pose-btn.active { background: #667eea; color: white; }
 
         /* 底部操作卡片 */
         .action-card {
@@ -146,7 +147,7 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 32px; margin-bottom: 10px;">🤲 專業芳療 VR 教學</h1>
-        <p style="color: #aaa;">沉浸式互動版 v5.6 (骨架修復版)</p>
+        <p style="color: #aaa;">沉浸式互動版 v6.8 (穩定防呆版)</p>
         <button class="start-btn" onclick="initApp()">開始療程</button>
         <div class="loading-spinner" id="spinner"></div>
     </div>
@@ -174,9 +175,9 @@
                 </div>
                 
                 <div style="margin-bottom:8px;">
-                    <button class="pose-btn" onclick="applyPose('flat')">平躺</button>
-                    <button class="pose-btn" onclick="applyPose('kneesBent')">膝蓋微彎</button>
-                    <button class="pose-btn" onclick="applyPose('leftRaised')">左腿抬起</button>
+                    <button class="pose-btn" id="btn-pose-flat" onclick="applyPose('flat')">平躺</button>
+                    <button class="pose-btn" id="btn-pose-leftRaised" onclick="applyPose('leftRaised')">左腿抬起</button>
+                    <button class="pose-btn" id="btn-pose-rightRaised" onclick="applyPose('rightRaised')">右腿抬起</button>
                 </div>
                 
                 <div class="adjust-row">
@@ -185,11 +186,7 @@
                 </div>
                 <div class="adjust-row">
                     <div class="pose-label"><span>左膝蓋彎曲</span> <span id="val-left-knee">0°</span></div>
-                    <input type="range" class="pose-input" id="range-left-knee" min="0" max="120" step="1" value="0" oninput="updatePose()">
-                </div>
-                <div class="adjust-row">
-                    <div class="pose-label"><span>左腳踝角度</span> <span id="val-left-ankle">0°</span></div>
-                    <input type="range" class="pose-input" id="range-left-ankle" min="-45" max="45" step="1" value="0" oninput="updatePose()">
+                    <input type="range" class="pose-input" id="range-left-knee" min="-120" max="0" step="1" value="0" oninput="updatePose()">
                 </div>
                 
                 <div style="border-top:1px solid rgba(255,255,255,0.1); margin:8px 0; padding-top:8px;">
@@ -199,13 +196,13 @@
                     </div>
                     <div class="adjust-row">
                         <div class="pose-label"><span>右膝蓋彎曲</span> <span id="val-right-knee">0°</span></div>
-                        <input type="range" class="pose-input" id="range-right-knee" min="0" max="120" step="1" value="0" oninput="updatePose()">
-                    </div>
-                    <div class="adjust-row">
-                        <div class="pose-label"><span>右腳踝角度</span> <span id="val-right-ankle">0°</span></div>
-                        <input type="range" class="pose-input" id="range-right-ankle" min="-45" max="45" step="1" value="0" oninput="updatePose()">
+                        <input type="range" class="pose-input" id="range-right-knee" min="-120" max="0" step="1" value="0" oninput="updatePose()">
                     </div>
                 </div>
+            </div>
+            
+            <div id="structure-message" style="color: #f44336; font-size: 12px; margin-bottom: 10px; display: none;">
+                ⚠️ 警告：此模型似乎沒有骨架，姿勢控制無法生效。
             </div>
 
             <!-- 工程模式 (隱藏) -->
@@ -216,8 +213,8 @@
                     <input type="range" class="adjust-input" id="range-x" min="-5" max="5" step="0.05" value="0.1" oninput="updateModelPos()">
                 </div>
                 <div class="adjust-row">
-                    <div class="adjust-label"><span>高度 (Y)</span> <span id="val-y">2.3</span></div>
-                    <input type="range" class="adjust-input" id="range-y" min="0" max="5" step="0.05" value="2.3" oninput="updateModelPos()">
+                    <div class="adjust-label"><span>高度 (Y)</span> <span id="val-y">2.18</span></div>
+                    <input type="range" class="adjust-input" id="range-y" min="0" max="5" step="0.05" value="2.18" oninput="updateModelPos()">
                 </div>
                 <div class="adjust-row">
                     <div class="adjust-label"><span>左右 (Z)</span> <span id="val-z">0</span></div>
@@ -245,7 +242,7 @@
 
                 <div style="margin-top:10px;">
                     <button class="phase-btn" onclick="toggleSkeletonHelper()">🦴 顯示/隱藏骨架</button>
-                    <button class="phase-btn" onclick="logAllBones()">📋 檢查骨骼名稱</button>
+                    <button class="phase-btn" onclick="showModelStructure()">📋 顯示模型結構</button>
                 </div>
             </div>
 
@@ -280,17 +277,10 @@
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
         // --- 設定區 (CONFIG) ---
-        // 復刻 V4.2 設定 (搭配 V5.0 功能)
         const CONFIG = {
-            MODEL_POS_DEFAULT: { x: 0.1, y: 2.3, z: 0 },
+            MODEL_POS_DEFAULT: { x: 0.1, y: 2.18, z: 0 }, 
             MODEL_SCALE: 1.0,
-            MODEL_ROT_DEFAULT: { x: -1.57, y: 0, z: 1.57 }, // V4.2 預設旋轉
-
-            POSE_DEFAULT: {
-                L_ARM: 75,
-                R_ARM: 75,
-                LEG_SPREAD: 5
-            },
+            MODEL_ROT_DEFAULT: { x: -1.57, y: 0, z: 1.57 }, 
             
             LEFT_LEG_Z: 0.12,  
             RIGHT_LEG_Z: -0.12,
@@ -306,7 +296,8 @@
             }
         };
 
-        // --- 完整療程資料庫 ---
+        // --- 完整療程資料庫 (含自動姿勢) ---
+        // 在需要抬腿的步驟加入 pose: 'leftRaised' 或 'rightRaised'
         const learningData = {
             1: [
                 { id: "1.1", text: "在毛巾上俯順至大腿", note: "設定客戶位置，輕柔地從膝蓋處向上俯順至大腿。", type: "drag", tool: "towel", icon: "TOWEL_ICON", start: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
@@ -325,11 +316,15 @@
                 { id: "2.5", text: "雙手交替向上撫順", note: "使用交替手進行撫順長推。", type: "drag", tool: "hand", icon: "👋", start: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
                 { id: "2.6", text: "小腿長推至委中穴", note: "長推到膝蓋後方穴位。", type: "drag", tool: "hand", icon: "🦵", start: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z} },
                 { id: "2.7", text: "小腿分三等份操作", note: "由內至外：內、中、外，共三次。", type: "drag", tool: "hand", icon: "📊", start: {x: CONFIG.COORDS.CALF_MID, y: -0.3, z: CONFIG.LEFT_LEG_Z - 0.05}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z - 0.05} },
-                { id: "2.8", text: "將腳抬起 90 度", note: "一手托腳盤，準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.LEFT_LEG_Z} },
-                { id: "2.9", text: "湧泉穴畫圈", note: "由湧泉穴出發，順時鐘畫圈。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: -0.2, z: CONFIG.LEFT_LEG_Z}, duration: 3 },
-                { id: "2.10", text: "過拳滑動", note: "使用拳頭由腳跟往腳趾滑動。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: -0.15, z: CONFIG.LEFT_LEG_Z} },
-                { id: "2.11", text: "腳掌心持壓", note: "肩膀放鬆，保持姿勢。", type: "press", tool: "hand", icon: "✋", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: -0.2, z: CONFIG.LEFT_LEG_Z}, duration: 2 },
-                { id: "2.12", text: "單邊結束安撫", note: "結束左腳動作。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z} },
+                
+                // ✨ 自動抬左腳
+                { id: "2.8", text: "將腳抬起 90 度", note: "一手托腳盤，準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
+                { id: "2.9", text: "湧泉穴畫圈", note: "由湧泉穴出發，順時鐘畫圈。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 3, pose: "leftRaised" },
+                { id: "2.10", text: "過拳滑動", note: "使用拳頭由腳跟往腳趾滑動。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: 0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
+                { id: "2.11", text: "腳掌心持壓", note: "肩膀放鬆，保持姿勢。", type: "press", tool: "hand", icon: "✋", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 2, pose: "leftRaised" },
+                
+                // ✨ 放下左腳 (恢復平躺)
+                { id: "2.12", text: "單邊結束安撫", note: "結束左腳動作，放平。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z}, pose: "flat" },
                 { id: "2.13", text: "蓋上毛巾", note: "覆蓋左腳。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: CONFIG.LEFT_LEG_Z} }
             ],
             3: [
@@ -341,14 +336,17 @@
                 { id: "3.6", text: "交替向上撫順", note: "交替手長推。", type: "drag", tool: "hand", icon: "👋", start: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
                 { id: "3.7", text: "小腿長推至委中穴", note: "長推到膝蓋後方。", type: "drag", tool: "hand", icon: "🦵", start: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z} },
                 { id: "3.8", text: "小腿分三等份", note: "由內至外：內、中、外。", type: "drag", tool: "hand", icon: "📊", start: {x: CONFIG.COORDS.CALF_MID, y: -0.3, z: CONFIG.RIGHT_LEG_Z + 0.05}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z + 0.05} },
-                { id: "3.9", text: "將腳抬起 90 度", note: "準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "3.10", text: "湧泉穴畫圈", note: "順時鐘畫圈，經足弓回湧泉。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: -0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 3 },
-                { id: "3.11", text: "半握拳滑動", note: "由腳跟往腳趾方向滑動。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: -0.2, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: -0.15, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "3.12", text: "腳掌心持壓", note: "肩膀放鬆，保持姿勢。", type: "press", tool: "hand", icon: "✋", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: -0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 2 },
-                { id: "3.13", text: "靜置握持", note: "持續按壓 10 秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: -0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 10 }
+                
+                // ✨ 自動抬右腳
+                { id: "3.9", text: "將腳抬起 90 度", note: "準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
+                { id: "3.10", text: "湧泉穴畫圈", note: "順時鐘畫圈，經足弓回湧泉。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 3, pose: "rightRaised" },
+                { id: "3.11", text: "半握拳滑動", note: "由腳跟往腳趾方向滑動。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
+                { id: "3.12", text: "腳掌心持壓", note: "肩膀放鬆，保持姿勢。", type: "press", tool: "hand", icon: "✋", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 2, pose: "rightRaised" },
+                { id: "3.13", text: "靜置握持", note: "持續按壓 10 秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 10, pose: "rightRaised" }
             ],
             4: [
-                { id: "4.1", text: "整理毛巾", note: "將蓋上之前將毛巾捲到中間。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.2, z: 0} },
+                // ✨ 放下右腳 (恢復平躺)
+                { id: "4.1", text: "整理毛巾", note: "將蓋上之前將毛巾捲到中間。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.2, z: 0}, pose: "flat" },
                 { id: "4.2", text: "大安撫", note: "進行最終的廣泛安撫。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: 0}, end: {x: CONFIG.COORDS.FOOT, y: -0.35, z: 0} },
                 { id: "4.3", text: "雙手停留腳底", note: "停留，能量平衡。", type: "press", tool: "hand", icon: "🧘", pos: {x: CONFIG.COORDS.FOOT, y: -0.35, z: 0}, duration: 5 },
                 { id: "4.4", text: "蓋上毛巾", note: "完整覆蓋結束療程。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: 0} }
@@ -383,25 +381,29 @@
         let poseControls = {
             leftThigh: 0,
             leftKnee: 0,
-            leftAnkle: 0,
+            leftAnkle: 45, 
             rightThigh: 0,
             rightKnee: 0,
-            rightAnkle: 0
+            rightAnkle: 45
         };
 
         // 姿勢預設
         const POSES = {
             flat: {
-                leftThigh: 0, leftKnee: 0, leftAnkle: 0,
-                rightThigh: 0, rightKnee: 0, rightAnkle: 0
+                leftThigh: 0, leftKnee: 0, leftAnkle: 45, 
+                rightThigh: 0, rightKnee: 0, rightAnkle: 45
             },
             kneesBent: {
-                leftThigh: -10, leftKnee: 30, leftAnkle: 0,
-                rightThigh: -10, rightKnee: 30, rightAnkle: 0
+                leftThigh: -10, leftKnee: -30, leftAnkle: 45,
+                rightThigh: -10, rightKnee: -30, rightAnkle: 45
             },
             leftRaised: {
-                leftThigh: -45, leftKnee: 90, leftAnkle: 15,
-                rightThigh: 0, rightKnee: 0, rightAnkle: 0
+                leftThigh: -45, leftKnee: -90, leftAnkle: 15,
+                rightThigh: 0, rightKnee: 0, rightAnkle: 45
+            },
+            rightRaised: {
+                leftThigh: 0, leftKnee: 0, leftAnkle: 45,
+                rightThigh: -45, rightKnee: -90, rightAnkle: 15
             }
         };
 
@@ -409,17 +411,6 @@
             document.getElementById('spinner').style.display = 'block';
             document.querySelector('.start-btn').style.display = 'none';
             setTimeout(initThreeJS, 100);
-            
-            // 初始化滑桿
-            document.getElementById('range-x').value = modelPos.x;
-            document.getElementById('range-y').value = modelPos.y;
-            document.getElementById('range-z').value = modelPos.z;
-            document.getElementById('range-scale').value = modelScale;
-            document.getElementById('range-rot-x').value = modelRot.x;
-            document.getElementById('range-rot-y').value = modelRot.y;
-            document.getElementById('range-rot-z').value = modelRot.z;
-            
-            updateDebugLabels();
         }
         
         function triggerDebugMode() {
@@ -498,6 +489,11 @@
             loadModel('male');
         }
 
+        function toggleModel() {
+            const newType = activeModelType === 'male' ? 'female' : 'male';
+            loadModel(newType);
+        }
+
         function loadModel(type) {
             if(model) scene.remove(model);
             if(skeletonHelper) scene.remove(skeletonHelper);
@@ -510,7 +506,6 @@
                 model.scale.set(modelScale, modelScale, modelScale);
                 model.rotation.set(modelRot.x, modelRot.y, modelRot.z);
                 
-                // 擴充骨骼尋找邏輯 (V5.6 增強版)
                 bones = {};
                 const boneNames = {
                     leftUpLeg: ['leftupleg', 'mixamorigleftupleg', 'thigh.l', 'left_thigh', 'upleg.l', 'thigh_l'],
@@ -535,41 +530,44 @@
                     }
                 });
 
-                // 檢查是否抓到骨架
                 let boneCount = Object.values(bones).filter(b => b !== null).length;
                 const statusEl = document.getElementById('bone-status');
                 const posePanel = document.getElementById('pose-panel');
                 
                 if (boneCount > 0) {
-                    statusEl.innerText = "(✅ 已連結)";
-                    statusEl.style.color = "#4caf50";
-                    posePanel.style.display = "block";
+                    if (statusEl) {
+                        statusEl.innerText = "(✅ 已連結)";
+                        statusEl.style.color = "#4caf50";
+                    }
+                    if (posePanel) posePanel.style.display = "block";
+                    const structMsg = document.getElementById('structure-message');
+                    if (structMsg) structMsg.style.display = 'none';
                 } else {
-                    statusEl.innerText = "(❌ 未偵測)";
-                    statusEl.style.color = "#f44336";
-                    posePanel.style.display = "none"; // 隱藏面板避免誤導
-                    
-                    // Debug: 印出所有骨頭名稱，方便除錯
-                    console.log("=== 骨骼偵測失敗，列出所有骨頭名稱 ===");
-                    model.traverse(c => { if(c.isBone) console.log(c.name); });
+                    if (statusEl) {
+                        statusEl.innerText = "(❌ 未偵測)";
+                        statusEl.style.color = "#f44336";
+                    }
+                    const structMsg = document.getElementById('structure-message');
+                    if (structMsg) structMsg.style.display = 'block';
                 }
 
-                // 輔助顯示
-                let hasSkeleton = false;
                 model.traverse((child) => {
                     if (child.isSkinnedMesh && child.skeleton) {
                         skeletonHelper = new THREE.SkeletonHelper(model);
                         skeletonHelper.visible = false;
                         scene.add(skeletonHelper);
-                        hasSkeleton = true;
                     }
                 });
 
                 scene.add(model);
                 
-                if(bones.leftArm) bones.leftArm.rotation.z = THREE.MathUtils.degToRad(75);
-                if(bones.rightArm) bones.rightArm.rotation.z = THREE.MathUtils.degToRad(-75);
-                updatePose();
+                if(bones.leftArm) bones.leftArm.rotation.z = 0;
+                if(bones.rightArm) bones.rightArm.rotation.z = 0;
+                
+                applyPose('flat'); 
+                
+                // 確保 DOM 元素存在再更新標籤
+                setTimeout(updateDebugLabels, 100);
 
                 document.getElementById('welcome').style.display = 'none';
                 document.getElementById('ui').style.display = 'block';
@@ -577,15 +575,48 @@
                 setPhase(1);
             });
         }
+        
+        function showModelStructure() {
+            let output = "=== 模型物件列表 ===\n";
+            let count = 0;
+            model.traverse(c => {
+                if(count < 30) { 
+                    output += `• ${c.name} (${c.type})\n`;
+                    count++;
+                }
+            });
+            const list = document.getElementById('structure-list');
+            list.innerText = output;
+            list.style.display = 'block';
+        }
+        
+        // Helper function for safe value setting
+        function safeSetValue(id, value) {
+            const el = document.getElementById(id);
+            if (el) el.value = value;
+        }
+
+        // Helper function for safe innerText setting
+        function safeSetText(id, text) {
+            const el = document.getElementById(id);
+            if (el) el.innerText = text;
+        }
 
         function updateModelPos() {
-            const x = parseFloat(document.getElementById('range-x').value);
+            const xEl = document.getElementById('range-x');
+            if (!xEl) return;
+
+            const x = parseFloat(xEl.value);
             const y = parseFloat(document.getElementById('range-y').value);
             const z = parseFloat(document.getElementById('range-z').value);
             const scale = parseFloat(document.getElementById('range-scale').value);
-            const rx = parseFloat(document.getElementById('range-rot-x').value);
-            const ry = parseFloat(document.getElementById('range-rot-y').value);
-            const rz = parseFloat(document.getElementById('range-rot-z').value);
+            
+            const rxEl = document.getElementById('range-rot-x');
+            const rx = rxEl ? parseFloat(rxEl.value) : modelRot.x;
+            const ryEl = document.getElementById('range-rot-y');
+            const ry = ryEl ? parseFloat(ryEl.value) : modelRot.y;
+            const rzEl = document.getElementById('range-rot-z');
+            const rz = rzEl ? parseFloat(rzEl.value) : modelRot.z;
             
             modelPos = { x, y, z };
             modelRot = { x: rx, y: ry, z: rz };
@@ -601,19 +632,22 @@
         }
         
         function updatePose() {
-            poseControls.leftThigh = parseFloat(document.getElementById('range-left-thigh').value);
+            const lThighEl = document.getElementById('range-left-thigh');
+            if (!lThighEl) return; 
+
+            poseControls.leftThigh = parseFloat(lThighEl.value);
             poseControls.leftKnee = parseFloat(document.getElementById('range-left-knee').value);
             poseControls.leftAnkle = parseFloat(document.getElementById('range-left-ankle').value);
             poseControls.rightThigh = parseFloat(document.getElementById('range-right-thigh').value);
             poseControls.rightKnee = parseFloat(document.getElementById('range-right-knee').value);
             poseControls.rightAnkle = parseFloat(document.getElementById('range-right-ankle').value);
             
-            document.getElementById('val-left-thigh').innerText = poseControls.leftThigh + '°';
-            document.getElementById('val-left-knee').innerText = poseControls.leftKnee + '°';
-            document.getElementById('val-left-ankle').innerText = poseControls.leftAnkle + '°';
-            document.getElementById('val-right-thigh').innerText = poseControls.rightThigh + '°';
-            document.getElementById('val-right-knee').innerText = poseControls.rightKnee + '°';
-            document.getElementById('val-right-ankle').innerText = poseControls.rightAnkle + '°';
+            safeSetText('val-left-thigh', poseControls.leftThigh + '°');
+            safeSetText('val-left-knee', poseControls.leftKnee + '°');
+            safeSetText('val-left-ankle', poseControls.leftAnkle + '°');
+            safeSetText('val-right-thigh', poseControls.rightThigh + '°');
+            safeSetText('val-right-knee', poseControls.rightKnee + '°');
+            safeSetText('val-right-ankle', poseControls.rightAnkle + '°');
             
             if (bones.leftUpLeg) bones.leftUpLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftThigh);
             if (bones.leftLeg) bones.leftLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftKnee);
@@ -636,25 +670,31 @@
                 rightAnkle: pose.rightAnkle,
                 duration: 0.5,
                 onUpdate: () => {
-                    document.getElementById('range-left-thigh').value = poseControls.leftThigh;
-                    document.getElementById('range-left-knee').value = poseControls.leftKnee;
-                    document.getElementById('range-left-ankle').value = poseControls.leftAnkle;
-                    document.getElementById('range-right-thigh').value = poseControls.rightThigh;
-                    document.getElementById('range-right-knee').value = poseControls.rightKnee;
-                    document.getElementById('range-right-ankle').value = poseControls.rightAnkle;
+                    safeSetValue('range-left-thigh', poseControls.leftThigh);
+                    safeSetValue('range-left-knee', poseControls.leftKnee);
+                    safeSetValue('range-left-ankle', poseControls.leftAnkle);
+                    safeSetValue('range-right-thigh', poseControls.rightThigh);
+                    safeSetValue('range-right-knee', poseControls.rightKnee);
+                    safeSetValue('range-right-ankle', poseControls.rightAnkle);
+                    
+                    document.querySelectorAll('.pose-btn').forEach(btn => btn.classList.remove('active'));
+                    const activeBtn = document.getElementById(`btn-pose-${poseName}`);
+                    if(activeBtn) activeBtn.classList.add('active');
+                    
                     updatePose();
                 }
             });
         }
         
         function updateDebugLabels() {
-            document.getElementById('val-x').innerText = modelPos.x.toFixed(2);
-            document.getElementById('val-y').innerText = modelPos.y.toFixed(2);
-            document.getElementById('val-z').innerText = modelPos.z.toFixed(2);
-            document.getElementById('val-scale').innerText = modelScale.toFixed(1);
-            document.getElementById('val-rot-x').innerText = modelRot.x.toFixed(2);
-            document.getElementById('val-rot-y').innerText = modelRot.y.toFixed(2);
-            document.getElementById('val-rot-z').innerText = modelRot.z.toFixed(2);
+            safeSetText('val-x', modelPos.x.toFixed(2));
+            safeSetText('val-y', modelPos.y.toFixed(2));
+            safeSetText('val-z', modelPos.z.toFixed(2));
+            safeSetText('val-scale', modelScale.toFixed(1));
+            
+            safeSetText('val-rot-x', modelRot.x.toFixed(2));
+            safeSetText('val-rot-y', modelRot.y.toFixed(2));
+            safeSetText('val-rot-z', modelRot.z.toFixed(2));
         }
 
         function toggleSkeletonHelper() {
@@ -701,16 +741,6 @@
             ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
             ctx.fillText(emoji, 64, 64);
             return new THREE.CanvasTexture(canvas);
-        }
-
-        function createGhostHand() {
-            const texture = createEmojiTexture('✋');
-            const geometry = new THREE.PlaneGeometry(0.5, 0.5);
-            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8, depthTest: false, side: THREE.DoubleSide });
-            ghostHand = new THREE.Mesh(geometry, material);
-            ghostHand.renderOrder = 999;
-            scene.add(ghostHand);
-            ghostHand.visible = false;
         }
 
         function createInteractable(pos, icon, type, isHidden = false) {
@@ -764,6 +794,16 @@
             return group;
         }
 
+        function createGhostHand() {
+            const texture = createEmojiTexture('✋');
+            const geometry = new THREE.PlaneGeometry(0.5, 0.5);
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8, depthTest: false, side: THREE.DoubleSide });
+            ghostHand = new THREE.Mesh(geometry, material);
+            ghostHand.renderOrder = 999;
+            scene.add(ghostHand);
+            ghostHand.visible = false;
+        }
+
         function setPhase(p) {
             currentPhase = p;
             currentStepIndex = 0;
@@ -788,6 +828,12 @@
             document.getElementById('action-text').innerText = step.text;
             document.getElementById('action-note').innerText = step.note;
             document.getElementById('current-tool-icon').innerText = step.icon === 'TOWEL_ICON' ? '⬜' : step.icon;
+            
+            if (step.pose) {
+                applyPose(step.pose);
+            } else {
+                applyPose('flat');
+            }
 
             if (step.type === 'drag') {
                 const startObj = createInteractable(step.start, '🟢', 'start');
