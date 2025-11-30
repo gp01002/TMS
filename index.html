@@ -426,6 +426,9 @@
                     <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#11998e; color:white; border:none; font-weight:bold; margin:4px;" onclick="testInteraction()">
                         🧪 測試互動
                     </button>
+                    <button id="lock-btn" style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#ff6b6b; color:white; border:none; font-weight:bold; margin:4px;" onclick="toggleCameraLock()">
+                        🔒 鎖定畫面
+                    </button>
                 </div>
             </div>
 
@@ -523,11 +526,30 @@
         let isPressing = false;
         let sequenceProgress = 0;
         let targetOffset = {x: 0, y: 0, z: 0}; // 互動點偏移量
+        let cameraLocked = false; // 畫面鎖定狀態
 
         function startGame() {
             document.getElementById('welcome-screen').classList.add('hidden');
             document.getElementById('ui-layer').style.display = 'block';
             setTimeout(initThreeJS, 100);
+        }
+        
+        function toggleCameraLock() {
+            cameraLocked = !cameraLocked;
+            controls.enabled = !cameraLocked;
+            
+            const btn = document.getElementById('lock-btn');
+            if (cameraLocked) {
+                btn.innerText = '🔓 解鎖畫面';
+                btn.style.background = '#51cf66';
+                showFeedback('✅ 畫面已鎖定，可以互動了', true);
+                console.log('🔒 畫面已鎖定 - 現在可以拖曳球體了');
+            } else {
+                btn.innerText = '🔒 鎖定畫面';
+                btn.style.background = '#ff6b6b';
+                showFeedback('✅ 畫面已解鎖，可以調整視角', true);
+                console.log('🔓 畫面已解鎖 - 現在可以旋轉視角了');
+            }
         }
 
         function initThreeJS() {
@@ -883,6 +905,7 @@
             const intersects = raycaster.intersectObjects(meshTargets, true);
             
             console.log('🖱️ 點擊檢測:', {
+                '畫面鎖定': cameraLocked ? '✅ 是' : '❌ 否',
                 '滑鼠位置': {x: mouse.x.toFixed(2), y: mouse.y.toFixed(2)},
                 '互動模式': step.interactionMode,
                 '互動點數量': meshTargets.length,
@@ -893,6 +916,13 @@
                 })),
                 '點擊到': intersects.length > 0 ? '✅ 有' : '❌ 無'
             });
+            
+            // 檢查畫面是否鎖定
+            if (!cameraLocked) {
+                console.log('💡 提示：請先點擊「🔒 鎖定畫面」按鈕，才能進行互動');
+                showFeedback('💡 請先鎖定畫面', false);
+                return;
+            }
             
             // 如果直接點擊沒中，檢查距離最近的球
             let clickedBall = null;
@@ -925,9 +955,6 @@
             }
             
             if (clickedBall) {
-                // 禁用相機控制避免衝突
-                controls.enabled = false;
-                
                 // 視覺反饋
                 clickedBall.material.emissive = new THREE.Color(0xffff00);
                 setTimeout(() => {
@@ -960,12 +987,10 @@
                 } else if (step.interactionMode === 'sequence') {
                     console.log('👆 順序點擊模式');
                     handleSequenceClick(clickedBall);
-                    setTimeout(() => { controls.enabled = true; }, 100);
                     
                 } else if (step.interactionMode === 'click') {
                     console.log('👆 簡單點擊模式');
                     handleSimpleClick(clickedBall.position);
-                    setTimeout(() => { controls.enabled = true; }, 100);
                 }
             } else {
                 console.log('❌ 沒有點到互動點');
@@ -1008,9 +1033,6 @@
 
         function onMouseUp(e) {
             const step = learningData[currentPhase][currentStepIndex];
-            
-            // 重新啟用相機控制
-            controls.enabled = true;
             
             if (isDragging) {
                 isDragging = false;
