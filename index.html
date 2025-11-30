@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V4.4 旋轉解鎖版)</title>
+    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V5.2 標準版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -18,10 +18,8 @@
             touch-action: none;
         }
         
-        /* --- UI 層 --- */
         .ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
         
-        /* 頂部資訊列 */
         .top-bar {
             position: absolute; top: 0; left: 0; width: 100%;
             background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent);
@@ -29,13 +27,12 @@
             align-items: center; pointer-events: auto;
         }
 
-        /* 左側選單 */
         .side-menu {
-            position: absolute; left: 20px; top: 80px; width: 300px;
+            position: absolute; left: 20px; top: 80px; width: 320px;
             background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px);
             border-radius: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1);
             pointer-events: auto; max-height: calc(100vh - 120px); overflow-y: auto;
-            transform: translateX(-340px); transition: transform 0.3s ease; 
+            transform: translateX(-360px); transition: transform 0.3s ease; 
             z-index: 20;
         }
         .side-menu.show { transform: translateX(0); }
@@ -50,8 +47,7 @@
             display: block; width: 100%; padding: 12px; margin-bottom: 8px;
             background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
             border-radius: 8px; color: #ccc; text-align: left; cursor: pointer;
-            transition: all 0.2s;
-            font-size: 14px;
+            transition: all 0.2s; font-size: 14px;
         }
         .phase-btn:hover { background: rgba(255,255,255,0.1); }
         .phase-btn.active { 
@@ -59,13 +55,21 @@
             color: white; border: none; box-shadow: 0 4px 12px rgba(118, 75, 162, 0.4);
         }
 
-        /* 微調滑桿 (預設隱藏) */
         .debug-section { display: none; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; }
         .adjust-row { margin-bottom: 12px; }
         .adjust-label { font-size: 12px; color: #ff6b6b; display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: bold; }
         .adjust-input { width: 100%; cursor: pointer; accent-color: #ff6b6b; }
+        
+        .pose-section { display: block; background: rgba(102, 126, 234, 0.2); padding: 12px; border-radius: 8px; margin-bottom: 15px; border: 1px solid rgba(102, 126, 234, 0.3); }
+        .pose-label { font-size: 11px; color: #8ec5fc; display: flex; justify-content: space-between; margin-bottom: 3px; }
+        .pose-input { width: 100%; cursor: pointer; accent-color: #667eea; height: 20px; }
+        .pose-btn {
+            padding: 8px 12px; margin: 4px 2px; background: rgba(102, 126, 234, 0.3);
+            border: 1px solid rgba(102, 126, 234, 0.5); border-radius: 6px;
+            color: #8ec5fc; font-size: 11px; cursor: pointer; transition: all 0.2s;
+        }
+        .pose-btn:hover { background: rgba(102, 126, 234, 0.5); }
 
-        /* 底部操作卡片 */
         .action-card {
             position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
             background: rgba(30, 30, 30, 0.9); backdrop-filter: blur(10px);
@@ -93,7 +97,6 @@
             box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
         }
 
-        /* 浮動手勢提示 */
         .gesture-hint {
             position: absolute;
             background: rgba(102, 126, 234, 0.9); color: white;
@@ -105,7 +108,6 @@
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
         }
 
-        /* 歡迎/載入頁 */
         .welcome-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(20, 20, 20, 0.95); z-index: 1000;
@@ -135,7 +137,7 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 32px; margin-bottom: 10px;">🤲 專業芳療 VR 教學</h1>
-        <p style="color: #aaa;">沉浸式互動版 v4.4 (旋轉解鎖)</p>
+        <p style="color: #aaa;">沉浸式互動版 v5.2 (標準版+旋轉)</p>
         <button class="start-btn" onclick="initApp()">開始療程</button>
         <div class="loading-spinner" id="spinner"></div>
     </div>
@@ -156,9 +158,48 @@
         </div>
 
         <div class="side-menu" id="side-menu">
-            <!-- 隱藏的工程模式區域 -->
+            <!-- 骨骼姿勢控制 -->
+            <div class="pose-section" id="pose-panel">
+                <div class="menu-title" style="color:#8ec5fc; border-color:#8ec5fc;">🦴 腿部姿勢控制</div>
+                
+                <div style="margin-bottom:8px;">
+                    <button class="pose-btn" onclick="applyPose('flat')">平躺</button>
+                    <button class="pose-btn" onclick="applyPose('kneesBent')">膝蓋微彎</button>
+                    <button class="pose-btn" onclick="applyPose('leftRaised')">左腿抬起</button>
+                </div>
+                
+                <div class="adjust-row">
+                    <div class="pose-label"><span>左大腿抬起</span> <span id="val-left-thigh">0°</span></div>
+                    <input type="range" class="pose-input" id="range-left-thigh" min="-90" max="45" step="1" value="0" oninput="updatePose()">
+                </div>
+                <div class="adjust-row">
+                    <div class="pose-label"><span>左膝蓋彎曲</span> <span id="val-left-knee">0°</span></div>
+                    <input type="range" class="pose-input" id="range-left-knee" min="0" max="120" step="1" value="0" oninput="updatePose()">
+                </div>
+                <div class="adjust-row">
+                    <div class="pose-label"><span>左腳踝角度</span> <span id="val-left-ankle">0°</span></div>
+                    <input type="range" class="pose-input" id="range-left-ankle" min="-45" max="45" step="1" value="0" oninput="updatePose()">
+                </div>
+                
+                <div style="border-top:1px solid rgba(255,255,255,0.1); margin:8px 0; padding-top:8px;">
+                    <div class="adjust-row">
+                        <div class="pose-label"><span>右大腿抬起</span> <span id="val-right-thigh">0°</span></div>
+                        <input type="range" class="pose-input" id="range-right-thigh" min="-90" max="45" step="1" value="0" oninput="updatePose()">
+                    </div>
+                    <div class="adjust-row">
+                        <div class="pose-label"><span>右膝蓋彎曲</span> <span id="val-right-knee">0°</span></div>
+                        <input type="range" class="pose-input" id="range-right-knee" min="0" max="120" step="1" value="0" oninput="updatePose()">
+                    </div>
+                    <div class="adjust-row">
+                        <div class="pose-label"><span>右腳踝角度</span> <span id="val-right-ankle">0°</span></div>
+                        <input type="range" class="pose-input" id="range-right-ankle" min="-45" max="45" step="1" value="0" oninput="updatePose()">
+                    </div>
+                </div>
+            </div>
+
+            <!-- 工程模式 -->
             <div class="debug-section" id="debug-panel">
-                <div class="menu-title" style="color:#ff6b6b; border-color:#ff6b6b;">🔧 工程模式 (位置/旋轉)</div>
+                <div class="menu-title" style="color:#ff6b6b; border-color:#ff6b6b;">🔧 工程模式</div>
                 <div class="adjust-row">
                     <div class="adjust-label"><span>前後 (X)</span> <span id="val-x">0.1</span></div>
                     <input type="range" class="adjust-input" id="range-x" min="-3" max="3" step="0.05" value="0.1" oninput="updateModelPos()">
@@ -172,28 +213,33 @@
                     <input type="range" class="adjust-input" id="range-z" min="-2" max="2" step="0.05" value="0" oninput="updateModelPos()">
                 </div>
                 <div class="adjust-row">
-                    <div class="adjust-label"><span>大小 (Scale)</span> <span id="val-scale">1.0</span></div>
-                    <input type="range" class="adjust-input" id="range-scale" min="0.5" max="50" step="0.1" value="1.0" oninput="updateModelPos()">
+                    <div class="adjust-label"><span>大小</span> <span id="val-scale">1.0</span></div>
+                    <input type="range" class="adjust-input" id="range-scale" min="0.5" max="2" step="0.1" value="1.0" oninput="updateModelPos()">
                 </div>
                 
                 <div style="border-top:1px solid #555; margin:10px 0;"></div>
-                <div class="adjust-label" style="color:#aaa; margin-bottom:5px;">旋轉設定 (Rotation)</div>
+                <div class="menu-title" style="color:#ffaa00; border-color:#ffaa00; font-size:12px;">🔄 旋轉控制</div>
+                
+                <div class="adjust-row">
+                    <div class="adjust-label" style="color:#ffaa00;"><span>旋轉 X</span> <span id="val-rot-x">-1.57</span></div>
+                    <input type="range" class="adjust-input" id="range-rot-x" min="-6.28" max="6.28" step="0.1" value="-1.57" oninput="updateModelPos()" style="accent-color:#ffaa00;">
+                </div>
+                <div class="adjust-row">
+                    <div class="adjust-label" style="color:#ffaa00;"><span>旋轉 Y</span> <span id="val-rot-y">0</span></div>
+                    <input type="range" class="adjust-input" id="range-rot-y" min="-6.28" max="6.28" step="0.1" value="0" oninput="updateModelPos()" style="accent-color:#ffaa00;">
+                </div>
+                <div class="adjust-row">
+                    <div class="adjust-label" style="color:#ffaa00;"><span>旋轉 Z</span> <span id="val-rot-z">1.57</span></div>
+                    <input type="range" class="adjust-input" id="range-rot-z" min="-6.28" max="6.28" step="0.1" value="1.57" oninput="updateModelPos()" style="accent-color:#ffaa00;">
+                </div>
 
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>旋轉 X</span> <span id="val-rot-x">-1.57</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-x" min="-6.28" max="6.28" step="0.1" value="-1.57" oninput="updateModelPos()">
-                </div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>旋轉 Y</span> <span id="val-rot-y">0</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-y" min="-6.28" max="6.28" step="0.1" value="0" oninput="updateModelPos()">
-                </div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>旋轉 Z</span> <span id="val-rot-z">1.57</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-z" min="-6.28" max="6.28" step="0.1" value="1.57" oninput="updateModelPos()">
+                <div style="margin-top:10px;">
+                    <button class="phase-btn" onclick="toggleSkeletonHelper()">🦴 顯示/隱藏骨架</button>
+                    <button class="phase-btn" onclick="logBones()">📋 顯示骨骼列表</button>
                 </div>
             </div>
 
-            <!-- 可見的選單區域 -->
+            <!-- 療程階段選單 -->
             <div class="menu-title" onclick="triggerDebugMode()">療程階段選單</div>
             <button class="phase-btn active" onclick="setPhase(1)" id="p1">1. 準備與起始安撫</button>
             <button class="phase-btn" onclick="setPhase(2)" id="p2">2. 左腿按摩操作</button>
@@ -223,28 +269,43 @@
     <script>
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
-        // --- 設定區 (CONFIG) - V4.4 原始設定 ---
+        // --- 設定區 (v5.2 回歸原座標) ---
         const CONFIG = {
-            MODEL_POS_DEFAULT: { x: 0.1, y: 2.3, z: 0 },
-            MODEL_SCALE: 1.0,
-            // 新增旋轉預設值 (對應 V4.4 的硬編碼值)
-            MODEL_ROT_DEFAULT: { x: -1.57, y: 0, z: 1.57 }, 
-
+            MODEL_POS_DEFAULT: { x: 0.1, y: 2.3, z: 0 },      // ✅ 原座標
+            MODEL_SCALE: 1.0,                                   // ✅ 原大小
+            MODEL_ROT_DEFAULT: { x: -1.57, y: 0, z: 1.57 },   // ✅ 原旋轉
+            
             LEFT_LEG_Z: 0.12,  
             RIGHT_LEG_Z: -0.12,
             
-            // V4.4 版本的座標
+            // ✅ 原座標系統
             COORDS: {
-                THIGH_ROOT: -3.3,    
-                THIGH_MID: -2.4,     
-                KNEE: -1.5,          
-                CALF_MID: -0.7,      
-                ANKLE: -0.2,         
-                FOOT: 0.0            
+                THIGH_ROOT: -0.4,
+                THIGH_MID: -0.25,
+                KNEE: 0.0,
+                CALF_MID: 0.2,
+                ANKLE: 0.4,
+                FOOT: 0.55
             }
         };
 
-        // --- 完整療程資料庫 (V4.4) ---
+        // 姿勢預設
+        const POSES = {
+            flat: {
+                leftThigh: 0, leftKnee: 0, leftAnkle: 0,
+                rightThigh: 0, rightKnee: 0, rightAnkle: 0
+            },
+            kneesBent: {
+                leftThigh: -10, leftKnee: 30, leftAnkle: 0,
+                rightThigh: -10, rightKnee: 30, rightAnkle: 0
+            },
+            leftRaised: {
+                leftThigh: -45, leftKnee: 90, leftAnkle: 15,
+                rightThigh: 0, rightKnee: 0, rightAnkle: 0
+            }
+        };
+
+        // 療程資料
         const learningData = {
             1: [
                 { id: "1.1", text: "在毛巾上俯順至大腿", note: "設定客戶位置，輕柔地從膝蓋處向上俯順至大腿。", type: "drag", tool: "towel", icon: "🧖‍♀️", start: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
@@ -304,19 +365,29 @@
         let ghostHand; 
         let tweenAnim;
         let activeModelType = 'male';
+        let skeletonHelper;
         
-        // 初始狀態
         let modelPos = { ...CONFIG.MODEL_POS_DEFAULT };
         let modelRot = { ...CONFIG.MODEL_ROT_DEFAULT };
         let modelScale = CONFIG.MODEL_SCALE;
         let debugClickCount = 0;
+
+        // 骨骼控制
+        let bones = {
+            leftUpLeg: null, leftLeg: null, leftFoot: null,
+            rightUpLeg: null, rightLeg: null, rightFoot: null
+        };
+        
+        let poseControls = {
+            leftThigh: 0, leftKnee: 0, leftAnkle: 0,
+            rightThigh: 0, rightKnee: 0, rightAnkle: 0
+        };
 
         function initApp() {
             document.getElementById('spinner').style.display = 'block';
             document.querySelector('.start-btn').style.display = 'none';
             setTimeout(initThreeJS, 100);
             
-            // 初始化滑桿
             document.getElementById('range-x').value = modelPos.x;
             document.getElementById('range-y').value = modelPos.y;
             document.getElementById('range-z').value = modelPos.z;
@@ -396,7 +467,7 @@
             const loader = new THREE.GLTFLoader();
             loader.load(BASE_URL + 'A01.glb', (gltf) => {
                 const room = gltf.scene;
-                room.scale.set(20, 20, 20); // 床的比例
+                room.scale.set(20, 20, 20);
                 room.traverse(c => { if(c.isMesh) c.receiveShadow = true; });
                 scene.add(room);
             });
@@ -405,6 +476,8 @@
 
         function loadModel(type) {
             if(model) scene.remove(model);
+            if(skeletonHelper) scene.remove(skeletonHelper);
+            
             activeModelType = type;
             const loader = new THREE.GLTFLoader();
             loader.load(BASE_URL + (type === 'male' ? 'B01.glb' : 'B02.glb'), (gltf) => {
@@ -416,10 +489,106 @@
                 model.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
                 scene.add(model);
                 
+                // 尋找骨骼
+                findBones();
+                
+                // 創建骨架輔助
+                let hasSkeleton = false;
+                model.traverse((child) => {
+                    if (child.isSkinnedMesh && child.skeleton) {
+                        skeletonHelper = new THREE.SkeletonHelper(model);
+                        skeletonHelper.visible = false;
+                        scene.add(skeletonHelper);
+                        hasSkeleton = true;
+                    }
+                });
+                
+                if (hasSkeleton) {
+                    console.log('✅ 找到骨架系統！');
+                    document.getElementById('pose-panel').style.display = 'block';
+                } else {
+                    console.log('❌ 未找到骨架系統');
+                    document.getElementById('pose-panel').style.display = 'none';
+                }
+                
                 document.getElementById('welcome').style.display = 'none';
                 document.getElementById('ui').style.display = 'block';
                 createGhostHand();
                 setPhase(1);
+            });
+        }
+
+        function findBones() {
+            for (let key in bones) bones[key] = null;
+            
+            const bonePatterns = {
+                leftUpLeg: ['leftupleg', 'left_upleg', 'thigh.l', 'thigh_l', 'left_thigh'],
+                leftLeg: ['leftleg', 'left_leg', 'calf.l', 'calf_l', 'left_calf', 'shin.l'],
+                leftFoot: ['leftfoot', 'left_foot', 'foot.l', 'foot_l'],
+                rightUpLeg: ['rightupleg', 'right_upleg', 'thigh.r', 'thigh_r', 'right_thigh'],
+                rightLeg: ['rightleg', 'right_leg', 'calf.r', 'calf_r', 'right_calf', 'shin.r'],
+                rightFoot: ['rightfoot', 'right_foot', 'foot.r', 'foot_r']
+            };
+            
+            model.traverse((child) => {
+                if (child.isBone) {
+                    const nameLower = child.name.toLowerCase();
+                    for (let boneKey in bonePatterns) {
+                        if (!bones[boneKey]) {
+                            const patterns = bonePatterns[boneKey];
+                            for (let pattern of patterns) {
+                                if (nameLower.includes(pattern)) {
+                                    bones[boneKey] = child;
+                                    console.log(`找到骨骼: ${boneKey} = ${child.name}`);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updatePose() {
+            poseControls.leftThigh = parseFloat(document.getElementById('range-left-thigh').value);
+            poseControls.leftKnee = parseFloat(document.getElementById('range-left-knee').value);
+            poseControls.leftAnkle = parseFloat(document.getElementById('range-left-ankle').value);
+            poseControls.rightThigh = parseFloat(document.getElementById('range-right-thigh').value);
+            poseControls.rightKnee = parseFloat(document.getElementById('range-right-knee').value);
+            poseControls.rightAnkle = parseFloat(document.getElementById('range-right-ankle').value);
+            
+            document.getElementById('val-left-thigh').innerText = poseControls.leftThigh + '°';
+            document.getElementById('val-left-knee').innerText = poseControls.leftKnee + '°';
+            document.getElementById('val-left-ankle').innerText = poseControls.leftAnkle + '°';
+            document.getElementById('val-right-thigh').innerText = poseControls.rightThigh + '°';
+            document.getElementById('val-right-knee').innerText = poseControls.rightKnee + '°';
+            document.getElementById('val-right-ankle').innerText = poseControls.rightAnkle + '°';
+            
+            if (bones.leftUpLeg) bones.leftUpLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftThigh);
+            if (bones.leftLeg) bones.leftLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftKnee);
+            if (bones.leftFoot) bones.leftFoot.rotation.x = THREE.MathUtils.degToRad(poseControls.leftAnkle);
+            if (bones.rightUpLeg) bones.rightUpLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.rightThigh);
+            if (bones.rightLeg) bones.rightLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.rightKnee);
+            if (bones.rightFoot) bones.rightFoot.rotation.x = THREE.MathUtils.degToRad(poseControls.rightAnkle);
+        }
+
+        function applyPose(poseName) {
+            const pose = POSES[poseName];
+            if (!pose) return;
+            
+            gsap.to(poseControls, {
+                leftThigh: pose.leftThigh, leftKnee: pose.leftKnee, leftAnkle: pose.leftAnkle,
+                rightThigh: pose.rightThigh, rightKnee: pose.rightKnee, rightAnkle: pose.rightAnkle,
+                duration: 0.5,
+                onUpdate: () => {
+                    document.getElementById('range-left-thigh').value = poseControls.leftThigh;
+                    document.getElementById('range-left-knee').value = poseControls.leftKnee;
+                    document.getElementById('range-left-ankle').value = poseControls.leftAnkle;
+                    document.getElementById('range-right-thigh').value = poseControls.rightThigh;
+                    document.getElementById('range-right-knee').value = poseControls.rightKnee;
+                    document.getElementById('range-right-ankle').value = poseControls.rightAnkle;
+                    updatePose();
+                }
             });
         }
 
@@ -453,6 +622,17 @@
             document.getElementById('val-rot-x').innerText = modelRot.x.toFixed(2);
             document.getElementById('val-rot-y').innerText = modelRot.y.toFixed(2);
             document.getElementById('val-rot-z').innerText = modelRot.z.toFixed(2);
+        }
+
+        function toggleSkeletonHelper() {
+            if (skeletonHelper) skeletonHelper.visible = !skeletonHelper.visible;
+        }
+
+        function logBones() {
+            console.log('=== 骨骼列表 ===');
+            for (let key in bones) {
+                console.log(bones[key] ? `✅ ${key}: ${bones[key].name}` : `❌ ${key}: 未找到`);
+            }
         }
 
         function toggleCameraLock() {
