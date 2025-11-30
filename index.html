@@ -361,12 +361,6 @@
                     </button>
                 </div>
                 
-                <div style="display:flex; gap:12px; margin-top:8px;">
-                    <button class="nav-btn" style="background:#ff6b6b; flex:1;" onclick="forceComplete()">
-                        🔧 強制完成此步驟
-                    </button>
-                </div>
-                
                 <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:10px;">
                     <div style="font-size:13px; color:#555; margin-bottom:8px; font-weight:bold;">
                         🎮 互動模式說明
@@ -458,7 +452,7 @@
                     target: 'thighs', 
                     technique: "俯順法 Effleurage",
                     interactionMode: "drag", // 拖曳軌跡
-                    dragPath: [{x: 0.5, y: 0.3, z: 0}, {x: 0.2, y: 0.3, z: 0}], // 從膝蓋到大腿
+                    dragPath: [{x: 0.5, y: -0.25, z: 0}, {x: 0.2, y: -0.25, z: 0}], // 從膝蓋到大腿
                     duration: 3 // 建議3秒完成
                 },
                 { 
@@ -468,7 +462,7 @@
                     target: 'feet', 
                     technique: "長推法",
                     interactionMode: "drag",
-                    dragPath: [{x: 0.2, y: 0.3, z: 0}, {x: 1.0, y: 0.25, z: 0}], // 從大腿到腳底
+                    dragPath: [{x: 0.2, y: -0.25, z: 0}, {x: 1.0, y: -0.35, z: 0}], // 從大腿到腳底
                     duration: 3
                 },
                 { 
@@ -822,23 +816,23 @@
 
         function getTargetPosition(targetType) {
             const positions = {
-                'thighs': {x: 0.2, y: 0.3, z: 0},
-                'feet': {x: 1.0, y: 0.25, z: 0},
-                'knees': {x: 0.5, y: 0.3, z: 0},
-                'legs': {x: 0.4, y: 0.3, z: 0},
-                'right_leg': {x: 0.4, y: 0.3, z: -0.25},
-                'hands': {x: 0.5, y: 0.6, z: 0}
+                'thighs': {x: 0.2, y: -0.25, z: 0},       // 大腿
+                'feet': {x: 1.0, y: -0.35, z: 0},         // 腳底  
+                'knees': {x: 0.5, y: -0.25, z: 0},        // 膝蓋
+                'legs': {x: 0.4, y: -0.25, z: 0},         // 腿部
+                'right_leg': {x: 0.4, y: -0.25, z: -0.25}, // 右腿
+                'hands': {x: 0.5, y: 0.1, z: 0}           // 手部（調高一點）
             };
-            return positions[targetType] || {x: 0.5, y: 0.3, z: 0};
+            return positions[targetType] || {x: 0.5, y: -0.25, z: 0};
         }
 
         function getSequencePosition(targetType) {
             const positions = {
-                'feet': {x: 1.0, y: 0.25, z: 0},
-                'calves': {x: 0.65, y: 0.3, z: 0},
-                'thighs': {x: 0.2, y: 0.3, z: 0}
+                'feet': {x: 1.0, y: -0.35, z: 0},         // 腳底（阿基里斯腱）
+                'calves': {x: 0.65, y: -0.25, z: 0},      // 小腿
+                'thighs': {x: 0.2, y: -0.25, z: 0}        // 大腿
             };
-            return positions[targetType] || {x: 0.5, y: 0.3, z: 0};
+            return positions[targetType] || {x: 0.5, y: -0.25, z: 0};
         }
 
         function showInteractionMode(mode) {
