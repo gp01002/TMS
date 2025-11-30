@@ -356,6 +356,12 @@
                 </div>
                 
                 <div style="display:flex; gap:12px; margin-top:12px;">
+                    <button id="lock-btn-main" class="nav-btn" style="background:#ff6b6b; flex:1; font-size:16px;" onclick="toggleCameraLock()">
+                        🔒 鎖定畫面
+                    </button>
+                </div>
+                
+                <div style="display:flex; gap:12px; margin-top:8px;">
                     <button class="nav-btn" style="background:#ff6b6b; flex:1;" onclick="forceComplete()">
                         🔧 強制完成此步驟
                     </button>
@@ -369,7 +375,9 @@
                         <strong>🖱️ 拖曳軌跡</strong>：長推動作<br>
                         <strong>⏱️ 按壓計時</strong>：定點按摩<br>
                         <strong>👆 順序點擊</strong>：分段操作<br>
-                        <strong>💡 提示</strong>：看游標是否變成手指
+                        <div style="margin-top:8px; padding:8px; background:#fff3cd; border-radius:6px; border-left:3px solid #ffc107;">
+                            <strong>⚠️ 互動前必做</strong>：先點「🔒 鎖定畫面」
+                        </div>
                     </div>
                 </div>
             </div>
@@ -539,14 +547,30 @@
             controls.enabled = !cameraLocked;
             
             const btn = document.getElementById('lock-btn');
+            const btnMain = document.getElementById('lock-btn-main');
+            
             if (cameraLocked) {
-                btn.innerText = '🔓 解鎖畫面';
-                btn.style.background = '#51cf66';
+                // 鎖定狀態
+                if (btn) {
+                    btn.innerText = '🔓 解鎖畫面';
+                    btn.style.background = '#51cf66';
+                }
+                if (btnMain) {
+                    btnMain.innerHTML = '🔓 解鎖畫面';
+                    btnMain.style.background = '#51cf66';
+                }
                 showFeedback('✅ 畫面已鎖定，可以互動了', true);
                 console.log('🔒 畫面已鎖定 - 現在可以拖曳球體了');
             } else {
-                btn.innerText = '🔒 鎖定畫面';
-                btn.style.background = '#ff6b6b';
+                // 解鎖狀態
+                if (btn) {
+                    btn.innerText = '🔒 鎖定畫面';
+                    btn.style.background = '#ff6b6b';
+                }
+                if (btnMain) {
+                    btnMain.innerHTML = '🔒 鎖定畫面';
+                    btnMain.style.background = '#ff6b6b';
+                }
                 showFeedback('✅ 畫面已解鎖，可以調整視角', true);
                 console.log('🔓 畫面已解鎖 - 現在可以旋轉視角了');
             }
