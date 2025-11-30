@@ -355,6 +355,12 @@
                     </button>
                 </div>
                 
+                <div style="display:flex; gap:12px; margin-top:12px;">
+                    <button class="nav-btn" style="background:#ff6b6b; flex:1;" onclick="forceComplete()">
+                        🔧 強制完成此步驟
+                    </button>
+                </div>
+                
                 <div style="margin-top:20px; padding:15px; background:#f8f9fa; border-radius:10px;">
                     <div style="font-size:13px; color:#555; margin-bottom:8px; font-weight:bold;">
                         🎮 互動模式說明
@@ -362,7 +368,8 @@
                     <div style="font-size:12px; color:#666; line-height:1.8;">
                         <strong>🖱️ 拖曳軌跡</strong>：長推動作<br>
                         <strong>⏱️ 按壓計時</strong>：定點按摩<br>
-                        <strong>👆 順序點擊</strong>：分段操作
+                        <strong>👆 順序點擊</strong>：分段操作<br>
+                        <strong>💡 提示</strong>：看游標是否變成手指
                     </div>
                 </div>
             </div>
@@ -413,8 +420,11 @@
                 </div>
 
                 <div style="text-align: center; margin-top:10px;">
-                    <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#667eea; color:white; border:none; font-weight:bold;" onclick="resetCam()">
+                    <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#667eea; color:white; border:none; font-weight:bold; margin:4px;" onclick="resetCam()">
                         🔄 重置視角
+                    </button>
+                    <button style="padding:8px 16px; cursor:pointer; border-radius:8px; background:#11998e; color:white; border:none; font-weight:bold; margin:4px;" onclick="testInteraction()">
+                        🧪 測試互動
                     </button>
                 </div>
             </div>
@@ -552,6 +562,10 @@
             const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
             fillLight.position.set(-5, 5, -5);
             scene.add(fillLight);
+
+            // 優化 raycaster 設定
+            raycaster.params.Points.threshold = 0.3;
+            raycaster.params.Line.threshold = 0.3;
 
             window.addEventListener('resize', onWindowResize);
             renderer.domElement.addEventListener('mousedown', onMouseDown);
@@ -865,27 +879,70 @@
             
             raycaster.setFromCamera(mouse, camera);
             
-            const intersects = raycaster.intersectObjects(targets.filter(t => t.isMesh));
+            const meshTargets = targets.filter(t => t.isMesh);
+            const intersects = raycaster.intersectObjects(meshTargets, true);
             
             console.log('🖱️ 點擊檢測:', {
                 '滑鼠位置': {x: mouse.x.toFixed(2), y: mouse.y.toFixed(2)},
                 '互動模式': step.interactionMode,
-                '互動點數量': targets.filter(t => t.isMesh).length,
+                '互動點數量': meshTargets.length,
+                '互動點位置': meshTargets.map(m => ({
+                    x: m.position.x.toFixed(2),
+                    y: m.position.y.toFixed(2),
+                    z: m.position.z.toFixed(2)
+                })),
                 '點擊到': intersects.length > 0 ? '✅ 有' : '❌ 無'
             });
             
+            // 如果直接點擊沒中，檢查距離最近的球
+            let clickedBall = null;
             if (intersects.length > 0) {
-                console.log('✅ 點擊成功！位置:', intersects[0].point);
+                clickedBall = intersects[0].object;
+                console.log('✅ 直接點擊成功！');
+            } else {
+                // 嘗試找最近的球（容錯機制）
+                let minDistance = Infinity;
+                const mouseWorldPos = new THREE.Vector3(mouse.x, mouse.y, 0).unproject(camera);
                 
+                meshTargets.forEach(ball => {
+                    const screenPos = ball.position.clone().project(camera);
+                    const distance = Math.sqrt(
+                        Math.pow(screenPos.x - mouse.x, 2) + 
+                        Math.pow(screenPos.y - mouse.y, 2)
+                    );
+                    
+                    if (distance < minDistance && distance < 0.2) { // 容錯範圍
+                        minDistance = distance;
+                        clickedBall = ball;
+                    }
+                });
+                
+                if (clickedBall) {
+                    console.log('✅ 近似點擊成功！距離:', minDistance.toFixed(3));
+                } else {
+                    console.log('❌ 點擊位置離球太遠，請點擊球體中心');
+                }
+            }
+            
+            if (clickedBall) {
                 // 禁用相機控制避免衝突
                 controls.enabled = false;
+                
+                // 視覺反饋
+                clickedBall.material.emissive = new THREE.Color(0xffff00);
+                setTimeout(() => {
+                    if (clickedBall.material) {
+                        clickedBall.material.emissive = new THREE.Color(0x000000);
+                    }
+                }, 200);
                 
                 if (step.interactionMode === 'drag') {
                     isDragging = true;
                     dragStartTime = Date.now();
-                    dragPath = [intersects[0].point.clone()];
+                    dragPath = [clickedBall.position.clone()];
                     document.getElementById('drag-hint').classList.add('show');
                     console.log('🖱️ 開始拖曳模式');
+                    showFeedback('開始拖曳！', true);
                     
                 } else if (step.interactionMode === 'press') {
                     isPressing = true;
@@ -898,19 +955,23 @@
                     circle.classList.add('show');
                     updatePressCircle();
                     console.log('⏱️ 開始按壓模式，需要按住', step.pressDuration, '秒');
+                    showFeedback(`按住 ${step.pressDuration} 秒`, true);
                     
                 } else if (step.interactionMode === 'sequence') {
                     console.log('👆 順序點擊模式');
-                    handleSequenceClick(intersects[0].object);
+                    handleSequenceClick(clickedBall);
                     setTimeout(() => { controls.enabled = true; }, 100);
                     
                 } else if (step.interactionMode === 'click') {
                     console.log('👆 簡單點擊模式');
-                    handleSimpleClick(intersects[0].point);
+                    handleSimpleClick(clickedBall.position);
                     setTimeout(() => { controls.enabled = true; }, 100);
                 }
             } else {
-                console.log('❌ 沒有點到互動點，請點擊綠色/金色球體');
+                console.log('❌ 沒有點到互動點');
+                console.log('💡 提示：請確保點擊綠色/金色/青綠色球體');
+                console.log('💡 或使用「強制完成此步驟」按鈕');
+                showFeedback('請點擊彩色球體', false);
             }
         }
 
@@ -1083,6 +1144,59 @@
             window.fbTimer = setTimeout(() => { 
                 el.style.opacity = 0; 
             }, 2000);
+        }
+        
+        function forceComplete() {
+            const step = learningData[currentPhase][currentStepIndex];
+            console.log('🔧 強制完成步驟:', step.id, step.text);
+            showFeedback(`✅ 強制完成: ${step.text}`, true);
+            setTimeout(() => nextStep(), 1000);
+        }
+        
+        function testInteraction() {
+            console.log('🧪 === 互動測試開始 ===');
+            
+            const step = learningData[currentPhase][currentStepIndex];
+            console.log('當前步驟:', step.id, step.text);
+            console.log('互動模式:', step.interactionMode);
+            
+            const meshTargets = targets.filter(t => t.isMesh);
+            console.log('互動點數量:', meshTargets.length);
+            
+            meshTargets.forEach((ball, i) => {
+                console.log(`球 ${i}:`, {
+                    顏色: '#' + ball.material.color.getHexString(),
+                    位置: {
+                        x: ball.position.x.toFixed(2),
+                        y: ball.position.y.toFixed(2),
+                        z: ball.position.z.toFixed(2)
+                    },
+                    大小: ball.geometry.parameters.radius.toFixed(2)
+                });
+                
+                // 讓球閃爍
+                ball.material.emissive = new THREE.Color(0xff0000);
+                setTimeout(() => {
+                    ball.material.emissive = new THREE.Color(0x000000);
+                }, 500 * (i + 1));
+            });
+            
+            console.log('模特兒位置:', {
+                x: model.position.x.toFixed(2),
+                y: model.position.y.toFixed(2),
+                z: model.position.z.toFixed(2)
+            });
+            
+            console.log('互動點偏移:', {
+                x: targetOffset.x.toFixed(2),
+                y: targetOffset.y.toFixed(2),
+                z: targetOffset.z.toFixed(2)
+            });
+            
+            console.log('💡 提示：球體會依序閃紅光，確認是否看得到');
+            console.log('🧪 === 測試結束 ===');
+            
+            showFeedback('查看控制台訊息', true);
         }
 
         function resetCam() { 
