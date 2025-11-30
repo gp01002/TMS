@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V5.2 標準版)</title>
+    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V5.2 修正版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -137,7 +137,7 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 32px; margin-bottom: 10px;">🤲 專業芳療 VR 教學</h1>
-        <p style="color: #aaa;">沉浸式互動版 v5.2 (標準版+旋轉)</p>
+        <p style="color: #aaa;">沉浸式互動版 v5.2 (修正版)</p>
         <button class="start-btn" onclick="initApp()">開始療程</button>
         <div class="loading-spinner" id="spinner"></div>
     </div>
@@ -202,19 +202,19 @@
                 <div class="menu-title" style="color:#ff6b6b; border-color:#ff6b6b;">🔧 工程模式</div>
                 <div class="adjust-row">
                     <div class="adjust-label"><span>前後 (X)</span> <span id="val-x">0.1</span></div>
-                    <input type="range" class="adjust-input" id="range-x" min="-3" max="3" step="0.05" value="0.1" oninput="updateModelPos()">
+                    <input type="range" class="adjust-input" id="range-x" min="-3" max="3" step="0.05" value="0.1" oninput="updateModelTransform()">
                 </div>
                 <div class="adjust-row">
                     <div class="adjust-label"><span>高度 (Y)</span> <span id="val-y">2.3</span></div>
-                    <input type="range" class="adjust-input" id="range-y" min="0" max="4" step="0.05" value="2.3" oninput="updateModelPos()">
+                    <input type="range" class="adjust-input" id="range-y" min="0" max="4" step="0.05" value="2.3" oninput="updateModelTransform()">
                 </div>
                 <div class="adjust-row">
                     <div class="adjust-label"><span>左右 (Z)</span> <span id="val-z">0</span></div>
-                    <input type="range" class="adjust-input" id="range-z" min="-2" max="2" step="0.05" value="0" oninput="updateModelPos()">
+                    <input type="range" class="adjust-input" id="range-z" min="-2" max="2" step="0.05" value="0" oninput="updateModelTransform()">
                 </div>
                 <div class="adjust-row">
                     <div class="adjust-label"><span>大小</span> <span id="val-scale">1.0</span></div>
-                    <input type="range" class="adjust-input" id="range-scale" min="0.5" max="2" step="0.1" value="1.0" oninput="updateModelPos()">
+                    <input type="range" class="adjust-input" id="range-scale" min="0.5" max="2" step="0.1" value="1.0" oninput="updateModelTransform()">
                 </div>
                 
                 <div style="border-top:1px solid #555; margin:10px 0;"></div>
@@ -222,15 +222,15 @@
                 
                 <div class="adjust-row">
                     <div class="adjust-label" style="color:#ffaa00;"><span>旋轉 X</span> <span id="val-rot-x">-1.57</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-x" min="-6.28" max="6.28" step="0.1" value="-1.57" oninput="updateModelPos()" style="accent-color:#ffaa00;">
+                    <input type="range" class="adjust-input" id="range-rot-x" min="-6.28" max="6.28" step="0.1" value="-1.57" oninput="updateModelTransform()" style="accent-color:#ffaa00;">
                 </div>
                 <div class="adjust-row">
                     <div class="adjust-label" style="color:#ffaa00;"><span>旋轉 Y</span> <span id="val-rot-y">0</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-y" min="-6.28" max="6.28" step="0.1" value="0" oninput="updateModelPos()" style="accent-color:#ffaa00;">
+                    <input type="range" class="adjust-input" id="range-rot-y" min="-6.28" max="6.28" step="0.1" value="0" oninput="updateModelTransform()" style="accent-color:#ffaa00;">
                 </div>
                 <div class="adjust-row">
                     <div class="adjust-label" style="color:#ffaa00;"><span>旋轉 Z</span> <span id="val-rot-z">1.57</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-z" min="-6.28" max="6.28" step="0.1" value="1.57" oninput="updateModelPos()" style="accent-color:#ffaa00;">
+                    <input type="range" class="adjust-input" id="range-rot-z" min="-6.28" max="6.28" step="0.1" value="1.57" oninput="updateModelTransform()" style="accent-color:#ffaa00;">
                 </div>
 
                 <div style="margin-top:10px;">
@@ -269,7 +269,7 @@
     <script>
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
-        // --- 設定區 (v5.2 回歸原座標) ---
+        // --- 設定區 (✅ 回到原座標) ---
         const CONFIG = {
             MODEL_POS_DEFAULT: { x: 0.1, y: 2.3, z: 0 },      // ✅ 原座標
             MODEL_SCALE: 1.0,                                   // ✅ 原大小
@@ -489,10 +489,8 @@
                 model.traverse(c => { if(c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
                 scene.add(model);
                 
-                // 尋找骨骼
                 findBones();
                 
-                // 創建骨架輔助
                 let hasSkeleton = false;
                 model.traverse((child) => {
                     if (child.isSkinnedMesh && child.skeleton) {
@@ -592,7 +590,8 @@
             });
         }
 
-        function updateModelPos() {
+        // 🔥 修正旋轉功能 - 重新命名函數避免衝突
+        function updateModelTransform() {
             const x = parseFloat(document.getElementById('range-x').value);
             const y = parseFloat(document.getElementById('range-y').value);
             const z = parseFloat(document.getElementById('range-z').value);
@@ -610,7 +609,8 @@
                 model.position.set(x, y, z);
                 model.scale.set(scale, scale, scale);
                 model.rotation.set(rx, ry, rz);
-                setupStep();
+                console.log('🔄 模型已旋轉:', { x: rx, y: ry, z: rz });
+                setupStep(); // 重新設置互動點位置
             }
         }
         
