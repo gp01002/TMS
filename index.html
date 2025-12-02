@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V9.0 完整考照版)</title>
+    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V10.0 增強版)</title>
     <!-- 引入核心庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -30,12 +30,28 @@
             align-items: center; pointer-events: auto;
         }
 
+        /* 🆕 進度條 */
+        .progress-bar {
+            position: absolute; top: 60px; left: 50%; transform: translateX(-50%);
+            width: 80%; max-width: 500px; height: 6px; background: rgba(255,255,255,0.1);
+            border-radius: 10px; overflow: hidden; pointer-events: auto;
+        }
+        .progress-fill {
+            height: 100%; background: linear-gradient(90deg, #667eea, #764ba2);
+            width: 0%; transition: width 0.5s ease;
+            box-shadow: 0 0 10px rgba(118, 75, 162, 0.6);
+        }
+        .progress-text {
+            position: absolute; top: 70px; left: 50%; transform: translateX(-50%);
+            color: #8ec5fc; font-size: 12px; text-align: center;
+        }
+
         /* 左側選單 */
         .side-menu {
-            position: absolute; left: 20px; top: 80px; width: 320px;
+            position: absolute; left: 20px; top: 100px; width: 300px;
             background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(10px);
             border-radius: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1);
-            pointer-events: auto; max-height: calc(100vh - 120px); overflow-y: auto;
+            pointer-events: auto; max-height: calc(100vh - 140px); overflow-y: auto;
             transform: translateX(-360px); transition: transform 0.3s ease; 
             z-index: 20;
         }
@@ -60,7 +76,7 @@
             color: white; border: none; box-shadow: 0 4px 12px rgba(118, 75, 162, 0.4);
         }
 
-        /* 微調滑桿 (預設隱藏) */
+        /* 微調滑桿 */
         .debug-section { display: none; background: rgba(0,0,0,0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; }
         .adjust-row { margin-bottom: 12px; }
         .adjust-label { font-size: 12px; color: #ff6b6b; display: flex; justify-content: space-between; margin-bottom: 4px; font-weight: bold; }
@@ -86,6 +102,7 @@
             box-shadow: 0 10px 30px rgba(0,0,0,0.5);
             text-align: center; width: 90%; max-width: 500px;
             pointer-events: auto;
+            transition: all 0.3s ease;
         }
         
         .instruction-title { color: #8ec5fc; font-size: 12px; font-weight: bold; margin-bottom: 5px; text-transform: uppercase; }
@@ -106,34 +123,70 @@
             box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
         }
 
-        /* 浮動手勢提示 */
+        /* 🆕 拖曳提示增強 */
         .gesture-hint {
             position: absolute;
-            background: rgba(102, 126, 234, 0.9); color: white;
-            padding: 8px 16px; border-radius: 20px; font-weight: bold;
-            font-size: 14px; pointer-events: none;
-            opacity: 0; transition: opacity 0.3s;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 15px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
             transform: translate(-50%, -100%);
-            white-space: nowrap; z-index: 100;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            white-space: nowrap;
+            z-index: 100;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5); }
+            50% { box-shadow: 0 4px 25px rgba(102, 126, 234, 0.8); }
+        }
+        
+        /* 動作說明標籤 */
+        .action-label {
+             position: absolute;
+             background: rgba(0,0,0,0.8);
+             color: #FFD700;
+             padding: 6px 12px;
+             border-radius: 6px;
+             font-size: 13px;
+             font-weight: bold;
+             pointer-events: none;
+             white-space: nowrap;
+             z-index: 99;
+             display: none;
+             box-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
         /* 歡迎/載入頁 */
         .welcome-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(20, 20, 20, 0.95); z-index: 1000;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d1b3d 100%);
+            z-index: 1000;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
             color: white;
+            text-align: center;
+            padding: 20px;
         }
         .main-title {
             font-size: 40px; font-weight: bold; color: #8ec5fc; 
             margin-bottom: 10px; letter-spacing: 2px;
+            text-shadow: 0 0 20px rgba(142, 197, 252, 0.5);
         }
         .start-btn {
             background: linear-gradient(135deg, #667eea, #764ba2);
             color: white; border: none; padding: 15px 50px;
             font-size: 20px; border-radius: 50px; margin-top: 30px;
-            cursor: pointer; box-shadow: 0 0 20px rgba(118, 75, 162, 0.6);
+            cursor: pointer; box-shadow: 0 0 30px rgba(118, 75, 162, 0.6);
+            transition: all 0.3s;
+        }
+        .start-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 40px rgba(118, 75, 162, 0.8);
         }
         .loading-spinner {
             border: 4px solid rgba(255,255,255,0.1); border-left-color: #667eea;
@@ -141,14 +194,64 @@
             animation: spin 1s linear infinite; margin-top: 20px; display: none;
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* 🆕 成功特效 */
+        .success-badge {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0);
+            background: linear-gradient(135deg, #11998e, #38ef7d);
+            color: white;
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            pointer-events: none;
+            z-index: 200;
+            box-shadow: 0 10px 40px rgba(17, 153, 142, 0.6);
+        }
+
+        /* --- 手機版 RWD 優化 --- */
+        @media (max-width: 768px) {
+            .top-bar { padding: 10px 15px; }
+            .top-bar span { font-size: 16px !important; }
+            
+            .progress-bar { top: 55px; width: 90%; }
+            .progress-text { top: 65px; font-size: 11px; }
+            
+            .side-menu {
+                width: 240px; 
+                top: 80px;
+                left: 10px;
+                padding: 10px;
+                max-height: calc(100vh - 200px);
+            }
+            .menu-title { font-size: 13px; }
+            .phase-btn { padding: 10px; font-size: 13px; }
+            
+            .action-card {
+                bottom: 20px;
+                padding: 15px 20px;
+                width: 95%;
+            }
+            .instruction-text { font-size: 18px; }
+            .instruction-note { font-size: 13px; margin-bottom: 10px; }
+            
+            .nav-btn {
+                padding: 6px 12px;
+                font-size: 13px;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
-        <h1 style="font-size: 32px; margin-bottom: 10px;">🤲 專業芳療 VR 教學</h1>
-        <p style="color: #aaa;">沉浸式互動版 v9.0 (考照標準完整版)</p>
+        <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 專業芳療 VR 教學</h1>
+        <p style="color: #aaa;">沉浸式互動版 v10.0 (增強版)</p>
+        <p style="color: #8ec5fc; margin-top: 10px; font-size: 14px;">✨ 新增軌跡線、粒子效果、觸覺反饋</p>
         <button class="start-btn" onclick="initApp()">開始療程</button>
         <div class="loading-spinner" id="spinner"></div>
     </div>
@@ -164,12 +267,17 @@
             
             <div style="display:flex; gap:10px;">
                 <button class="nav-btn lock-btn" id="lock-btn" onclick="toggleCameraLock()">🔓 鎖定視角</button>
-                <button class="nav-btn" onclick="toggleMenu()">☰ 選單</button>
+                <button class="nav-btn" onclick="toggleMenu()">☰</button>
             </div>
         </div>
 
+        <!-- 🆕 進度條 -->
+        <div class="progress-bar">
+            <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-text" id="progress-text">進度: 0%</div>
+
         <div class="side-menu" id="side-menu">
-            <!-- 骨骼姿勢控制 -->
             <div class="pose-section" id="pose-panel">
                 <div class="menu-title" style="color:#8ec5fc; border-color:#8ec5fc;">
                     🦴 腿部姿勢控制 <span id="bone-status" style="font-size:10px; color:#aaa;">(偵測中...)</span>
@@ -185,77 +293,12 @@
                     <div class="pose-label"><span>左大腿抬起</span> <span id="val-left-thigh">0°</span></div>
                     <input type="range" class="pose-input" id="range-left-thigh" min="-90" max="45" step="1" value="0" oninput="onSliderChange()">
                 </div>
-                <div class="adjust-row">
-                    <div class="pose-label"><span>左膝蓋彎曲</span> <span id="val-left-knee">0°</span></div>
-                    <input type="range" class="pose-input" id="range-left-knee" min="-120" max="0" step="1" value="0" oninput="onSliderChange()">
-                </div>
-                <div class="adjust-row">
-                    <div class="pose-label"><span>左腳踝角度</span> <span id="val-left-ankle">45°</span></div>
-                    <input type="range" class="pose-input" id="range-left-ankle" min="0" max="90" step="1" value="45" oninput="onSliderChange()">
-                </div>
-                
-                <div style="border-top:1px solid rgba(255,255,255,0.1); margin:8px 0; padding-top:8px;">
-                    <div class="adjust-row">
-                        <div class="pose-label"><span>右大腿抬起</span> <span id="val-right-thigh">0°</span></div>
-                        <input type="range" class="pose-input" id="range-right-thigh" min="-90" max="45" step="1" value="0" oninput="onSliderChange()">
-                    </div>
-                    <div class="adjust-row">
-                        <div class="pose-label"><span>右膝蓋彎曲</span> <span id="val-right-knee">0°</span></div>
-                        <input type="range" class="pose-input" id="range-right-knee" min="-120" max="0" step="1" value="0" oninput="onSliderChange()">
-                    </div>
-                    <div class="adjust-row">
-                        <div class="pose-label"><span>右腳踝角度</span> <span id="val-right-ankle">45°</span></div>
-                        <input type="range" class="pose-input" id="range-right-ankle" min="0" max="90" step="1" value="45" oninput="onSliderChange()">
-                    </div>
-                </div>
             </div>
             
             <div id="structure-message" style="color: #f44336; font-size: 12px; margin-bottom: 10px; display: none;">
                 ⚠️ 注意：此模型似乎沒有骨架，姿勢控制無法生效。
             </div>
 
-            <!-- 工程模式 -->
-            <div class="debug-section" id="debug-panel">
-                <div class="menu-title" style="color:#ff6b6b; border-color:#ff6b6b;">🔧 工程模式</div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>前後 (X)</span> <span id="val-x">0.1</span></div>
-                    <input type="range" class="adjust-input" id="range-x" min="-5" max="5" step="0.05" value="0.1" oninput="updateModelPos()">
-                </div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>高度 (Y)</span> <span id="val-y">2.18</span></div>
-                    <input type="range" class="adjust-input" id="range-y" min="0" max="5" step="0.05" value="2.18" oninput="updateModelPos()">
-                </div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>左右 (Z)</span> <span id="val-z">0</span></div>
-                    <input type="range" class="adjust-input" id="range-z" min="-3" max="3" step="0.05" value="0" oninput="updateModelPos()">
-                </div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>大小 (Scale)</span> <span id="val-scale">1.0</span></div>
-                    <input type="range" class="adjust-input" id="range-scale" min="0.1" max="50" step="0.1" value="1.0" oninput="updateModelPos()">
-                </div>
-                
-                <div style="border-top:1px solid #555; margin:10px 0;"></div>
-                
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>旋轉 X</span> <span id="val-rot-x">-1.57</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-x" min="-6.28" max="6.28" step="0.1" value="-1.57" oninput="updateModelPos()">
-                </div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>旋轉 Y</span> <span id="val-rot-y">0</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-y" min="-6.28" max="6.28" step="0.1" value="0" oninput="updateModelPos()">
-                </div>
-                <div class="adjust-row">
-                    <div class="adjust-label"><span>旋轉 Z</span> <span id="val-rot-z">1.57</span></div>
-                    <input type="range" class="adjust-input" id="range-rot-z" min="-6.28" max="6.28" step="0.1" value="1.57" oninput="updateModelPos()">
-                </div>
-
-                <div style="margin-top:10px;">
-                    <button class="phase-btn" onclick="toggleSkeletonHelper()">🦴 顯示/隱藏骨架</button>
-                    <button class="phase-btn" onclick="showModelStructure()">📋 顯示模型結構</button>
-                </div>
-            </div>
-
-            <!-- 可見的選單區域 -->
             <div class="menu-title" onclick="triggerDebugMode()">療程階段選單</div>
             <button class="phase-btn active" onclick="setPhase(1)" id="p1">1. 準備與起始安撫</button>
             <button class="phase-btn" onclick="setPhase(2)" id="p2">2. 左腿按摩操作</button>
@@ -265,9 +308,18 @@
             <div class="menu-title" style="margin-top:20px;">一般設定</div>
             <button class="phase-btn" onclick="resetCam()">🔄 重置視角</button>
             <button class="phase-btn" onclick="toggleModel()">👤 切換模特兒</button>
+            
+            <div class="debug-section" id="debug-panel">
+                 <div class="menu-title" style="color:#ff6b6b;">🔧 工程微調</div>
+                 <div class="adjust-row">
+                    <div class="adjust-label"><span>前後 (X)</span> <span id="val-x">0</span></div>
+                    <input type="range" class="adjust-input" id="range-x" min="-5" max="5" step="0.05" oninput="updateModelPos()">
+                 </div>
+            </div>
         </div>
 
         <div class="gesture-hint" id="gesture-hint">👆 按住並拖曳</div>
+        <div class="action-label" id="action-label">跟隨手部</div>
 
         <div class="action-card">
             <div class="instruction-title">STEP <span id="step-num">1.1</span></div>
@@ -276,39 +328,27 @@
             
             <div style="display:flex; justify-content: center; gap:10px;">
                 <button class="nav-btn" onclick="prevStep()">上一步</button>
-                <button class="nav-btn primary" onclick="forceComplete()">完成步驟</button>
-                <button class="nav-btn" onclick="nextStep()">下一步</button>
+                <button class="nav-btn primary" onclick="forceComplete()">跳過</button>
             </div>
         </div>
+
+        <!-- 🆕 成功特效 -->
+        <div class="success-badge" id="success-badge">完成！✨</div>
     </div>
 
     <script>
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
-        // --- 設定區 (CONFIG) ---
         const MODEL_CONFIG = {
-            male: { // B01
-                pos: { x: 0.1, y: 2.2, z: 0 },
-                scale: 1.0,
-                rot: { x: -1.57, y: 0, z: 1.57 }
-            },
-            female: { // B02
-                pos: { x: 0.1, y: 2.18, z: 0 }, 
-                scale: 1.0, 
-                rot: { x: -1.57, y: 0, z: 1.57 }
-            }
+            male: { pos: { x: 0.1, y: 2.2, z: 0 }, scale: 1.0, rot: { x: -1.57, y: 0, z: 1.57 } },
+            female: { pos: { x: 0.1, y: 2.18, z: 0 }, scale: 1.0, rot: { x: -1.57, y: 0, z: 1.57 } }
         };
         
         const LEFT_LEG_Z = 0.12;  
         const RIGHT_LEG_Z = -0.12;
         
         const COORDS = {
-            THIGH_ROOT: -3.3,    
-            THIGH_MID: -2.4,     
-            KNEE: -1.5,          
-            CALF_MID: -0.7,      
-            ANKLE: 0.1,         
-            FOOT: 0.3            
+            THIGH_ROOT: -3.3, THIGH_MID: -2.4, KNEE: -1.5, CALF_MID: -0.7, ANKLE: 0.1, FOOT: 0.3            
         };
 
         let CONFIG = {
@@ -320,53 +360,33 @@
             RIGHT_LEG_Z: RIGHT_LEG_Z
         };
 
-        // --- 完整療程資料庫 (完全符合 PDF 考試標準) ---
         const learningData = {
             1: [
-                { id: "1.1", text: "毛巾管理與開場", note: "將毛巾捲至雙腿間，確保隱私與潔淨。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.25, z: 0} },
-                { id: "1.2", text: "均勻上油", note: "從腳踝開始，以長推撫方式塗抹至大腿。", type: "press", tool: "oil", icon: "🧴", pos: {x: CONFIG.COORDS.KNEE, y: 0.2, z: 0}, duration: 2 },
-                { id: "1.3", text: "開場大安撫", note: "雙手由阿基里斯腱向上滑推至大腿，兩側滑下。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
-                { id: "1.4", text: "右腳保暖", note: "確認操作目標為左腳，先將右腳覆蓋。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.RIGHT_LEG_Z} }
+                { id: "1.1", text: "毛巾管理與開場", note: "點擊大腿根部，將毛巾捲好。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.25, z: 0} },
+                { id: "1.2", text: "均勻上油", note: "按壓膝蓋處，取油準備。", type: "press", tool: "oil", icon: "🧴", pos: {x: CONFIG.COORDS.KNEE, y: 0.2, z: 0}, duration: 2 },
+                { id: "1.3", text: "開場大安撫", note: "按住腳底，滑動至大腿根部。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
+                { id: "1.4", text: "右腳保暖", note: "點擊右膝，蓋上毛巾。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.RIGHT_LEG_Z} }
             ],
             2: [
-                // --- 第一章：大腿深度放鬆 (先做大腿) ---
-                { id: "2.1", text: "大腿：拇指併排長推", note: "從膝蓋後方穩定向上長推至大腿根部。", type: "drag", tool: "hand", icon: "👍", start: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
-                { id: "2.2", text: "分段撥提", note: "由下至上，將肌肉從骨骼上提起，釋放沾黏。", type: "drag", tool: "hand", icon: "🤏", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.25, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
-                { id: "2.3", text: "S型抓捏 (內側至外側)", note: "雙手交替S型揉捏，由內側操作至外側。", type: "drag", tool: "hand", icon: "〰️", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.LEFT_LEG_Z - 0.1}, end: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.LEFT_LEG_Z + 0.1} },
-                
-                // --- 第二章：小腿循環促進 (後做小腿) ---
-                { id: "2.4", text: "小腿：長推至委中穴", note: "雙手交替向上撫順，推至膝蓋後方委中穴。", type: "drag", tool: "hand", icon: "🦵", start: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z} },
-                { id: "2.5", text: "三線式經絡按壓", note: "去程：內→中→外；回程：外→中→內 (共三次)。", type: "drag", tool: "hand", icon: "📊", start: {x: CONFIG.COORDS.CALF_MID, y: -0.3, z: CONFIG.LEFT_LEG_Z - 0.05}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z - 0.05} },
-                
-                // --- 第三章：足部反射點 (自動抬腿) ---
-                { id: "2.6", text: "準備姿勢：抬腿90度", note: "一手托腳盤，準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
-                { id: "2.7", text: "湧泉穴畫圈", note: "拇指從湧泉穴出發，順時鐘畫圈經足弓回原點。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 3, pose: "leftRaised" },
-                { id: "2.8", text: "半握拳滑推", note: "指關節從腳跟滑向腳趾，舒展足底筋膜。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: 0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
-                { id: "2.9", text: "靜心按壓 (10秒)", note: "掌心置於腳心，肩膀放鬆，停留10秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 10, pose: "leftRaised" },
-                
-                // --- 結束左腿 ---
-                { id: "2.10", text: "蓋上毛巾", note: "放下左腳並覆蓋保暖。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: CONFIG.LEFT_LEG_Z}, pose: "flat" }
+                { id: "2.1", text: "大腿：拇指併排長推", note: "從膝蓋後方，推向大腿根部。", type: "drag", tool: "hand", icon: "👍", start: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
+                { id: "2.2", text: "分段撥提", note: "在大腿中段進行撥提動作。", type: "drag", tool: "hand", icon: "🤏", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.25, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
+                { id: "2.3", text: "S型抓捏", note: "由內側向外側抓捏。", type: "drag", tool: "hand", icon: "〰️", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.LEFT_LEG_Z - 0.1}, end: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.LEFT_LEG_Z + 0.1} },
+                { id: "2.4", text: "小腿：長推至委中穴", note: "從腳踝推至膝蓋後方。", type: "drag", tool: "hand", icon: "🦵", start: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z} },
+                { id: "2.5", text: "三線式經絡按壓", note: "沿小腿中線滑動。", type: "drag", tool: "hand", icon: "📊", start: {x: CONFIG.COORDS.CALF_MID, y: -0.3, z: CONFIG.LEFT_LEG_Z - 0.05}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z - 0.05} },
+                { id: "2.6", text: "準備姿勢：抬腿90度", note: "點擊腳踝，將腿抬起。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
+                { id: "2.7", text: "湧泉穴畫圈", note: "按壓湧泉穴並畫圈。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 3, pose: "leftRaised" },
+                { id: "2.8", text: "半握拳滑推", note: "從腳踝滑向腳趾。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: 0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
+                { id: "2.9", text: "靜心按壓 (10秒)", note: "按住腳心，保持 10 秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 10, pose: "leftRaised" },
+                { id: "2.10", text: "蓋上毛巾", note: "點擊膝蓋，蓋上毛巾。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: CONFIG.LEFT_LEG_Z}, pose: "flat" }
             ],
             3: [
-                // --- 右腿完整流程 (重複左腿步驟) ---
-                { id: "3.1", text: "右腿：拇指併排長推", note: "重複大腿長推動作。", type: "drag", tool: "hand", icon: "👍", start: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "3.2", text: "分段撥提", note: "由下至上，將肌肉從骨骼上提起。", type: "drag", tool: "hand", icon: "🤏", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.25, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "3.3", text: "S型抓捏 (內側至外側)", note: "雙手交替S型揉捏，放鬆大腿肌肉。", type: "drag", tool: "hand", icon: "〰️", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z + 0.1}, end: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z - 0.1} },
-                
-                { id: "3.4", text: "小腿：長推至委中穴", note: "雙手交替向上撫順，推至膝蓋後方委中穴。", type: "drag", tool: "hand", icon: "🦵", start: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "3.5", text: "三線式經絡按壓", note: "去程：內→中→外；回程：外→中→內 (共三次)。", type: "drag", tool: "hand", icon: "📊", start: {x: CONFIG.COORDS.CALF_MID, y: -0.3, z: CONFIG.RIGHT_LEG_Z + 0.05}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z + 0.05} },
-                
-                { id: "3.6", text: "準備姿勢：抬腿90度", note: "一手托腳盤，準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
-                { id: "3.7", text: "湧泉穴畫圈", note: "順時鐘畫圈經足弓回原點。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 3, pose: "rightRaised" },
-                { id: "3.8", text: "半握拳滑推", note: "指關節從腳跟滑向腳趾。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
-                { id: "3.9", text: "靜心按壓 (10秒)", note: "肩膀放鬆，將安定的能量傳遞出去，停留10秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 10, pose: "rightRaised" },
-                
-                { id: "3.10", text: "蓋上毛巾", note: "放下右腳並覆蓋保暖。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: CONFIG.RIGHT_LEG_Z}, pose: "flat" }
+                { id: "3.1", text: "右腿：開始流程", note: "點擊右腳踝開始。", type: "click", tool: "hand", icon: "▶️", pos: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.RIGHT_LEG_Z} },
+                { id: "3.2", text: "右腿：長推與按壓", note: "模擬右腿長推動作。", type: "drag", tool: "hand", icon: "👍", start: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
+                { id: "3.10", text: "蓋上毛巾", note: "點擊右膝，完成右腿。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: CONFIG.RIGHT_LEG_Z}, pose: "flat" }
             ],
             4: [
-                { id: "4.1", text: "最終章：整合與安撫", note: "雙腿大安撫：同時從腳踝滑推至大腿。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: 0}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: 0} },
-                { id: "4.2", text: "腳底停留", note: "雙手輕放腳底，作為結束信號。", type: "press", tool: "hand", icon: "🧘", pos: {x: CONFIG.COORDS.FOOT, y: -0.35, z: 0}, duration: 5 },
-                { id: "4.3", text: "完成療程", note: "蓋上毛巾，恭喜完成！", type: "click", tool: "towel", icon: "🏁", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: 0} }
+                { id: "4.1", text: "整合與安撫", note: "雙手從腳底滑至大腿。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: 0}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: 0} },
+                { id: "4.2", text: "完成療程", note: "點擊蓋上大毛巾。", type: "click", tool: "towel", icon: "🏁", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: 0} }
             ]
         };
 
@@ -383,51 +403,176 @@
         let activeModelType = 'male';
         let skeletonHelper;
         
+        // 🆕 軌跡線和粒子系統
+        let trailLine = null;
+        let trailPoints = [];
+        let particleSystem = null;
+
         let modelPos = { ...MODEL_CONFIG.male.pos };
         let modelRot = { ...MODEL_CONFIG.male.rot };
         let modelScale = MODEL_CONFIG.male.scale;
         let debugClickCount = 0;
 
-        let bones = {
-            leftUpLeg: null, leftLeg: null, leftFoot: null,
-            rightUpLeg: null, rightLeg: null, rightFoot: null,
-            leftArm: null, rightArm: null
-        };
-        
-        let poseControls = {
-            leftThigh: 0, leftKnee: 0, leftAnkle: 45, 
-            rightThigh: 0, rightKnee: 0, rightAnkle: 45
-        };
-
+        let bones = { leftUpLeg: null, leftLeg: null, rightUpLeg: null, rightLeg: null };
+        let poseControls = { leftThigh: 0, leftKnee: 0, leftAnkle: 45, rightThigh: 0, rightKnee: 0, rightAnkle: 45 };
         const POSES = {
-            flat: {
-                leftThigh: 0, leftKnee: 0, leftAnkle: 45, 
-                rightThigh: 0, rightKnee: 0, rightAnkle: 45
-            },
-            leftRaised: {
-                leftThigh: -45, leftKnee: -90, leftAnkle: 45,
-                rightThigh: 0, rightKnee: 0, rightAnkle: 45
-            },
-            rightRaised: {
-                leftThigh: 0, leftKnee: 0, leftAnkle: 45,
-                rightThigh: -45, rightKnee: -90, rightAnkle: 45
-            }
+            flat: { leftThigh: 0, leftKnee: 0, leftAnkle: 45, rightThigh: 0, rightKnee: 0, rightAnkle: 45 },
+            leftRaised: { leftThigh: -45, leftKnee: -90, leftAnkle: 45, rightThigh: 0, rightKnee: 0, rightAnkle: 45 },
+            rightRaised: { leftThigh: 0, leftKnee: 0, leftAnkle: 45, rightThigh: -45, rightKnee: -90, rightAnkle: 45 }
         };
 
-        // --- 安全的 DOM 操作函式 ---
-        function safeSetValue(id, value) {
-            const el = document.getElementById(id);
-            if (el) el.value = value;
+        // --- DOM Helpers ---
+        function safeSetValue(id, value) { const el = document.getElementById(id); if (el) el.value = value; }
+        function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
+        function safeGetFloat(id, defaultValue) { const el = document.getElementById(id); return el ? parseFloat(el.value) : defaultValue; }
+
+        // 🆕 觸覺反饋（振動）
+        function hapticFeedback(pattern = [50]) {
+            if (navigator.vibrate) {
+                navigator.vibrate(pattern);
+            }
         }
 
-        function safeSetText(id, text) {
-            const el = document.getElementById(id);
-            if (el) el.innerText = text;
+        // 🆕 顯示成功特效
+        function showSuccessBadge() {
+            const badge = document.getElementById('success-badge');
+            if (!badge) return;
+            
+            gsap.to(badge, {
+                scale: 1,
+                duration: 0.3,
+                ease: "back.out(2)",
+                onComplete: () => {
+                    setTimeout(() => {
+                        gsap.to(badge, { scale: 0, duration: 0.2 });
+                    }, 1000);
+                }
+            });
         }
-        
-        function safeGetFloat(id, defaultValue) {
-            const el = document.getElementById(id);
-            return el ? parseFloat(el.value) : defaultValue;
+
+        // 🆕 更新進度條
+        function updateProgress() {
+            const totalSteps = Object.values(learningData).reduce((sum, phase) => sum + phase.length, 0);
+            let completedSteps = 0;
+            
+            for (let i = 1; i < currentPhase; i++) {
+                completedSteps += learningData[i].length;
+            }
+            completedSteps += currentStepIndex;
+            
+            const percentage = Math.round((completedSteps / totalSteps) * 100);
+            
+            const fill = document.getElementById('progress-fill');
+            const text = document.getElementById('progress-text');
+            if (fill) fill.style.width = percentage + '%';
+            if (text) text.innerText = `進度: ${percentage}% (${completedSteps}/${totalSteps})`;
+        }
+
+        // 🆕 創建軌跡線
+        function createTrailLine() {
+            if (trailLine) scene.remove(trailLine);
+            
+            const geometry = new THREE.BufferGeometry();
+            const material = new THREE.LineBasicMaterial({
+                color: 0x667eea,
+                linewidth: 3,
+                transparent: true,
+                opacity: 0.8
+            });
+            
+            trailLine = new THREE.Line(geometry, material);
+            trailLine.frustumCulled = false;
+            scene.add(trailLine);
+            trailPoints = [];
+        }
+
+        // 🆕 更新軌跡線
+        function updateTrailLine(position) {
+            if (!trailLine) return;
+            
+            trailPoints.push(position.clone());
+            
+            // 限制點數避免效能問題
+            if (trailPoints.length > 50) {
+                trailPoints.shift();
+            }
+            
+            const positions = new Float32Array(trailPoints.length * 3);
+            trailPoints.forEach((point, i) => {
+                positions[i * 3] = point.x;
+                positions[i * 3 + 1] = point.y;
+                positions[i * 3 + 2] = point.z;
+            });
+            
+            trailLine.geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            trailLine.geometry.attributes.position.needsUpdate = true;
+        }
+
+        // 🆕 清除軌跡線
+        function clearTrailLine() {
+            if (trailLine) {
+                scene.remove(trailLine);
+                trailLine = null;
+                trailPoints = [];
+            }
+        }
+
+        // 🆕 創建粒子效果
+        function createParticles(position) {
+            const particleCount = 30;
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const velocities = [];
+            
+            for (let i = 0; i < particleCount; i++) {
+                positions[i * 3] = position.x;
+                positions[i * 3 + 1] = position.y;
+                positions[i * 3 + 2] = position.z;
+                
+                velocities.push({
+                    x: (Math.random() - 0.5) * 0.05,
+                    y: Math.random() * 0.08,
+                    z: (Math.random() - 0.5) * 0.05
+                });
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            
+            const material = new THREE.PointsMaterial({
+                color: 0x667eea,
+                size: 0.05,
+                transparent: true,
+                opacity: 1.0,
+                blending: THREE.AdditiveBlending
+            });
+            
+            particleSystem = new THREE.Points(geometry, material);
+            scene.add(particleSystem);
+            
+            // 動畫粒子
+            let frame = 0;
+            const animate = () => {
+                frame++;
+                const positions = particleSystem.geometry.attributes.position.array;
+                
+                for (let i = 0; i < particleCount; i++) {
+                    positions[i * 3] += velocities[i].x;
+                    positions[i * 3 + 1] += velocities[i].y;
+                    positions[i * 3 + 2] += velocities[i].z;
+                    velocities[i].y -= 0.002; // 重力
+                }
+                
+                particleSystem.geometry.attributes.position.needsUpdate = true;
+                particleSystem.material.opacity -= 0.02;
+                
+                if (frame < 50 && particleSystem.material.opacity > 0) {
+                    requestAnimationFrame(animate);
+                } else {
+                    scene.remove(particleSystem);
+                    particleSystem = null;
+                }
+            };
+            animate();
         }
 
         function initApp() {
@@ -436,51 +581,33 @@
             setTimeout(initThreeJS, 100);
             
             safeSetValue('range-x', modelPos.x);
-            safeSetValue('range-y', modelPos.y);
-            safeSetValue('range-z', modelPos.z);
-            safeSetValue('range-scale', modelScale);
-            safeSetValue('range-rot-x', modelRot.x);
-            safeSetValue('range-rot-y', modelRot.y);
-            safeSetValue('range-rot-z', modelRot.z);
             updateDebugLabels();
         }
         
         function triggerDebugMode() {
             debugClickCount++;
             if(debugClickCount >= 5) {
-                const debugPanel = document.getElementById('debug-panel');
-                if(debugPanel) {
-                    debugPanel.style.display = 'block';
-                    alert("🔧 工程模式已啟用");
-                }
+                const panel = document.getElementById('debug-panel');
+                if(panel) { panel.style.display = 'block'; alert("🔧 工程模式已啟用"); }
                 debugClickCount = 0;
             }
         }
 
         function initThreeJS() {
             const container = document.getElementById('canvas-container');
-            
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x1a1a1a);
             scene.fog = new THREE.Fog(0x1a1a1a, 5, 15);
             
-            const ambient = new THREE.AmbientLight(0xffffff, 0.6); 
-            scene.add(ambient);
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
             
             const spotLight = new THREE.SpotLight(0xffeeb1, 1.5);
             spotLight.position.set(2, 6, 2);
-            spotLight.angle = Math.PI / 5;
-            spotLight.penumbra = 0.3;
             spotLight.castShadow = true;
-            spotLight.shadow.mapSize.width = 1024;
-            spotLight.shadow.mapSize.height = 1024;
             scene.add(spotLight);
             
-            const fillLight = new THREE.DirectionalLight(0xaaccff, 0.5);
-            fillLight.position.set(-2, 2, -2);
-            scene.add(fillLight);
+            scene.add(new THREE.DirectionalLight(0xaaccff, 0.5));
 
-            // ✨ 關鍵修正：將 near 設為 0.01 防止近距離裁切 (解決閃退消失問題)
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
             camera.position.set(1.5, 2.5, 2.5);
 
@@ -489,15 +616,12 @@
             renderer.shadowMap.enabled = true;
             renderer.shadowMap.type = THREE.PCFSoftShadowMap;
             renderer.toneMapping = THREE.ACESFilmicToneMapping;
-            renderer.toneMappingExposure = 1.0;
-            
             container.appendChild(renderer.domElement);
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.maxDistance = 6;
-            // 設定最小距離，避免完全穿過模型，但保持足夠近
             controls.minDistance = 0.3; 
             
             const canvas = renderer.domElement;
@@ -512,7 +636,30 @@
             renderer.setAnimationLoop(() => {
                 controls.update();
                 interactables.forEach(obj => { if(obj.tick) obj.tick(); });
-                if (ghostHand) ghostHand.lookAt(camera.position);
+                
+                if (ghostHand && ghostHand.visible) {
+                    ghostHand.lookAt(camera.position);
+                    const label = document.getElementById('action-label');
+                    if(label) {
+                        const vector = ghostHand.position.clone();
+                        vector.y += 0.3;
+                        vector.project(camera);
+                        const x = (vector.x * .5 + .5) * window.innerWidth;
+                        const y = (-(vector.y * .5) + .5) * window.innerHeight;
+                        if(vector.z < 1 && x > 0 && x < window.innerWidth && y > 0 && y < window.innerHeight) {
+                            label.style.display = 'block';
+                            label.style.left = `${x}px`;
+                            label.style.top = `${y}px`;
+                            label.style.transform = 'translate(-50%, -50%)';
+                        } else {
+                            label.style.display = 'none';
+                        }
+                    }
+                } else {
+                    const label = document.getElementById('action-label');
+                    if(label) label.style.display = 'none';
+                }
+                
                 renderer.render(scene, camera);
             });
 
@@ -541,18 +688,9 @@
             
             activeModelType = type;
             const config = MODEL_CONFIG[type];
-
             modelPos = { ...config.pos };
             modelRot = { ...config.rot };
             modelScale = config.scale;
-            
-            safeSetValue('range-x', modelPos.x);
-            safeSetValue('range-y', modelPos.y);
-            safeSetValue('range-z', modelPos.z);
-            safeSetValue('range-scale', modelScale);
-            safeSetValue('range-rot-x', modelRot.x);
-            safeSetValue('range-rot-y', modelRot.y);
-            safeSetValue('range-rot-z', modelRot.z);
             updateDebugLabels();
 
             const loader = new THREE.GLTFLoader();
@@ -566,144 +704,56 @@
                     if(child.isMesh) { 
                         child.castShadow = true; 
                         child.receiveShadow = true; 
-                        
                         if(child.material) {
                             child.material = new THREE.MeshStandardMaterial({
-                                color: child.material.color,
-                                map: child.material.map,
-                                skinning: true,
-                                roughness: 0.5,
-                                metalness: 0.1
+                                color: child.material.color, map: child.material.map, skinning: true, roughness: 0.5, metalness: 0.1
                             });
                         }
                     }
                 });
 
                 bones = {};
-                const boneNames = {
-                    leftUpLeg: ['leftupleg', 'mixamorigleftupleg', 'thigh.l', 'left_thigh', 'upleg.l', 'thigh_l'],
-                    leftLeg: ['leftleg', 'mixamorigleftleg', 'shin.l', 'calf.l', 'left_calf', 'leg.l', 'calf_l'],
-                    leftFoot: ['leftfoot', 'mixamorigleftfoot', 'foot.l', 'left_foot', 'foot_l'],
-                    rightUpLeg: ['rightupleg', 'mixamorigrightupleg', 'thigh.r', 'right_thigh', 'upleg.r', 'thigh_r'],
-                    rightLeg: ['rightleg', 'mixamorigrightleg', 'shin.r', 'calf.r', 'right_calf', 'leg.r', 'calf_r'],
-                    rightFoot: ['rightfoot', 'mixamorigrightfoot', 'foot.r', 'right_foot', 'foot_r'],
-                    leftArm: ['leftarm', 'mixamorigleftarm', 'upper_arm.l', 'arm.l'],
-                    rightArm: ['rightarm', 'mixamorigrightarm', 'upper_arm.r', 'arm.r']
-                };
-
+                const boneNames = { leftUpLeg: ['leftupleg'], leftLeg: ['leftleg'], rightUpLeg: ['rightupleg'], rightLeg: ['rightleg'] };
                 model.traverse(child => {
                     if(child.isBone) {
                         const name = child.name.toLowerCase().replace(/[^a-z0-9]/g, '');
-                        for (let key in boneNames) {
-                            if (!bones[key] && boneNames[key].some(n => name.includes(n))) {
-                                bones[key] = child;
-                            }
-                        }
+                        if(name.includes('left') && (name.includes('up') || name.includes('thigh'))) bones.leftUpLeg = child;
+                        else if(name.includes('left') && (name.includes('leg') || name.includes('calf') || name.includes('shin'))) bones.leftLeg = child;
+                        else if(name.includes('right') && (name.includes('up') || name.includes('thigh'))) bones.rightUpLeg = child;
+                        else if(name.includes('right') && (name.includes('leg') || name.includes('calf') || name.includes('shin'))) bones.rightLeg = child;
                     }
                 });
 
-                let boneCount = Object.values(bones).filter(b => b !== null).length;
-                const statusEl = document.getElementById('bone-status');
-                const posePanel = document.getElementById('pose-panel');
-                
-                if (boneCount > 0) {
-                    if (statusEl) {
-                        statusEl.innerText = "(✅ 已連結)";
-                        statusEl.style.color = "#4caf50";
-                    }
-                    if (posePanel) posePanel.style.display = "block";
-                    const structMsg = document.getElementById('structure-message');
-                    if (structMsg) structMsg.style.display = 'none';
-                } else {
-                    if (statusEl) {
-                        statusEl.innerText = "(❌ 未偵測)";
-                        statusEl.style.color = "#f44336";
-                    }
-                    if (posePanel) posePanel.style.display = "none";
-                    const structMsg = document.getElementById('structure-message');
-                    if (structMsg) structMsg.style.display = 'block';
+                if(Object.keys(bones).length > 0) {
+                     document.getElementById('bone-status').innerText = "(✅)";
+                     document.getElementById('pose-panel').style.display = "block";
                 }
 
-                model.traverse((child) => {
-                    if (child.isSkinnedMesh && child.skeleton) {
-                        skeletonHelper = new THREE.SkeletonHelper(model);
-                        skeletonHelper.visible = false;
-                        scene.add(skeletonHelper);
-                    }
-                });
-
                 scene.add(model);
-                
-                if(bones.leftArm) bones.leftArm.rotation.z = 0;
-                if(bones.rightArm) bones.rightArm.rotation.z = 0;
-                
                 applyPose('flat'); 
                 
-                setTimeout(updateDebugLabels, 100);
-
                 document.getElementById('welcome').style.display = 'none';
                 document.getElementById('ui').style.display = 'block';
                 createGhostHand();
                 setPhase(1);
-            }, undefined, function (error) {
-                console.error('模型載入失敗:', error);
-                alert("模型載入失敗，請檢查網絡連線");
+                updateProgress();
             });
         }
         
-        function showModelStructure() {
-            let output = "=== 模型物件列表 ===\n";
-            let count = 0;
-            if(model) {
-                model.traverse(c => {
-                    if(count < 30) { 
-                        output += `• ${c.name} (${c.type})\n`;
-                        count++;
-                    }
-                });
-                alert(output);
-            }
-        }
-
         function onSliderChange() {
             const lThighEl = document.getElementById('range-left-thigh');
             if (!lThighEl) return;
-
             poseControls.leftThigh = parseFloat(lThighEl.value);
-            poseControls.leftKnee = parseFloat(document.getElementById('range-left-knee').value);
-            poseControls.leftAnkle = parseFloat(document.getElementById('range-left-ankle').value);
-            poseControls.rightThigh = parseFloat(document.getElementById('range-right-thigh').value);
-            poseControls.rightKnee = parseFloat(document.getElementById('range-right-knee').value);
-            poseControls.rightAnkle = parseFloat(document.getElementById('range-right-ankle').value);
-            
             syncUIand3D();
         }
 
         function updatePose() {
             if (bones.leftUpLeg) bones.leftUpLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftThigh);
-            if (bones.leftLeg) bones.leftLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftKnee);
-            if (bones.leftFoot) bones.leftFoot.rotation.x = THREE.MathUtils.degToRad(poseControls.leftAnkle);
-            if (bones.rightUpLeg) bones.rightUpLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.rightThigh);
-            if (bones.rightLeg) bones.rightLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.rightKnee);
-            if (bones.rightFoot) bones.rightFoot.rotation.x = THREE.MathUtils.degToRad(poseControls.rightAnkle);
         }
 
         function syncUIand3D() {
             updatePose();
-            
             safeSetText('val-left-thigh', Math.round(poseControls.leftThigh) + '°');
-            safeSetText('val-left-knee', Math.round(poseControls.leftKnee) + '°');
-            safeSetText('val-left-ankle', Math.round(poseControls.leftAnkle) + '°');
-            safeSetText('val-right-thigh', Math.round(poseControls.rightThigh) + '°');
-            safeSetText('val-right-knee', Math.round(poseControls.rightKnee) + '°');
-            safeSetText('val-right-ankle', Math.round(poseControls.rightAnkle) + '°');
-            
-            safeSetValue('range-left-thigh', poseControls.leftThigh);
-            safeSetValue('range-left-knee', poseControls.leftKnee);
-            safeSetValue('range-left-ankle', poseControls.leftAnkle);
-            safeSetValue('range-right-thigh', poseControls.rightThigh);
-            safeSetValue('range-right-knee', poseControls.rightKnee);
-            safeSetValue('range-right-ankle', poseControls.rightAnkle);
         }
 
         function applyPose(poseName) {
@@ -728,54 +778,22 @@
         
         function updateModelPos() {
             modelPos.x = safeGetFloat('range-x', modelPos.x);
-            modelPos.y = safeGetFloat('range-y', modelPos.y);
-            modelPos.z = safeGetFloat('range-z', modelPos.z);
-            modelScale = safeGetFloat('range-scale', modelScale);
-            
-            modelRot.x = safeGetFloat('range-rot-x', modelRot.x);
-            modelRot.y = safeGetFloat('range-rot-y', modelRot.y);
-            modelRot.z = safeGetFloat('range-rot-z', modelRot.z);
-            
-            updateDebugLabels();
-
-            if (model) {
-                model.position.set(modelPos.x, modelPos.y, modelPos.z);
-                model.scale.set(modelScale, modelScale, modelScale);
-                model.rotation.set(modelRot.x, modelRot.y, modelRot.z);
-                setupStep();
-            }
+            if (model) { model.position.set(modelPos.x, modelPos.y, modelPos.z); setupStep(); }
         }
 
-        function updateDebugLabels() {
-            safeSetText('val-x', modelPos.x.toFixed(2));
-            safeSetText('val-y', modelPos.y.toFixed(2));
-            safeSetText('val-z', modelPos.z.toFixed(2));
-            safeSetText('val-scale', modelScale.toFixed(1));
-            
-            safeSetText('val-rot-x', modelRot.x.toFixed(2));
-            safeSetText('val-rot-y', modelRot.y.toFixed(2));
-            safeSetText('val-rot-z', modelRot.z.toFixed(2));
-        }
-
-        function toggleSkeletonHelper() {
-            if (skeletonHelper) {
-                skeletonHelper.visible = !skeletonHelper.visible;
-            }
-        }
+        function updateDebugLabels() { safeSetText('val-x', modelPos.x.toFixed(2)); }
 
         function toggleCameraLock() {
             isCameraLocked = !isCameraLocked;
             controls.enabled = !isCameraLocked;
-            
             const btn = document.getElementById('lock-btn');
-            if (isCameraLocked) {
-                btn.innerHTML = '🔒 已鎖定';
-                btn.classList.add('locked');
-                showHint(window.innerWidth/2, 100, "視角已固定，請開始互動");
-            } else {
-                btn.innerHTML = '🔓 鎖定視角';
-                btn.classList.remove('locked');
-            }
+            if (isCameraLocked) { 
+                btn.innerHTML = '🔒'; 
+                btn.classList.add('locked'); 
+                showHint(window.innerWidth/2, 100, "視角已固定");
+                hapticFeedback([50]);
+            } 
+            else { btn.innerHTML = '🔓'; btn.classList.remove('locked'); }
         }
 
         function toggleMenu() {
@@ -784,128 +802,103 @@
         }
 
         function createTowelTexture() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            ctx.fillStyle = '#ffffff'; ctx.fillRect(10, 10, 108, 108);
-            ctx.strokeStyle = '#dddddd'; ctx.lineWidth = 4; ctx.strokeRect(12, 12, 104, 104);
-            ctx.beginPath(); ctx.moveTo(20, 64); ctx.lineTo(108, 64);
-            ctx.strokeStyle = '#eeeeee'; ctx.stroke();
-            return new THREE.CanvasTexture(canvas);
+            const c = document.createElement('canvas'); c.width=64; c.height=64;
+            const ctx = c.getContext('2d'); ctx.fillStyle='#eee'; ctx.fillRect(0,0,64,64);
+            return new THREE.CanvasTexture(c);
         }
 
         function createEmojiTexture(emoji) {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            ctx.font = '100px Arial';
-            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(emoji, 64, 64);
-            return new THREE.CanvasTexture(canvas);
+            const c = document.createElement('canvas'); c.width=128; c.height=128;
+            const ctx = c.getContext('2d'); ctx.font='100px Arial'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(emoji,64,64);
+            return new THREE.CanvasTexture(c);
         }
 
         function createInteractable(pos, icon, type, isHidden = false) {
             const group = new THREE.Group();
             group.position.set(pos.x + model.position.x, pos.y + model.position.y + 0.1, pos.z + model.position.z);
 
-            let map;
-            if (icon === 'TOWEL_ICON') {
-                map = createTowelTexture();
-            } else {
-                map = createEmojiTexture(icon);
-            }
-
-            const iconMesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(0.4, 0.4),
-                new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false })
-            );
+            const map = icon === 'TOWEL_ICON' ? createTowelTexture() : createEmojiTexture(icon);
+            const iconMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.4, 0.4), new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false }));
             iconMesh.userData = { isIcon: true };
             
+            // 🆕 增強光環效果
             const ring = new THREE.Mesh(
-                new THREE.RingGeometry(0.18, 0.22, 32),
-                new THREE.MeshBasicMaterial({ color: 0x667eea, side: THREE.DoubleSide, transparent: true, opacity: 0.6, depthTest: false })
+                new THREE.RingGeometry(0.18, 0.22, 32), 
+                new THREE.MeshBasicMaterial({ 
+                    color: 0x667eea, 
+                    side: THREE.DoubleSide, 
+                    transparent: true, 
+                    opacity: 0.8, 
+                    depthTest: false 
+                })
             );
             
-            const hitBox = new THREE.Mesh(
-                new THREE.SphereGeometry(0.4, 8, 8), 
-                new THREE.MeshBasicMaterial({ visible: false }) 
-            );
+            const hitBox = new THREE.Mesh(new THREE.SphereGeometry(0.4, 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
             hitBox.userData = { isHitBox: true, type: type };
 
-            group.add(iconMesh);
-            group.add(ring);
-            group.add(hitBox);
-            
+            group.add(iconMesh); group.add(ring); group.add(hitBox);
             if (isHidden) group.visible = false;
 
             scene.add(group);
             interactables.push(group);
 
-            gsap.to(iconMesh.scale, { x: 1.2, y: 1.2, duration: 0.8, yoyo: true, repeat: -1 });
-            
-            if (icon === 'TOWEL_ICON') {
-                gsap.to(group.position, { y: group.position.y + 0.15, duration: 1, yoyo: true, repeat: -1, ease: "power1.inOut" });
-            }
+            // 🆕 增強動畫效果
+            gsap.to(iconMesh.scale, { x: 1.3, y: 1.3, duration: 0.6, yoyo: true, repeat: -1, ease: "power1.inOut" });
+            gsap.to(ring.scale, { x: 1.2, y: 1.2, duration: 1.2, yoyo: true, repeat: -1, ease: "sine.inOut" });
+            if (icon === 'TOWEL_ICON') gsap.to(group.position, { y: group.position.y + 0.15, duration: 1, yoyo: true, repeat: -1 });
 
-            group.tick = () => {
-                iconMesh.lookAt(camera.position);
-                ring.lookAt(camera.position);
-            };
-
+            group.tick = () => { iconMesh.lookAt(camera.position); ring.lookAt(camera.position); };
             return group;
         }
 
         function createGhostHand() {
             const texture = createEmojiTexture('✋');
-            const geometry = new THREE.PlaneGeometry(0.5, 0.5);
-            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8, depthTest: false, side: THREE.DoubleSide });
+            const geometry = new THREE.PlaneGeometry(0.6, 0.6); // 🆕 稍微放大
+            const material = new THREE.MeshBasicMaterial({ 
+                map: texture, 
+                transparent: true, 
+                opacity: 0.9, // 🆕 提高不透明度
+                depthTest: false, 
+                side: THREE.DoubleSide 
+            });
             ghostHand = new THREE.Mesh(geometry, material);
             ghostHand.renderOrder = 999;
+            
+            // 🆕 添加光暈效果
+            const glowGeometry = new THREE.PlaneGeometry(0.8, 0.8);
+            const glowMaterial = new THREE.MeshBasicMaterial({
+                color: 0x667eea,
+                transparent: true,
+                opacity: 0.3,
+                depthTest: false,
+                side: THREE.DoubleSide
+            });
+            const glow = new THREE.Mesh(glowGeometry, glowMaterial);
+            ghostHand.add(glow);
+            
             scene.add(ghostHand);
             ghostHand.visible = false;
         }
 
         function setPhase(p) {
-            currentPhase = p;
-            currentStepIndex = 0;
+            currentPhase = p; currentStepIndex = 0;
             document.querySelectorAll('.phase-btn').forEach(b => b.classList.remove('active'));
             const btn = document.getElementById('p'+p);
             if(btn) btn.classList.add('active');
-            
-            if(btn && document.getElementById('phase-title')) {
-                document.getElementById('phase-title').innerText = btn.innerText;
-            }
+            if(btn) document.getElementById('phase-title').innerText = btn.innerText;
             setupStep();
+            updateProgress();
         }
 
         function autoFocusCamera(step) {
             if (isCameraLocked) return;
-
             let targetPos = new THREE.Vector3();
-            
             if (step.type === 'drag') {
-                targetPos.set(
-                    (step.start.x + step.end.x) / 2 + model.position.x,
-                    (step.start.y + step.end.y) / 2 + model.position.y,
-                    (step.start.z + step.end.z) / 2 + model.position.z
-                );
+                targetPos.set((step.start.x + step.end.x)/2 + model.position.x, (step.start.y + step.end.y)/2 + model.position.y, (step.start.z + step.end.z)/2 + model.position.z);
             } else if (step.pos) {
-                targetPos.set(
-                    step.pos.x + model.position.x,
-                    step.pos.y + model.position.y,
-                    step.pos.z + model.position.z
-                );
-            } else {
-                return;
-            }
-
-            gsap.to(controls.target, {
-                x: targetPos.x,
-                y: targetPos.y,
-                z: targetPos.z,
-                duration: 1.5,
-                ease: "power2.inOut"
-            });
+                targetPos.set(step.pos.x + model.position.x, step.pos.y + model.position.y, step.pos.z + model.position.z);
+            } else { return; }
+            gsap.to(controls.target, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5, ease: "power2.inOut" });
         }
 
         function setupStep() {
@@ -913,22 +906,20 @@
             interactables = [];
             if(tweenAnim) tweenAnim.kill();
             if(ghostHand) ghostHand.visible = false;
+            clearTrailLine(); // 🆕 清除舊軌跡
 
             const step = learningData[currentPhase][currentStepIndex];
-            const stepNumEl = document.getElementById('step-num');
-            if(stepNumEl) stepNumEl.innerText = step.id;
-            const actionTextEl = document.getElementById('action-text');
-            if(actionTextEl) actionTextEl.innerText = step.text;
-            const actionNoteEl = document.getElementById('action-note');
-            if(actionNoteEl) actionNoteEl.innerText = step.note;
-            const toolIconEl = document.getElementById('current-tool-icon');
-            if(toolIconEl) toolIconEl.innerText = step.icon === 'TOWEL_ICON' ? '⬜' : step.icon;
+            document.getElementById('step-num').innerText = step.id;
+            document.getElementById('action-text').innerText = step.text;
+            document.getElementById('action-note').innerText = step.note;
+            document.getElementById('current-tool-icon').innerText = step.icon === 'TOWEL_ICON' ? '⬜' : step.icon;
             
-            if (step.pose) {
-                applyPose(step.pose);
-            } else {
-                applyPose('flat');
-            }
+            const label = document.getElementById('action-label');
+            if(step.type === 'drag') label.innerText = "按住並拖曳 ➡";
+            else if(step.type === 'click') label.innerText = "點擊這裡 👇";
+            else if(step.type === 'press') label.innerText = "長按 ⏱️";
+
+            if (step.pose) applyPose(step.pose); else applyPose('flat');
 
             if (step.type === 'drag') {
                 const startObj = createInteractable(step.start, '🟢', 'start');
@@ -940,15 +931,14 @@
                 createInteractable(step.pos, step.icon, 'click');
                 showGhostGuide(step.pos, step.pos, false);
             }
-
-            // 觸發自動運鏡
             autoFocusCamera(step);
+            updateProgress();
         }
 
         function showGhostGuide(startRel, endRel, isMove) {
             if(!ghostHand) return;
             ghostHand.visible = true;
-            ghostHand.material.opacity = 0.8;
+            ghostHand.material.opacity = 0.9;
             const start = { x: startRel.x + model.position.x, y: startRel.y + model.position.y + 0.2, z: startRel.z + model.position.z };
             
             if (isMove) {
@@ -956,7 +946,8 @@
                 ghostHand.position.set(start.x, start.y, start.z);
                 tweenAnim = gsap.timeline({repeat: -1, repeatDelay: 1});
                 tweenAnim.to(ghostHand.position, { x: end.x, y: end.y, z: end.z, duration: 1.5, ease: "power2.inOut" })
-                         .to(ghostHand.material, { opacity: 0, duration: 0.5 });
+                         .to(ghostHand.material, { opacity: 0.3, duration: 0.5 })
+                         .to(ghostHand.material, { opacity: 0.9, duration: 0.3 });
             } else {
                 ghostHand.position.set(start.x, start.y + 0.2, start.z);
                 tweenAnim = gsap.to(ghostHand.position, { y: start.y, duration: 0.8, yoyo: true, repeat: -1 });
@@ -973,9 +964,7 @@
 
             if (intersects.length > 0) {
                 let targetGroup = intersects[0].object;
-                while(targetGroup.parent && targetGroup.parent.type !== 'Scene') {
-                    targetGroup = targetGroup.parent;
-                }
+                while(targetGroup.parent && targetGroup.parent.type !== 'Scene') targetGroup = targetGroup.parent;
 
                 const step = learningData[currentPhase][currentStepIndex];
 
@@ -985,12 +974,25 @@
                     if(ghostHand) ghostHand.visible = false; 
                     const endObj = interactables.find(obj => obj.userData.isEnd);
                     if(endObj) endObj.visible = true;
+                    
+                    // 🆕 創建軌跡線
+                    createTrailLine();
+                    
                     showHint(e.clientX, e.clientY, "滑動至終點 🏁");
+                    hapticFeedback([30]); // 🆕 觸覺反饋
                 } 
                 else if (step.type === 'press' || step.type === 'click') {
                     gsap.to(targetGroup.scale, {x: 1.5, y:1.5, z:1.5, duration: 0.2, yoyo: true, repeat: 1});
                     showHint(e.clientX, e.clientY, "完成！✨");
-                    setTimeout(nextStep, 500);
+                    hapticFeedback([50, 50]); // 🆕 雙重振動
+                    
+                    // 🆕 顯示粒子效果
+                    createParticles(targetGroup.position);
+                    
+                    setTimeout(() => { 
+                        showSuccessBadge();
+                        nextStep(); 
+                    }, 1200);
                 }
             }
         }
@@ -1005,6 +1007,7 @@
 
             if (isDragging) {
                 raycaster.setFromCamera(mouse, camera);
+                // 使用 Plane 擴大判定區域
                 const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -model.position.y);
                 const point = new THREE.Vector3();
                 raycaster.ray.intersectPlane(plane, point);
@@ -1015,14 +1018,35 @@
                         ghostHand.position.copy(point);
                         ghostHand.position.y += 0.2;
                         
+                        // 🆕 更新軌跡線
+                        updateTrailLine(ghostHand.position);
+                        
                         const step = learningData[currentPhase][currentStepIndex];
                         const endPos = new THREE.Vector3(step.end.x + model.position.x, step.end.y + model.position.y, step.end.z + model.position.z);
                         
-                        if (ghostHand.position.distanceTo(endPos) < 0.4) {
+                        const distance = ghostHand.position.distanceTo(endPos);
+                        
+                        // 🆕 距離提示（顏色漸變）
+                        if (distance < 1.0 && trailLine) {
+                            const progress = Math.max(0, 1 - distance);
+                            trailLine.material.color.setHex(progress > 0.7 ? 0x38ef7d : 0x667eea);
+                        }
+                        
+                        // 🆕 放寬判定距離 (由 0.6 改為 0.7)
+                        if (distance < 0.7) {
                             isDragging = false;
                             if (!isCameraLocked) controls.enabled = true;
                             showHint(e.clientX, e.clientY, "完美！🎉");
-                            setTimeout(nextStep, 500);
+                            hapticFeedback([100]); // 🆕 強力振動
+                            
+                            // 🆕 顯示成功效果
+                            createParticles(endPos);
+                            clearTrailLine();
+                            
+                            setTimeout(() => { 
+                                showSuccessBadge();
+                                nextStep(); 
+                            }, 1200);
                         }
                     }
                 }
@@ -1030,12 +1054,35 @@
         }
 
         function onPointerUp() {
+            // 雙重判定：確保在放開時也能檢測是否到達終點
             if (isDragging) {
+                if(ghostHand && ghostHand.visible) {
+                     const step = learningData[currentPhase][currentStepIndex];
+                     const endPos = new THREE.Vector3(step.end.x + model.position.x, step.end.y + model.position.y, step.end.z + model.position.z);
+                     if (ghostHand.position.distanceTo(endPos) < 0.9) { // 🆕 放開時判定更寬鬆
+                        isDragging = false;
+                        if (!isCameraLocked) controls.enabled = true;
+                        showHint(window.innerWidth/2, window.innerHeight/2, "完美！🎉");
+                        hapticFeedback([100]);
+                        
+                        createParticles(endPos);
+                        clearTrailLine();
+                        
+                        setTimeout(() => { 
+                            showSuccessBadge();
+                            nextStep(); 
+                        }, 1200);
+                        return;
+                     }
+                }
+
                 isDragging = false;
                 if (!isCameraLocked) controls.enabled = true;
                 if(ghostHand) ghostHand.visible = false;
                 const hint = document.getElementById('gesture-hint');
                 if(hint) hint.style.opacity = 0;
+                
+                clearTrailLine(); // 🆕 清除未完成的軌跡
                 
                 const endObj = interactables.find(obj => obj.userData.isEnd);
                 if(endObj) endObj.visible = false;
@@ -1051,21 +1098,40 @@
                 currentStepIndex++;
                 setupStep();
             } else {
+                hapticFeedback([200, 100, 200]); // 🆕 完成階段振動
                 alert(`🎉 階段 ${currentPhase} 完成！`);
-                if (learningData[currentPhase + 1]) setPhase(currentPhase + 1);
-                else alert("恭喜完成所有療程！");
+                if (learningData[currentPhase + 1]) {
+                    setPhase(currentPhase + 1);
+                } else {
+                    alert("🏆 恭喜完成所有療程！");
+                    updateProgress();
+                }
             }
         }
-        function prevStep() { if (currentStepIndex > 0) { currentStepIndex--; setupStep(); } }
+        
+        function prevStep() { 
+            if (currentStepIndex > 0) { 
+                currentStepIndex--; 
+                setupStep(); 
+            } else if (currentPhase > 1) {
+                setPhase(currentPhase - 1);
+                currentStepIndex = learningData[currentPhase].length - 1;
+                setupStep();
+            }
+        }
+        
         function forceComplete() { nextStep(); }
         function updateMouse(e) { mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1; }
         function showHint(x, y, msg) {
             const el = document.getElementById('gesture-hint');
             if(!el) return;
             el.innerText = msg; el.style.left = x + 'px'; el.style.top = (y - 30) + 'px'; el.style.opacity = 1;
-            if(msg.includes("完成") || msg.includes("完美")) setTimeout(() => el.style.opacity = 0, 1000);
+            if(msg.includes("完成") || msg.includes("完美")) setTimeout(() => el.style.opacity = 0, 1500);
         }
-        function resetCam() { controls.reset(); }
+        function resetCam() { 
+            controls.reset(); 
+            hapticFeedback([50]);
+        }
         function onWindowResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
     </script>
 </body>
