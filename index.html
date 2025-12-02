@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>艾柏國際芳療 - VR 教學系統（統一版）</title>
+    <title>艾柏國際芳療 - VR 教學系統（修復版）</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/VRButton.js"></script>
 
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
@@ -122,13 +121,6 @@
             white-space: nowrap; z-index: 100;
             box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
         }
-        
-        .action-label {
-             position: absolute; background: rgba(0,0,0,0.8); color: #FFD700;
-             padding: 6px 12px; border-radius: 6px; font-size: 13px;
-             font-weight: bold; pointer-events: none; white-space: nowrap;
-             z-index: 99; display: none; box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-        }
 
         .welcome-overlay {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -166,7 +158,28 @@
             z-index: 200; box-shadow: 0 10px 40px rgba(17, 153, 142, 0.6);
         }
 
-        /* VR 狀態顯示 */
+        /* VR 按鈕 */
+        #vr-button {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: bold;
+            font-size: 16px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+            z-index: 1001;
+            display: none;
+        }
+        #vr-button:hover {
+            transform: translateX(-50%) scale(1.05);
+        }
+
         .vr-status {
             position: absolute; top: 10px; right: 10px;
             background: rgba(0, 0, 0, 0.8); color: #8ec5fc;
@@ -175,20 +188,9 @@
         }
         .vr-status.active { display: block; }
 
-        /* VR 按鈕美化 */
-        #VRButton {
-            background: linear-gradient(135deg, #667eea, #764ba2) !important;
-            border: none !important;
-            border-radius: 25px !important;
-            padding: 12px 30px !important;
-            font-weight: bold !important;
-            font-size: 16px !important;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5) !important;
-        }
-
         @media (max-width: 768px) {
             .action-card { bottom: 80px; padding: 15px 20px; width: 95%; }
-            .instruction-text { font-size: 18px; }
+            #vr-button { bottom: 80px; }
         }
     </style>
 </head>
@@ -204,6 +206,9 @@
     </div>
 
     <div id="canvas-container" style="width:100vw; height:100vh;"></div>
+
+    <!-- 自訂 VR 按鈕 -->
+    <button id="vr-button" onclick="enterVR()">🥽 進入 VR 模式</button>
 
     <div class="vr-status" id="vr-status">
         🥽 模式: <span id="vr-mode-text">桌面</span>
@@ -257,7 +262,6 @@
         </div>
 
         <div class="gesture-hint" id="gesture-hint">👆 按住並拖曳</div>
-        <div class="action-label" id="action-label">跟隨手部</div>
 
         <div class="action-card">
             <div class="instruction-title">STEP <span id="step-num">1.1</span></div>
@@ -321,11 +325,11 @@
         let interactables = []; 
         let currentPhase = 1, currentStepIndex = 0;
         let isDragging = false, isCameraLocked = false;
-        let ghostHand, activeModelType = 'male';
+        let activeModelType = 'male';
         
         let trailLine = null, trailPoints = [];
         let isVRMode = false;
-        let vrHand = null, handJoints = [];
+        let vrSession = null;
         let pressTimer = null, pressStartTime = 0;
 
         let modelPos = { ...MODEL_CONFIG.male.pos };
@@ -452,32 +456,19 @@
             renderer.xr.enabled = true;
             container.appendChild(renderer.domElement);
 
-            // 創建 VR 按鈕
-            document.body.appendChild(THREE.VRButton.createButton(renderer, {
-                optionalFeatures: ['hand-tracking']
-            }));
-
-            renderer.xr.addEventListener('sessionstart', () => {
-                isVRMode = true;
-                console.log('✅ VR 模式已啟動');
-                document.getElementById('vr-status').classList.add('active');
-                document.getElementById('vr-mode-text').innerText = 'VR ✓';
-                document.getElementById('ui').style.display = 'none';
-                if (ghostHand) ghostHand.visible = false;
-                
-                // 設定 VR 手部追蹤
-                vrHand = renderer.xr.getHand(0);
-                scene.add(vrHand);
-                console.log('🖐️ 手部追蹤已啟用');
-            });
-
-            renderer.xr.addEventListener('sessionend', () => {
-                isVRMode = false;
-                console.log('❌ VR 模式已關閉');
-                document.getElementById('vr-status').classList.remove('active');
-                document.getElementById('vr-mode-text').innerText = '桌面';
-                document.getElementById('ui').style.display = 'block';
-            });
+            // 檢查 WebXR 支援
+            if ('xr' in navigator) {
+                navigator.xr.isSessionSupported('immersive-vr').then((supported) => {
+                    if (supported) {
+                        document.getElementById('vr-button').style.display = 'block';
+                        console.log('✅ WebXR VR 已支援');
+                    } else {
+                        console.log('❌ 此裝置不支援 WebXR VR');
+                    }
+                });
+            } else {
+                console.log('❌ 此瀏覽器不支援 WebXR');
+            }
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
@@ -495,105 +486,44 @@
 
             renderer.setAnimationLoop(() => {
                 if (!isVRMode) controls.update();
-                else updateVRHandTracking();
-                
                 interactables.forEach(obj => { if(obj.tick) obj.tick(); });
-                
-                if (ghostHand && ghostHand.visible && !isVRMode) {
-                    ghostHand.lookAt(camera.position);
-                }
-                
                 renderer.render(scene, camera);
             });
 
             loadEnvironment();
         }
 
-        // VR 手部追蹤更新
-        function updateVRHandTracking() {
-            if (!vrHand || !vrHand.joints) return;
-            
-            const indexTip = vrHand.joints['index-finger-tip'];
-            if (!indexTip) return;
-            
-            const tipPosition = new THREE.Vector3();
-            indexTip.getWorldPosition(tipPosition);
-            
-            checkVRInteraction(tipPosition);
-        }
+        // 進入 VR 模式
+        async function enterVR() {
+            if (!renderer.xr.enabled) {
+                alert('此裝置不支援 WebXR');
+                return;
+            }
 
-        function checkVRInteraction(tipPosition) {
-            const step = learningData[currentPhase][currentStepIndex];
-            
-            if (step.type === 'drag') {
-                const startPos = new THREE.Vector3(
-                    step.start.x + modelPos.x,
-                    step.start.y + modelPos.y,
-                    step.start.z + modelPos.z
-                );
-                const endPos = new THREE.Vector3(
-                    step.end.x + modelPos.x,
-                    step.end.y + modelPos.y,
-                    step.end.z + modelPos.z
-                );
+            try {
+                vrSession = await navigator.xr.requestSession('immersive-vr', {
+                    optionalFeatures: ['hand-tracking', 'local-floor']
+                });
                 
-                if (!isDragging && tipPosition.distanceTo(startPos) < 0.15) {
-                    isDragging = true;
-                    createTrailLine();
-                    console.log('🟢 VR 拖曳開始');
-                }
+                await renderer.xr.setSession(vrSession);
                 
-                if (isDragging) {
-                    updateTrailLine(tipPosition);
-                    if (tipPosition.distanceTo(endPos) < 0.25) {
-                        isDragging = false;
-                        clearTrailLine();
-                        createParticles(endPos);
-                        console.log('🏁 VR 拖曳完成');
-                        setTimeout(() => { showSuccessBadge(); nextStep(); }, 500);
-                    }
-                }
-            } else if (step.type === 'press') {
-                const targetPos = new THREE.Vector3(
-                    step.pos.x + modelPos.x,
-                    step.pos.y + modelPos.y,
-                    step.pos.z + modelPos.z
-                );
-                
-                if (tipPosition.distanceTo(targetPos) < 0.15) {
-                    if (!pressTimer) {
-                        pressStartTime = Date.now();
-                        console.log(`⏱️ VR 按壓開始 (${step.duration}秒)`);
-                        pressTimer = setInterval(() => {
-                            const elapsed = (Date.now() - pressStartTime) / 1000;
-                            if (elapsed >= step.duration) {
-                                clearInterval(pressTimer);
-                                pressTimer = null;
-                                createParticles(targetPos);
-                                console.log('✅ VR 按壓完成');
-                                setTimeout(() => { showSuccessBadge(); nextStep(); }, 500);
-                            }
-                        }, 100);
-                    }
-                } else {
-                    if (pressTimer) {
-                        clearInterval(pressTimer);
-                        pressTimer = null;
-                        console.log('❌ VR 按壓取消');
-                    }
-                }
-            } else if (step.type === 'click') {
-                const targetPos = new THREE.Vector3(
-                    step.pos.x + modelPos.x,
-                    step.pos.y + modelPos.y,
-                    step.pos.z + modelPos.z
-                );
-                
-                if (tipPosition.distanceTo(targetPos) < 0.15) {
-                    createParticles(targetPos);
-                    console.log('👆 VR 點擊完成');
-                    setTimeout(() => { showSuccessBadge(); nextStep(); }, 500);
-                }
+                vrSession.addEventListener('end', () => {
+                    isVRMode = false;
+                    vrSession = null;
+                    console.log('❌ VR 會話結束');
+                    document.getElementById('vr-status').classList.remove('active');
+                    document.getElementById('ui').style.display = 'block';
+                });
+
+                isVRMode = true;
+                console.log('✅ VR 模式已啟動');
+                document.getElementById('vr-status').classList.add('active');
+                document.getElementById('vr-mode-text').innerText = 'VR ✓';
+                document.getElementById('ui').style.display = 'none';
+
+            } catch (error) {
+                console.error('進入 VR 失敗:', error);
+                alert('無法進入 VR 模式: ' + error.message);
             }
         }
 
@@ -603,6 +533,8 @@
                 const room = gltf.scene;
                 room.scale.set(20, 20, 20);
                 scene.add(room);
+            }, undefined, (error) => {
+                console.error('載入環境失敗:', error);
             });
             loadModel('male');
         }
@@ -634,8 +566,9 @@
                 
                 document.getElementById('welcome').style.display = 'none';
                 document.getElementById('ui').style.display = 'block';
-                createGhostHand();
                 setPhase(1);
+            }, undefined, (error) => {
+                console.error('載入模型失敗:', error);
             });
         }
 
@@ -654,22 +587,6 @@
                     document.getElementById('val-left-thigh').innerText = Math.round(poseControls.leftThigh) + '°';
                 }
             });
-        }
-
-        function createGhostHand() {
-            const canvas = document.createElement('canvas');
-            canvas.width = 128; canvas.height = 128;
-            const ctx = canvas.getContext('2d');
-            ctx.font = '100px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText('✋', 64, 64);
-            
-            const texture = new THREE.CanvasTexture(canvas);
-            const geometry = new THREE.PlaneGeometry(0.5, 0.5);
-            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.9, depthTest: false });
-            ghostHand = new THREE.Mesh(geometry, material);
-            ghostHand.renderOrder = 999;
-            scene.add(ghostHand);
-            ghostHand.visible = false;
         }
 
         function createInteractable(pos, icon) {
@@ -787,6 +704,7 @@
                 console.log(`⏱️ 桌面按壓開始 (${step.duration}秒)`);
                 pressTimer = setInterval(() => {
                     const elapsed = (Date.now() - pressStartTime) / 1000;
+                    console.log(`按壓進度: ${elapsed.toFixed(1)}/${step.duration}秒`);
                     if (elapsed >= step.duration) {
                         clearInterval(pressTimer);
                         pressTimer = null;
@@ -817,8 +735,9 @@
                 const step = learningData[currentPhase][currentStepIndex];
                 const endPos = new THREE.Vector3(step.end.x + modelPos.x, step.end.y + modelPos.y, step.end.z + modelPos.z);
                 
-                // 修正：放寬判定距離
-                if (point.distanceTo(endPos) < 0.6) {
+                const distance = point.distanceTo(endPos);
+                
+                if (distance < 0.6) {
                     isDragging = false;
                     controls.enabled = true;
                     clearTrailLine();
@@ -835,7 +754,6 @@
             
             const step = learningData[currentPhase][currentStepIndex];
             
-            // 按壓類型：如果放開時未完成，取消
             if (step.type === 'press' && pressTimer) {
                 clearInterval(pressTimer);
                 pressTimer = null;
@@ -843,7 +761,6 @@
                 return;
             }
             
-            // 拖曳類型：檢查是否已到達終點
             if (isDragging) {
                 isDragging = false;
                 controls.enabled = true;
