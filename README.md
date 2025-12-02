@@ -1,3 +1,70 @@
+艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (VR Swedish Massage Training)
+這是一個基於 Web 的沉浸式 VR 教學應用程式，旨在幫助學員通過瑞典式腿部按摩的專業考試。透過 3D 互動與自動運鏡，學員可以在虛擬環境中反覆練習標準流程。
+🚀 研發歷程 (Development Roadmap)
+本專案採用 敏捷開發 (Agile Development) 模式，透過多次迭代 (Iterations) 不斷優化功能與使用者體驗。
+
+階段一：原型建構與基礎建設 (Prototype & Infrastructure)
+目標：建立 3D 環境並驗證核心技術的可行性。
+技術選型：決定使用 Three.js 作為 3D 渲染引擎，並引入 GSAP 處理平滑動畫。
+環境搭建：
+建立虛擬芳療室場景 (A01.glb)。
+導入基礎人體模型 (B01 男性 / B02 女性)，確認模型加載與顯示正常。
+互動核心：
+開發 OrbitControls 攝影機控制系統，允許使用者旋轉、縮放視角。
+實作「射線檢測 (Raycasting)」技術，讓滑鼠/觸控能與 3D 物件互動。
+
+階段二：骨骼系統與姿勢控制 (Rigging & Pose System)
+目標：讓靜態模型能夠根據按摩需求改變姿勢。
+骨骼綁定：解析 GLTF 模型的骨骼結構 (Bones)，識別大腿、小腿、足部等關鍵節點。
+反向動力學 (IK) 模擬：
+開發 poseControls 系統，透過滑桿 (Slider) 即時調整關節角度。
+預設多種姿勢 (如：平躺 flat、抬腿 leftRaised、膝蓋彎曲 kneesBent)。
+UI 整合：建立側邊選單，提供可視化的姿勢除錯 (Debug) 工具。
+
+階段三：互動引導與手勢系統 (Interaction & Guidance)
+目標：引導使用者進行正確的按摩手勢。
+虛擬手 (Ghost Hand)：
+設計半透明的「手部引導」動畫，顯示正確的移動路徑。
+利用 GSAP 製作 drag (拖曳) 與 press (按壓) 的動態提示。
+互動熱點 (Hotspots)：
+在模型表面建立不可見的碰撞體 (Hitboxes)，精確偵測使用者的點擊與滑動。
+實作「起點 -> 終點」的邏輯判定，確保動作完整性。
+
+階段四：標準化流程校正 (Standardization & Validation)
+目標：對照《瑞典式腿部按摩考試標準流程》進行嚴格校正。
+流程重構：
+依據考試 PDF，將流程重新編排為：準備 -> 大腿 (Phase 1) -> 小腿 (Phase 2) -> 足部 (Phase 3) -> 結尾。
+修正「小腿三線按壓」的順序 (內→中→外 / 外→中→內)。
+精確設定每個步驟的停留時間 (如：靜心按壓 10 秒)。
+雙腿對稱性：實作右腿流程，確保與左腿操作對稱且一致。
+
+階段五：沉浸感優化與使用者體驗 (UX Optimization)
+目標：提升操作的流暢度與視覺舒適度。
+自動運鏡 (Auto-Focus Camera)：
+開發智慧攝影機系統，當步驟切換時，鏡頭會自動平滑移動至操作部位，減少使用者手動調整的負擔。
+近距離渲染修正：
+調整攝影機的 near clipping plane 至 0.01，解決近距離觀察時模型「穿模」或消失的問題。
+視覺回饋：
+優化「毛巾」與「按摩油」的互動圖示。
+新增完成步驟時的視覺特效與提示文字。
+
+🛠️ 技術架構 (Tech Stack)
+Core: HTML5, JavaScript (ES6+)
+3D Engine: Three.js (WebGL)
+Animation: GSAP (GreenSock Animation Platform)
+Assets: GLTF/GLB Models (Draco Compression supported)
+Deployment: GitHub Pages
+
+📦 如何執行 (How to Run)
+直接開啟 完整版瑞典按摩教學.html 即可在瀏覽器中執行（需聯網以加載 CDN 函式庫）。
+建議使用 Chrome 或 Edge 瀏覽器以獲得最佳效能。
+支援桌面滑鼠操作與行動裝置觸控操作。
+
+📝 待辦事項 (Future Roadmap)
+[ ] VR 頭盔支援：透過 WebXR API 支援 Oculus/Vive 等裝置。
+[ ] 語音導覽：加入 AI 語音，同步朗讀步驟說明。
+[ ] 評分系統：記錄使用者操作的準確度與時間，給予評分。
+
 瑞典式腿部按摩標準流程指引
 專案簡介 (Introduction)
 本軟體旨在協助芳香療法學習者與專業人員，掌握 艾柏國際芳香療法師（2015年標準） 的瑞典式腿部按摩考試手法。透過數位化的方式，呈現從初始上油到最終安撫的完整標準作業程序，確保使用者能精準執行每一個按摩步驟與穴位操作。
