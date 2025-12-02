@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V8.3 最終校正版)</title>
+    <title>艾柏國際芳療 - 沉浸式瑞典按摩 VR 教學 (V9.0 完整考照版)</title>
+    <!-- 引入核心庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -147,7 +148,7 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 32px; margin-bottom: 10px;">🤲 專業芳療 VR 教學</h1>
-        <p style="color: #aaa;">沉浸式互動版 v8.3 (最終校正版)</p>
+        <p style="color: #aaa;">沉浸式互動版 v9.0 (考照標準完整版)</p>
         <button class="start-btn" onclick="initApp()">開始療程</button>
         <div class="loading-spinner" id="spinner"></div>
     </div>
@@ -285,17 +286,16 @@
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
         // --- 設定區 (CONFIG) ---
-        // ✨ V8.3 雙模最終校正
         const MODEL_CONFIG = {
             male: { // B01
                 pos: { x: 0.1, y: 2.2, z: 0 },
                 scale: 1.0,
                 rot: { x: -1.57, y: 0, z: 1.57 }
             },
-            female: { // B02 (尺寸還原為 1.0)
-                pos: { x: 0.1, y: 2.18, z: 0 }, // 位置修正
-                scale: 1.0, // 比例修正為 1.0
-                rot: { x: -1.57, y: 0, z: 1.57 } // 旋轉修正 (躺下)
+            female: { // B02
+                pos: { x: 0.1, y: 2.18, z: 0 }, 
+                scale: 1.0, 
+                rot: { x: -1.57, y: 0, z: 1.57 }
             }
         };
         
@@ -311,7 +311,6 @@
             FOOT: 0.3            
         };
 
-        // 彙整 CONFIG，初始值設為 male
         let CONFIG = {
             MODEL_POS_DEFAULT: { ...MODEL_CONFIG.male.pos }, 
             MODEL_SCALE: MODEL_CONFIG.male.scale,
@@ -321,59 +320,53 @@
             RIGHT_LEG_Z: RIGHT_LEG_Z
         };
 
-        // --- 完整療程資料庫 (含自動姿勢) ---
+        // --- 完整療程資料庫 (完全符合 PDF 考試標準) ---
         const learningData = {
             1: [
-                { id: "1.1", text: "在毛巾上俯順至大腿", note: "設定客戶位置，輕柔地從膝蓋處向上俯順至大腿。", type: "drag", tool: "towel", icon: "TOWEL_ICON", start: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
-                { id: "1.2", text: "由兩側滑下至腳底", note: "雙手沿著腿部兩側，向下滑至腳底。", type: "drag", tool: "hand", icon: "👐", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.25, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z} },
-                { id: "1.3", text: "將毛巾捲在雙腿之間", note: "確保毛巾覆蓋隱私部位並定位。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.25, z: 0} }, 
-                { id: "1.4", text: "雙腿由阿基里斯腱上推", note: "雙腿同步操作，從腳跟往上推。", type: "drag", tool: "hand", icon: "🤲", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z} },
-                { id: "1.5", text: "將右腳覆蓋", note: "確認操作目標為左腳，先將右腳保暖。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "1.6", text: "上油", note: "取適量按摩油施加於雙手。", type: "press", tool: "oil", icon: "🧴", pos: {x: CONFIG.COORDS.KNEE, y: 0.2, z: 0}, duration: 2 }, 
-                { id: "1.7", text: "大安撫", note: "兩手放在腳底，停留做初始廣泛安撫。", type: "press", tool: "hand", icon: "✨", pos: {x: COORDS.FOOT, y: -0.3, z: LEFT_LEG_Z}, duration: 3 }
+                { id: "1.1", text: "毛巾管理與開場", note: "將毛巾捲至雙腿間，確保隱私與潔淨。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.25, z: 0} },
+                { id: "1.2", text: "均勻上油", note: "從腳踝開始，以長推撫方式塗抹至大腿。", type: "press", tool: "oil", icon: "🧴", pos: {x: CONFIG.COORDS.KNEE, y: 0.2, z: 0}, duration: 2 },
+                { id: "1.3", text: "開場大安撫", note: "雙手由阿基里斯腱向上滑推至大腿，兩側滑下。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
+                { id: "1.4", text: "右腳保暖", note: "確認操作目標為左腳，先將右腳覆蓋。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.RIGHT_LEG_Z} }
             ],
             2: [
-                { id: "2.1", text: "雙手拇指並排長推", note: "從腳踝長推至大腿。", type: "drag", tool: "hand", icon: "👍", start: {x: COORDS.ANKLE, y: -0.35, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
-                { id: "2.2", text: "由兩側回包", note: "回程動作，滑回腳踝。", type: "drag", tool: "hand", icon: "👐", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z}, end: {x: COORDS.ANKLE, y: -0.35, z: LEFT_LEG_Z} },
-                { id: "2.3", text: "撥提技巧", note: "由下至上，分段向兩側提。", type: "drag", tool: "hand", icon: "🤏", start: {x: COORDS.CALF_MID, y: -0.25, z: RIGHT_LEG_Z}, end: {x: COORDS.CALF_MID, y: -0.2, z: RIGHT_LEG_Z - 0.1} },
-                { id: "2.4", text: "大腿內外側操作", note: "大腿分為內外側，由內至外操作。", type: "drag", tool: "hand", icon: "👐", start: {x: COORDS.THIGH_MID, y: -0.2, z: LEFT_LEG_Z - 0.1}, end: {x: COORDS.THIGH_MID, y: -0.2, z: LEFT_LEG_Z + 0.1} },
-                { id: "2.5", text: "雙手交替向上撫順", note: "使用交替手進行撫順長推。", type: "drag", tool: "hand", icon: "👋", start: {x: COORDS.KNEE, y: -0.2, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
-                { id: "2.6", text: "小腿長推至委中穴", note: "長推到膝蓋後方穴位。", type: "drag", tool: "hand", icon: "🦵", start: {x: COORDS.ANKLE, y: -0.3, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z} },
-                { id: "2.7", text: "小腿分三等份操作", note: "由內至外：內、中、外，共三次。", type: "drag", tool: "hand", icon: "📊", start: {x: COORDS.CALF_MID, y: -0.3, z: LEFT_LEG_Z - 0.05}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z - 0.05} },
+                // --- 第一章：大腿深度放鬆 (先做大腿) ---
+                { id: "2.1", text: "大腿：拇指併排長推", note: "從膝蓋後方穩定向上長推至大腿根部。", type: "drag", tool: "hand", icon: "👍", start: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
+                { id: "2.2", text: "分段撥提", note: "由下至上，將肌肉從骨骼上提起，釋放沾黏。", type: "drag", tool: "hand", icon: "🤏", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.25, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
+                { id: "2.3", text: "S型抓捏 (內側至外側)", note: "雙手交替S型揉捏，由內側操作至外側。", type: "drag", tool: "hand", icon: "〰️", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.LEFT_LEG_Z - 0.1}, end: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.LEFT_LEG_Z + 0.1} },
                 
-                // ✨ 自動抬左腳
-                { id: "2.8", text: "將腳抬起 90 度", note: "一手托腳盤，準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: COORDS.FOOT, y: -0.3, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
-                { id: "2.9", text: "湧泉穴畫圈", note: "由湧泉穴出發，順時鐘畫圈。", type: "press", tool: "hand", icon: "⭕", pos: {x: COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 3, pose: "leftRaised" },
-                { id: "2.10", text: "過拳滑動", note: "使用拳頭由腳跟往腳趾滑動。", type: "drag", tool: "hand", icon: "🤛", start: {x: COORDS.ANKLE, y: 0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
-                { id: "2.11", text: "腳掌心持壓", note: "肩膀放鬆，保持姿勢。", type: "press", tool: "hand", icon: "✋", pos: {x: COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 2, pose: "leftRaised" },
+                // --- 第二章：小腿循環促進 (後做小腿) ---
+                { id: "2.4", text: "小腿：長推至委中穴", note: "雙手交替向上撫順，推至膝蓋後方委中穴。", type: "drag", tool: "hand", icon: "🦵", start: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z} },
+                { id: "2.5", text: "三線式經絡按壓", note: "去程：內→中→外；回程：外→中→內 (共三次)。", type: "drag", tool: "hand", icon: "📊", start: {x: CONFIG.COORDS.CALF_MID, y: -0.3, z: CONFIG.LEFT_LEG_Z - 0.05}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.LEFT_LEG_Z - 0.05} },
                 
-                // ✨ 放下左腳 (恢復平躺)
-                { id: "2.12", text: "單邊結束安撫", note: "結束左腳動作，放平。", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z}, pose: "flat" },
-                { id: "2.13", text: "蓋上毛巾", note: "覆蓋左腳。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: COORDS.KNEE, y: -0.1, z: CONFIG.LEFT_LEG_Z} }
+                // --- 第三章：足部反射點 (自動抬腿) ---
+                { id: "2.6", text: "準備姿勢：抬腿90度", note: "一手托腳盤，準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
+                { id: "2.7", text: "湧泉穴畫圈", note: "拇指從湧泉穴出發，順時鐘畫圈經足弓回原點。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 3, pose: "leftRaised" },
+                { id: "2.8", text: "半握拳滑推", note: "指關節從腳跟滑向腳趾，舒展足底筋膜。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: 0.2, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.LEFT_LEG_Z}, pose: "leftRaised" },
+                { id: "2.9", text: "靜心按壓 (10秒)", note: "掌心置於腳心，肩膀放鬆，停留10秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.LEFT_LEG_Z}, duration: 10, pose: "leftRaised" },
+                
+                // --- 結束左腿 ---
+                { id: "2.10", text: "蓋上毛巾", note: "放下左腳並覆蓋保暖。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: CONFIG.LEFT_LEG_Z}, pose: "flat" }
             ],
             3: [
-                { id: "3.1", text: "右腿：拇指並排長推", note: "長推從下往上到大腿。", type: "drag", tool: "hand", icon: "👍", start: {x: COORDS.ANKLE, y: -0.35, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: RIGHT_LEG_Z} },
-                { id: "3.2", text: "由兩側回包", note: "回程動作。", type: "drag", tool: "hand", icon: "👐", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.ANKLE, y: -0.35, z: RIGHT_LEG_Z} },
-                { id: "3.3", text: "撥提技巧", note: "由下至上，分段兩側提。", type: "drag", tool: "hand", icon: "🤏", start: {x: COORDS.CALF_MID, y: -0.25, z: CONFIG.RIGHT_LEG_Z}, end: {x: COORDS.CALF_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z - 0.1} },
-                { id: "3.4", text: "S 型抓捏", note: "執行 S 型的捏法，放鬆肌肉。", type: "drag", tool: "hand", icon: "〰️", start: {x: COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z - 0.05}, end: {x: COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z + 0.05} }, 
-                { id: "3.5", text: "大腿內外側操作", note: "由內自外操作。", type: "drag", tool: "hand", icon: "👐", start: {x: COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z + 0.1}, end: {x: COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z - 0.1} },
-                { id: "3.6", text: "交替向上撫順", note: "交替手長推。", type: "drag", tool: "hand", icon: "👋", start: {x: COORDS.KNEE, y: -0.2, z: CONFIG.RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "3.7", text: "小腿長推至委中穴", note: "長推到膝蓋後方。", type: "drag", tool: "hand", icon: "🦵", start: {x: COORDS.ANKLE, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z} },
-                { id: "3.8", text: "小腿分三等份", note: "由內至外：內、中、外。", type: "drag", tool: "hand", icon: "📊", start: {x: COORDS.CALF_MID, y: -0.3, z: CONFIG.RIGHT_LEG_Z + 0.05}, end: {x: COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z + 0.05} },
+                // --- 右腿完整流程 (重複左腿步驟) ---
+                { id: "3.1", text: "右腿：拇指併排長推", note: "重複大腿長推動作。", type: "drag", tool: "hand", icon: "👍", start: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
+                { id: "3.2", text: "分段撥提", note: "由下至上，將肌肉從骨骼上提起。", type: "drag", tool: "hand", icon: "🤏", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.25, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.RIGHT_LEG_Z} },
+                { id: "3.3", text: "S型抓捏 (內側至外側)", note: "雙手交替S型揉捏，放鬆大腿肌肉。", type: "drag", tool: "hand", icon: "〰️", start: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z + 0.1}, end: {x: CONFIG.COORDS.THIGH_MID, y: -0.2, z: CONFIG.RIGHT_LEG_Z - 0.1} },
                 
-                // ✨ 自動抬右腳
-                { id: "3.9", text: "將腳抬起 90 度", note: "準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: COORDS.FOOT, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
-                { id: "3.10", text: "湧泉穴畫圈", note: "順時鐘畫圈，經足弓回湧泉。", type: "press", tool: "hand", icon: "⭕", pos: {x: COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 3, pose: "rightRaised" },
-                { id: "3.11", text: "半握拳滑動", note: "由腳跟往腳趾方向滑動。", type: "drag", tool: "hand", icon: "🤛", start: {x: COORDS.ANKLE, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, end: {x: COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
-                { id: "3.12", text: "腳掌心持壓", note: "肩膀放鬆，保持姿勢。", type: "press", tool: "hand", icon: "✋", pos: {x: COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 2, pose: "rightRaised" },
-                { id: "3.13", text: "靜置握持", note: "持續按壓 10 秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 10, pose: "rightRaised" }
+                { id: "3.4", text: "小腿：長推至委中穴", note: "雙手交替向上撫順，推至膝蓋後方委中穴。", type: "drag", tool: "hand", icon: "🦵", start: {x: CONFIG.COORDS.ANKLE, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z} },
+                { id: "3.5", text: "三線式經絡按壓", note: "去程：內→中→外；回程：外→中→內 (共三次)。", type: "drag", tool: "hand", icon: "📊", start: {x: CONFIG.COORDS.CALF_MID, y: -0.3, z: CONFIG.RIGHT_LEG_Z + 0.05}, end: {x: CONFIG.COORDS.KNEE, y: -0.25, z: CONFIG.RIGHT_LEG_Z + 0.05} },
+                
+                { id: "3.6", text: "準備姿勢：抬腿90度", note: "一手托腳盤，準備腳底動作。", type: "click", tool: "hand", icon: "🦶", pos: {x: CONFIG.COORDS.FOOT, y: -0.3, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
+                { id: "3.7", text: "湧泉穴畫圈", note: "順時鐘畫圈經足弓回原點。", type: "press", tool: "hand", icon: "⭕", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 3, pose: "rightRaised" },
+                { id: "3.8", text: "半握拳滑推", note: "指關節從腳跟滑向腳趾。", type: "drag", tool: "hand", icon: "🤛", start: {x: CONFIG.COORDS.ANKLE, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, end: {x: CONFIG.COORDS.FOOT + 0.1, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, pose: "rightRaised" },
+                { id: "3.9", text: "靜心按壓 (10秒)", note: "肩膀放鬆，將安定的能量傳遞出去，停留10秒。", type: "press", tool: "hand", icon: "⏱️", pos: {x: CONFIG.COORDS.FOOT + 0.05, y: 0.2, z: CONFIG.RIGHT_LEG_Z}, duration: 10, pose: "rightRaised" },
+                
+                { id: "3.10", text: "蓋上毛巾", note: "放下右腳並覆蓋保暖。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: CONFIG.RIGHT_LEG_Z}, pose: "flat" }
             ],
             4: [
-                // ✨ 放下右腳 (恢復平躺)
-                { id: "4.1", text: "整理毛巾", note: "將蓋上之前將毛巾捲到中間。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: COORDS.KNEE, y: -0.2, z: 0}, pose: "flat" },
-                { id: "4.2", text: "大安撫", note: "進行最終的廣泛安撫。", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, end: {x: COORDS.FOOT, y: -0.35, z: 0} },
-                { id: "4.3", text: "雙手停留腳底", note: "停留，能量平衡。", type: "press", tool: "hand", icon: "🧘", pos: {x: COORDS.FOOT, y: -0.35, z: 0}, duration: 5 },
-                { id: "4.4", text: "蓋上毛巾", note: "完整覆蓋結束療程。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: COORDS.KNEE, y: -0.1, z: 0} }
+                { id: "4.1", text: "最終章：整合與安撫", note: "雙腿大安撫：同時從腳踝滑推至大腿。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: 0}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: 0} },
+                { id: "4.2", text: "腳底停留", note: "雙手輕放腳底，作為結束信號。", type: "press", tool: "hand", icon: "🧘", pos: {x: CONFIG.COORDS.FOOT, y: -0.35, z: 0}, duration: 5 },
+                { id: "4.3", text: "完成療程", note: "蓋上毛巾，恭喜完成！", type: "click", tool: "towel", icon: "🏁", pos: {x: CONFIG.COORDS.KNEE, y: -0.1, z: 0} }
             ]
         };
 
@@ -390,13 +383,11 @@
         let activeModelType = 'male';
         let skeletonHelper;
         
-        // 初始化變數
         let modelPos = { ...MODEL_CONFIG.male.pos };
         let modelRot = { ...MODEL_CONFIG.male.rot };
         let modelScale = MODEL_CONFIG.male.scale;
         let debugClickCount = 0;
 
-        // 骨骼控制
         let bones = {
             leftUpLeg: null, leftLeg: null, leftFoot: null,
             rightUpLeg: null, rightLeg: null, rightFoot: null,
@@ -404,23 +395,14 @@
         };
         
         let poseControls = {
-            leftThigh: 0,
-            leftKnee: 0,
-            leftAnkle: 45, 
-            rightThigh: 0,
-            rightKnee: 0,
-            rightAnkle: 45
+            leftThigh: 0, leftKnee: 0, leftAnkle: 45, 
+            rightThigh: 0, rightKnee: 0, rightAnkle: 45
         };
 
-        // 姿勢預設
         const POSES = {
             flat: {
                 leftThigh: 0, leftKnee: 0, leftAnkle: 45, 
                 rightThigh: 0, rightKnee: 0, rightAnkle: 45
-            },
-            kneesBent: {
-                leftThigh: -10, leftKnee: -30, leftAnkle: 45,
-                rightThigh: -10, rightKnee: -30, rightAnkle: 45
             },
             leftRaised: {
                 leftThigh: -45, leftKnee: -90, leftAnkle: 45,
@@ -432,19 +414,15 @@
             }
         };
 
-        // --- 安全的 DOM 操作函式 (Safe DOM Utils) ---
+        // --- 安全的 DOM 操作函式 ---
         function safeSetValue(id, value) {
             const el = document.getElementById(id);
-            if (el) {
-                el.value = value;
-            }
+            if (el) el.value = value;
         }
 
         function safeSetText(id, text) {
             const el = document.getElementById(id);
-            if (el) {
-                el.innerText = text;
-            }
+            if (el) el.innerText = text;
         }
         
         function safeGetFloat(id, defaultValue) {
@@ -457,7 +435,6 @@
             document.querySelector('.start-btn').style.display = 'none';
             setTimeout(initThreeJS, 100);
             
-            // 安全初始化
             safeSetValue('range-x', modelPos.x);
             safeSetValue('range-y', modelPos.y);
             safeSetValue('range-z', modelPos.z);
@@ -465,7 +442,6 @@
             safeSetValue('range-rot-x', modelRot.x);
             safeSetValue('range-rot-y', modelRot.y);
             safeSetValue('range-rot-z', modelRot.z);
-            
             updateDebugLabels();
         }
         
@@ -488,7 +464,7 @@
             scene.background = new THREE.Color(0x1a1a1a);
             scene.fog = new THREE.Fog(0x1a1a1a, 5, 15);
             
-            const ambient = new THREE.AmbientLight(0xffffff, 0.6); // 增亮
+            const ambient = new THREE.AmbientLight(0xffffff, 0.6); 
             scene.add(ambient);
             
             const spotLight = new THREE.SpotLight(0xffeeb1, 1.5);
@@ -504,7 +480,7 @@
             fillLight.position.set(-2, 2, -2);
             scene.add(fillLight);
 
-            // ✨ V8.3: camera.near = 0.01 (防止太近消失)
+            // ✨ 關鍵修正：將 near 設為 0.01 防止近距離裁切 (解決閃退消失問題)
             camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.01, 100);
             camera.position.set(1.5, 2.5, 2.5);
 
@@ -521,6 +497,8 @@
             controls.enableDamping = true;
             controls.dampingFactor = 0.05;
             controls.maxDistance = 6;
+            // 設定最小距離，避免完全穿過模型，但保持足夠近
+            controls.minDistance = 0.3; 
             
             const canvas = renderer.domElement;
             canvas.addEventListener('mousedown', onPointerDown);
@@ -564,12 +542,10 @@
             activeModelType = type;
             const config = MODEL_CONFIG[type];
 
-            // 更新全域變數
             modelPos = { ...config.pos };
             modelRot = { ...config.rot };
             modelScale = config.scale;
             
-            // 更新UI
             safeSetValue('range-x', modelPos.x);
             safeSetValue('range-y', modelPos.y);
             safeSetValue('range-z', modelPos.z);
@@ -586,7 +562,6 @@
                 model.scale.set(modelScale, modelScale, modelScale);
                 model.rotation.set(modelRot.x, modelRot.y, modelRot.z);
                 
-                // ✨ 材質修復
                 model.traverse(child => {
                     if(child.isMesh) { 
                         child.castShadow = true; 
@@ -604,7 +579,6 @@
                     }
                 });
 
-                // 擴充骨骼尋找邏輯
                 bones = {};
                 const boneNames = {
                     leftUpLeg: ['leftupleg', 'mixamorigleftupleg', 'thigh.l', 'left_thigh', 'upleg.l', 'thigh_l'],
@@ -628,7 +602,6 @@
                     }
                 });
 
-                // 檢查是否有骨架
                 let boneCount = Object.values(bones).filter(b => b !== null).length;
                 const statusEl = document.getElementById('bone-status');
                 const posePanel = document.getElementById('pose-panel');
@@ -661,7 +634,6 @@
 
                 scene.add(model);
                 
-                // 手臂放下
                 if(bones.leftArm) bones.leftArm.rotation.z = 0;
                 if(bones.rightArm) bones.rightArm.rotation.z = 0;
                 
@@ -689,15 +661,10 @@
                         count++;
                     }
                 });
-                const list = document.getElementById('structure-list');
-                if(list) {
-                    list.innerText = output;
-                    list.style.display = 'block';
-                }
+                alert(output);
             }
         }
 
-        // 這是 UI 滑桿觸發的更新
         function onSliderChange() {
             const lThighEl = document.getElementById('range-left-thigh');
             if (!lThighEl) return;
@@ -712,7 +679,6 @@
             syncUIand3D();
         }
 
-        // 這是程式內部更新 (GSAP動畫 或 初始化) 觸發的
         function updatePose() {
             if (bones.leftUpLeg) bones.leftUpLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftThigh);
             if (bones.leftLeg) bones.leftLeg.rotation.x = THREE.MathUtils.degToRad(poseControls.leftKnee);
@@ -722,12 +688,9 @@
             if (bones.rightFoot) bones.rightFoot.rotation.x = THREE.MathUtils.degToRad(poseControls.rightAnkle);
         }
 
-        // 這個函式負責同步 UI 顯示 (安全地)
         function syncUIand3D() {
-            // 1. 更新 3D 骨架
             updatePose();
             
-            // 2. 更新 UI 文字
             safeSetText('val-left-thigh', Math.round(poseControls.leftThigh) + '°');
             safeSetText('val-left-knee', Math.round(poseControls.leftKnee) + '°');
             safeSetText('val-left-ankle', Math.round(poseControls.leftAnkle) + '°');
@@ -735,7 +698,6 @@
             safeSetText('val-right-knee', Math.round(poseControls.rightKnee) + '°');
             safeSetText('val-right-ankle', Math.round(poseControls.rightAnkle) + '°');
             
-            // 3. 更新 UI 滑桿位置 (如果不是由滑桿觸發的)
             safeSetValue('range-left-thigh', poseControls.leftThigh);
             safeSetValue('range-left-knee', poseControls.leftKnee);
             safeSetValue('range-left-ankle', poseControls.leftAnkle);
@@ -748,12 +710,10 @@
             const pose = POSES[poseName];
             if (!pose) return;
             
-            // 更新按鈕狀態
             document.querySelectorAll('.pose-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-pose-${poseName}`);
             if(activeBtn) activeBtn.classList.add('active');
             
-            // 動畫過渡
             gsap.to(poseControls, {
                 leftThigh: pose.leftThigh,
                 leftKnee: pose.leftKnee,
@@ -762,7 +722,7 @@
                 rightKnee: pose.rightKnee,
                 rightAnkle: pose.rightAnkle,
                 duration: 0.5,
-                onUpdate: syncUIand3D // 直接呼叫同步函式
+                onUpdate: syncUIand3D 
             });
         }
         
@@ -918,6 +878,36 @@
             setupStep();
         }
 
+        function autoFocusCamera(step) {
+            if (isCameraLocked) return;
+
+            let targetPos = new THREE.Vector3();
+            
+            if (step.type === 'drag') {
+                targetPos.set(
+                    (step.start.x + step.end.x) / 2 + model.position.x,
+                    (step.start.y + step.end.y) / 2 + model.position.y,
+                    (step.start.z + step.end.z) / 2 + model.position.z
+                );
+            } else if (step.pos) {
+                targetPos.set(
+                    step.pos.x + model.position.x,
+                    step.pos.y + model.position.y,
+                    step.pos.z + model.position.z
+                );
+            } else {
+                return;
+            }
+
+            gsap.to(controls.target, {
+                x: targetPos.x,
+                y: targetPos.y,
+                z: targetPos.z,
+                duration: 1.5,
+                ease: "power2.inOut"
+            });
+        }
+
         function setupStep() {
             interactables.forEach(obj => scene.remove(obj));
             interactables = [];
@@ -950,6 +940,9 @@
                 createInteractable(step.pos, step.icon, 'click');
                 showGhostGuide(step.pos, step.pos, false);
             }
+
+            // 觸發自動運鏡
+            autoFocusCamera(step);
         }
 
         function showGhostGuide(startRel, endRel, isMove) {
