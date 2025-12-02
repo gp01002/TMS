@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V11.4 啟動修復版)</title>
+    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V11.6 完美運鏡版)</title>
     <!-- 引入核心庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -174,7 +174,7 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #aaa;">V11.4 啟動修復版 (右腿+手勢)</p>
+        <p style="color: #aaa;">V11.6 完美運鏡版</p>
         <p style="color: #8ec5fc; font-size: 14px; margin-top:5px;">支援 Meta Quest / WebXR 手勢互動</p>
         <button class="start-btn" onclick="initApp()">進入教室</button>
         <div class="loading-spinner" id="spinner"></div>
@@ -349,6 +349,7 @@
         let vrHands = [];
         let vrInteractionObjects = []; // 存儲控制器上的碰撞檢測點
         let handModelFactory, controllerModelFactory;
+        let dolly; // VR 用戶組
         const vrTempMatrix = new THREE.Matrix4();
         let vrHitStatus = { isTouchingStart: false, isTouchingEnd: false, touchStartTime: 0 };
 
@@ -417,8 +418,7 @@
 
                 button.onclick = function () {
                     if ( currentSession === null ) {
-                        // 請求會話，並加入錯誤捕捉
-                        // 關鍵修正：移除 'layers' 以避免與 baseLayer 衝突
+                        // 移除 'layers' 以避免衝突
                         const sessionInit = { optionalFeatures: [ 'local-floor', 'bounded-floor', 'hand-tracking' ] };
                         navigator.xr.requestSession( 'immersive-vr', sessionInit )
                             .then( onSessionStarted )
@@ -451,7 +451,6 @@
             }
 
             if ( 'xr' in navigator ) {
-                // 檢查是否為安全連線 (HTTPS 或 localhost)
                 if (!window.isSecureContext) {
                     showHTTPSWarning();
                 } else {
@@ -493,12 +492,17 @@
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.shadowMap.enabled = true;
-            renderer.xr.enabled = true; // 確保啟用 WebXR
+            renderer.xr.enabled = true; 
             container.appendChild(renderer.domElement);
 
-            // 加入自製的 Robust VR Button
             const vrButton = createVRButton(renderer);
             document.body.appendChild(vrButton);
+
+            // --- VR Dolly Setup (修復視角卡床底問題) ---
+            dolly = new THREE.Group();
+            dolly.position.set(0.5, 0.8, 1.5); // 墊高 0.8m，往後 1.5m，往右 0.5m
+            scene.add(dolly);
+            dolly.add(camera);
 
             // Setup VR Controllers & Hands
             setupVR();
@@ -527,7 +531,7 @@
 
                 interactables.forEach(obj => { if(obj.tick) obj.tick(); });
                 
-                // Ghost Hand Logic (僅在非VR模式或桌面預覽時)
+                // Ghost Hand Logic
                 if (ghostHand && ghostHand.visible) {
                     ghostHand.lookAt(camera.position);
                     updateHTMLActionLabel();
@@ -564,7 +568,6 @@
 
         // --- VR Setup & Logic ---
         function setupVR() {
-            // 安全檢查：如果 Factory 不存在，則跳過 VR 初始化，防止報錯
             if (typeof THREE.XRHandModelFactory === 'undefined' || typeof THREE.XRControllerModelFactory === 'undefined') {
                 console.warn("VR Model Factories not loaded. Skipping VR hands setup.");
                 return;
@@ -573,18 +576,19 @@
             handModelFactory = new THREE.XRHandModelFactory();
             controllerModelFactory = new THREE.XRControllerModelFactory();
 
-            // Setup Controllers (Grip & Ray)
             for (let i = 0; i < 2; i++) {
-                // Controller Grip (手把模型)
+                // Controller Grip
                 const controllerGrip = renderer.xr.getControllerGrip(i);
                 controllerGrip.add(controllerModelFactory.createControllerModel(controllerGrip));
-                scene.add(controllerGrip);
+                // 注意：這裡將控制器加入 dolly 而不是 scene，確保跟隨增高墊移動
+                dolly.add(controllerGrip);
 
-                // Controller Ray (互動射線)
+                // Controller Ray
                 const controller = renderer.xr.getController(i);
-                controller.addEventListener('selectstart', () => { isDragging = true; }); // 手把板機
+                controller.addEventListener('selectstart', () => { isDragging = true; }); 
                 controller.addEventListener('selectend', () => { isDragging = false; });
-                scene.add(controller);
+                // 這裡也加入 dolly
+                dolly.add(controller);
                 
                 // 視覺化射線
                 const geometry = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0, 0, -1)]);
@@ -593,32 +597,28 @@
                 line.scale.z = 5;
                 controller.add(line);
                 
-                // 添加「碰撞偵測球」到控制器前端 (用於接觸按摩)
+                // 碰撞偵測球
                 const hitSphere = new THREE.Mesh(
                     new THREE.SphereGeometry(0.05, 8, 8),
                     new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3, wireframe: true })
                 );
-                hitSphere.position.z = -0.05; // 稍微往前
+                hitSphere.position.z = -0.05; 
                 controller.add(hitSphere);
-                vrInteractionObjects.push(hitSphere); // 加入偵測列表
+                vrInteractionObjects.push(hitSphere); 
                 vrControllers.push(controller);
 
-                // Setup Hands (裸手追蹤)
+                // Setup Hands
                 const hand = renderer.xr.getHand(i);
-                hand.add(handModelFactory.createHandModel(hand)); // 顯示虛擬手
+                hand.add(handModelFactory.createHandModel(hand)); 
                 
-                // 在手部模型的「食指尖」添加偵測球
-                // 注意：這需要手部模型載入後才能準確綁定，這裡先用簡單方式綁定在手腕，或者使用 XRHand 的 joint 系統
-                // 為了簡化，我們在 hand object 下掛一個球，實際運作時手部模型會更新 hand object 的 transform
                 const handHitSphere = new THREE.Mesh(
                     new THREE.SphereGeometry(0.04, 8, 8),
                     new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 })
                 );
-                // 嘗試綁定到 index-finger-tip (若不支援則跟隨手掌)
+                
                 hand.addEventListener('connected', (event) => {
                     const xrHand = event.data.hand;
                     if(xrHand) {
-                         // 在 loop 中更新位置，這裡僅標記
                          hand.userData.isHand = true;
                     }
                 });
@@ -626,40 +626,33 @@
                 hand.add(handHitSphere);
                 vrInteractionObjects.push(handHitSphere);
                 vrHands.push(hand);
-                scene.add(hand);
+                // 手部也加入 dolly
+                dolly.add(hand);
             }
         }
 
-        // VR 核心互動邏輯：檢測手/控制器是否「觸碰」到按摩點
+        // VR 核心互動邏輯
         function handleVRInteractionLogic() {
-            // 如果沒有正在進行的步驟，跳過
             if(!interactables.length) return;
 
             const step = learningData[currentPhase][currentStepIndex];
-            // 找出場景中的目標點 (Start / End / Click Point)
-            const startObj = interactables.find(obj => obj.userData.isStart || (!obj.userData.isEnd && !obj.userData.isStart)); // Start or Single Click Point
+            const startObj = interactables.find(obj => obj.userData.isStart || (!obj.userData.isEnd && !obj.userData.isStart));
             const endObj = interactables.find(obj => obj.userData.isEnd);
 
             if (!startObj) return;
 
-            // 遍歷所有互動裝置 (左右手控制器、左右手)
             for (let collider of vrInteractionObjects) {
-                // 取得碰撞球的世界座標
                 const colliderPos = new THREE.Vector3();
-                collider.getWorldPosition(colliderPos);
+                collider.getWorldPosition(colliderPos); // 確保取得世界座標
 
-                // 計算與目標點的距離
                 const distToStart = colliderPos.distanceTo(startObj.position);
                 
-                // 判斷邏輯
                 if (step.type === 'click' || step.type === 'press') {
-                    // 點擊/按壓模式
-                    if (distToStart < 0.15) { // 距離小於 15cm
-                        collider.material.color.set(0xff0000); // 變紅表示接觸
+                    if (distToStart < 0.15) { 
+                        collider.material.color.set(0xff0000); 
                         if (!vrHitStatus.touchStartTime) {
                             vrHitStatus.touchStartTime = Date.now();
                         } else {
-                            // 檢查停留時間
                             const elapsed = (Date.now() - vrHitStatus.touchStartTime) / 1000;
                             const required = step.duration || 0.5;
                             if (elapsed >= required) {
@@ -668,28 +661,23 @@
                             }
                         }
                     } else {
-                        collider.material.color.set(collider.parent.userData.isHand ? 0x00ffff : 0x00ff00); // 恢復顏色
+                        collider.material.color.set(collider.parent.userData.isHand ? 0x00ffff : 0x00ff00); 
                         vrHitStatus.touchStartTime = 0;
                     }
                 } 
                 else if (step.type === 'drag') {
-                    // 滑動模式
                     if (!vrHitStatus.isTouchingStart) {
-                        // 尚未觸摸起點
                         if (distToStart < 0.15) {
                             vrHitStatus.isTouchingStart = true;
-                            startObj.children[1].material.color.set(0xffff00); // 起點變黃
+                            startObj.children[1].material.color.set(0xffff00); 
                         }
                     } else {
-                        // 已觸摸起點，檢測是否到達終點
                         if (endObj) {
                             const distToEnd = colliderPos.distanceTo(endObj.position);
                             if (distToEnd < 0.15) {
                                 completeStepVR();
                                 vrHitStatus.isTouchingStart = false;
                             }
-                            
-                            // 視覺反饋：如果在路徑中間，手球變色
                             collider.material.color.set(0xffff00);
                         }
                     }
@@ -698,18 +686,15 @@
         }
 
         function completeStepVR() {
-            // 避免重複觸發
             if(this.isProcessing) return;
             this.isProcessing = true;
             
-            // 觸覺回饋 (Haptics) - 僅控制器支援
             vrControllers.forEach(c => {
                 if(c.gamepad && c.gamepad.hapticActuators && c.gamepad.hapticActuators.length > 0) {
                     c.gamepad.hapticActuators[0].pulse(1.0, 100);
                 }
             });
 
-            // 動畫效果
             interactables.forEach(group => {
                 gsap.to(group.scale, {x: 0, y:0, z:0, duration: 0.3});
             });
@@ -720,7 +705,7 @@
             }, 500);
         }
 
-        // --- 滑鼠/觸控 判定邏輯 (保留原功能) ---
+        // --- 滑鼠/觸控 判定邏輯 (修復版：點背景可轉視角) ---
         function checkIntersection() {
             const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -model.position.y);
             const point = new THREE.Vector3();
@@ -956,13 +941,46 @@
 
         function autoFocusCamera(step) {
             if (isCameraLocked || renderer.xr.isPresenting) return; 
+            
             let targetPos = new THREE.Vector3();
+            
+            // 計算目標中心點
             if (step.type === 'drag') {
-                targetPos.set((step.start.x + step.end.x)/2 + model.position.x, (step.start.y + step.end.y)/2 + model.position.y, (step.start.z + step.end.z)/2 + model.position.z);
+                targetPos.set(
+                    (step.start.x + step.end.x)/2 + model.position.x, 
+                    (step.start.y + step.end.y)/2 + model.position.y, 
+                    (step.start.z + step.end.z)/2 + model.position.z
+                );
             } else if (step.pos) {
-                targetPos.set(step.pos.x + model.position.x, step.pos.y + model.position.y, step.pos.z + model.position.z);
+                targetPos.set(
+                    step.pos.x + model.position.x, 
+                    step.pos.y + model.position.y, 
+                    step.pos.z + model.position.z
+                );
             } else { return; }
-            gsap.to(controls.target, { x: targetPos.x, y: targetPos.y, z: targetPos.z, duration: 1.5, ease: "power2.inOut" });
+
+            // 1. 移動聚焦點 (Target)
+            gsap.to(controls.target, { 
+                x: targetPos.x, 
+                y: targetPos.y, 
+                z: targetPos.z, 
+                duration: 1.5, 
+                ease: "power2.inOut" 
+            });
+
+            // 2. 移動攝影機位置 (Camera Position) - 創造「好的位置」
+            // 計算最佳攝影機位置：保持在目標的右前方，距離適中
+            // 這裡設定一個相對偏移量 (Offset)
+            const offset = new THREE.Vector3(1.5, 0.5, 1.5); // 右前方俯視
+            const camTargetPos = targetPos.clone().add(offset);
+
+            gsap.to(camera.position, {
+                x: camTargetPos.x,
+                y: camTargetPos.y,
+                z: camTargetPos.z,
+                duration: 1.5,
+                ease: "power2.inOut"
+            });
         }
 
         function setupStep() {
@@ -1032,9 +1050,17 @@
         function onPointerDown(e) {
             updateMouse(e);
             raycaster.setFromCamera(mouse, camera);
-            isDragging = true;
-            controls.enabled = false;
-            checkIntersection();
+            
+            // 重要修復：只有點到「互動球」才鎖定視角，否則允許轉動
+            const intersects = raycaster.intersectObjects(interactables, true);
+            if (intersects.length > 0) {
+                isDragging = true;
+                controls.enabled = false;
+                checkIntersection();
+            } else {
+                isDragging = false;
+                controls.enabled = true;
+            }
         }
 
         function onPointerMove(e) {
