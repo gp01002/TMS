@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (v26.1)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (v26.2)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -101,7 +101,7 @@
         <div class="welcome-slide" id="slide-instructions">
             <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
             <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典式腿部按摩 SOP</h1>
-            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v26.1</p>
+            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v26.2</p>
             
             <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px; margin-left: auto; margin-right: auto;">
                 <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 操作指南</p>
@@ -111,8 +111,8 @@
                     <p style="margin-left: 20px;">• <b>操作球體</b>：點擊或拖曳球體執行動作</p>
                     <p style="margin-left: 20px;">• <b>雙指縮放</b>：放大/縮小畫面</p>
                     <p style="margin-top: 10px;">🥽 <b>VR 操作：</b></p>
-                    <p style="margin-left: 20px;">• 食指靠近球體即可觸發</p>
-                    <p style="margin-left: 20px;">• 遠離球體後捏合傳送</p>
+                    <p style="margin-left: 20px;">• 支援手勢追蹤：食指靠近球體即可觸發</p>
+                    <p style="margin-left: 20px;">• 支援手把控制器：靠近球體即可觸發</p>
                 </div>
             </div>
             
@@ -319,11 +319,9 @@
 
         function initApp() {
             document.getElementById('spinner').style.display = 'block';
-            // document.querySelector('.start-btn').style.display = 'none'; // 修改: initApp 不再隱藏按鈕，而是由 welcome overlay 管理
             setTimeout(initThreeJS, 100);
         }
 
-        // 新增歡迎頁面切換函數
         function nextWelcomeSlide() {
             document.getElementById('slide-preface').classList.remove('active');
             document.getElementById('slide-instructions').classList.add('active');
@@ -443,9 +441,7 @@
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.9 });
             const mesh = new THREE.Mesh(geometry, material);
             
-            // 🔥 移動到更右側以避免遮擋 (原: 1.0 -> 改: 1.2 -> v26.1 改: 1.3 以確保不被遮擋)
             mesh.position.set(1.3, 3.2, -2.0); 
-            // 🔥 稍微旋轉面向使用者
             mesh.rotation.set(0, -0.3, 0); 
             
             scene.add(mesh);
@@ -511,12 +507,10 @@
             controls.update();
 
             const canvas = renderer.domElement;
-            // 🔥 關鍵修正：使用 capture: true 來優先攔截觸控事件，解決 OrbitControls 搶奪導致的當機問題
             canvas.addEventListener('touchstart', onTouchStart, { passive: false, capture: true });
             canvas.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
-            canvas.addEventListener('touchend', onPointerUp, { passive: false }); // touchend 還是需要 passive: false 嗎？為了安全起見先保留
+            canvas.addEventListener('touchend', onPointerUp, { passive: false }); 
             
-            // 滑鼠事件保持原樣
             canvas.addEventListener('mousedown', onPointerDown);
             canvas.addEventListener('mousemove', onPointerMove);
             canvas.addEventListener('mouseup', onPointerUp);
@@ -579,48 +573,95 @@
             controllerModelFactory = new XRControllerModelFactory();
             
             for (let i = 0; i < 2; i++) {
-                const controller = renderer.xr.getController(i); cameraOffset.add(controller); vrControllers.push(controller);
-                const hand = renderer.xr.getHand(i); cameraOffset.add(hand); 
+                // 1. Controller Setup
+                const controller = renderer.xr.getController(i);
+                cameraOffset.add(controller);
+                vrControllers.push(controller);
+
+                // Add visual model for controller (optional, but good for debug)
+                const controllerModel = controllerModelFactory.createControllerModel(controller);
+                controller.add(controllerModel);
+
+                // 2. Hand Setup
+                const hand = renderer.xr.getHand(i);
+                cameraOffset.add(hand);
                 try { const handModel = handModelFactory.createHandModel(hand, "mesh"); hand.add(handModel); } catch (e) {}
-                
-                const handData = { hand: hand, handIndex: i, handedness: null, isTracking: false, indexTip: null, thumbTip: null, wrist: null, indicator: null, isPinching: false };
-                
+
+                // 3. Unified Data Structure
+                const handData = {
+                    hand: hand,
+                    controller: controller, // Store controller
+                    handIndex: i,
+                    handedness: null,
+                    isHandTracking: false, // Specific to hand
+                    isControllerActive: false, // Specific to controller
+                    indexTip: null,
+                    indicator: null,
+                    isPinching: false
+                };
+
+                // Indicator Mesh ( The green ball )
                 const indicator = new THREE.Mesh(
-                    new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 32, 32), 
-                    new THREE.MeshStandardMaterial({ 
-                        color: 0x00ff00, 
-                        transparent: true, 
-                        opacity: 0.6,
-                        emissive: 0x00ff00,
-                        emissiveIntensity: 0.5
-                    })
+                    new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 32, 32),
+                    new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.6, emissive: 0x00ff00, emissiveIntensity: 0.5 })
                 );
-                indicator.visible = false; scene.add(indicator); handData.indicator = indicator;
-                
-                hand.addEventListener('connected', (e) => { handData.handedness = e.data.handedness; handData.isTracking = true; safeSetText('hand-track-status', `${e.data.handedness} OK`); });
-                hand.addEventListener('disconnected', () => { handData.isTracking = false; handData.indicator.visible = false; });
-                vrHands.push(hand); vrHandData.push(handData);
+                indicator.visible = false;
+                scene.add(indicator);
+                handData.indicator = indicator;
+
+                // Events
+                // Hand
+                hand.addEventListener('connected', (e) => {
+                    handData.handedness = e.data.handedness;
+                    handData.isHandTracking = true;
+                    safeSetText('hand-track-status', `Hand ${e.data.handedness}`);
+                });
+                hand.addEventListener('disconnected', () => { handData.isHandTracking = false; });
+
+                // Controller
+                controller.addEventListener('connected', (e) => {
+                    handData.handedness = e.data.handedness;
+                    handData.isControllerActive = true;
+                    safeSetText('hand-track-status', `Ctrl ${e.data.handedness}`);
+                });
+                controller.addEventListener('disconnected', () => { handData.isControllerActive = false; });
+
+                vrHands.push(hand);
+                vrHandData.push(handData);
             }
         }
 
         function updateVRStatus() {
             vrHandData.forEach(handData => {
-                if (!handData.isTracking) return;
-                const hand = handData.hand;
-                if (hand.joints && hand.joints['index-finger-tip']) {
-                    handData.indexTip = hand.joints['index-finger-tip'];
-                    handData.thumbTip = hand.joints['thumb-tip'];
-                    handData.wrist = hand.joints['wrist'];
-                    
+                let activePos = null;
+
+                // 1. Try Hand Tracking First
+                if (handData.isHandTracking && handData.hand.joints && handData.hand.joints['index-finger-tip']) {
+                    handData.indexTip = handData.hand.joints['index-finger-tip'];
+                    handData.thumbTip = handData.hand.joints['thumb-tip']; // For pinching
+                    handData.wrist = handData.hand.joints['wrist']; // For teleport direction
+
                     const worldPos = new THREE.Vector3();
                     handData.indexTip.getWorldPosition(worldPos);
-                    if (handData.indicator) {
-                        handData.indicator.position.copy(worldPos);
-                        handData.indicator.visible = true;
-                    }
+                    activePos = worldPos;
+                }
+                // 2. Fallback to Controller
+                else if (handData.isControllerActive) {
+                    const worldPos = new THREE.Vector3();
+                    handData.controller.getWorldPosition(worldPos);
+                    activePos = worldPos;
+                }
+
+                // Update Indicator Position
+                if (activePos && handData.indicator) {
+                    handData.indicator.position.copy(activePos);
+                    handData.indicator.visible = true;
+                } else if (handData.indicator) {
+                    handData.indicator.visible = false;
                 }
             });
             
+            // Update distance text if indicator is active
             const currentData = learningData[String(currentPhase)];
             if (currentData && interactables.length > 0) {
                 const startObj = interactables.find(obj => obj.userData.isStart || (!obj.userData.isEnd && !obj.userData.isStart));
@@ -670,7 +711,7 @@
             
             let anyHandPinching = false;
             vrHandData.forEach(handData => {
-                if (!handData.isTracking || !handData.indexTip || !handData.thumbTip || !handData.wrist) return;
+                if (!handData.isHandTracking || !handData.indexTip || !handData.thumbTip || !handData.wrist) return;
                 const indexPos = new THREE.Vector3(); const thumbPos = new THREE.Vector3(); const wristPos = new THREE.Vector3();
                 handData.indexTip.getWorldPosition(indexPos); handData.thumbTip.getWorldPosition(thumbPos); handData.wrist.getWorldPosition(wristPos);
                 
@@ -757,7 +798,9 @@
             if (!startObj) return;
 
             vrHandData.forEach(handData => {
-                if (!handData.isTracking || !handData.indicator || !handData.indicator.visible) return;
+                // Note: Logic updated to rely on handData.indicator position, which is now updated by controllers too
+                if (!handData.indicator || !handData.indicator.visible) return;
+                
                 const indexTipWorldPos = handData.indicator.position;
                 const distToStart = indexTipWorldPos.distanceTo(startObj.position);
                 
@@ -1019,16 +1062,9 @@
         }
         
         function onTouchStart(e) { 
-            // 🔥 新增：檢測雙指操作，啟用 OrbitControls
             if (e.touches.length > 1) {
                 controls.enabled = true;
                 isDragging = false;
-                // 🔥 這裡的 preventDefault 應該交由 OrbitControls 處理，
-                // 但如果我們不 call，可能會觸發瀏覽器的縮放行為。
-                // 由於我們用了 capture: true，OrbitControls 可能會在我們之後收到事件。
-                // 這裡不 return，讓事件繼續傳遞給 OrbitControls?
-                // 如果 return，OrbitControls 收不到事件?
-                // 正確做法：設置狀態，但不阻止事件傳遞。
                 return;
             }
             e.preventDefault(); 
@@ -1040,7 +1076,6 @@
         }
         
         function onTouchMove(e) { 
-            // 🔥 新增：雙指操作時直接交給 OrbitControls
             if (e.touches.length > 1) {
                 controls.enabled = true;
                 return;
