@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V11.6 完美運鏡版)</title>
+    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V11.8 手勢精準版)</title>
     <!-- 引入核心庫 -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -174,7 +174,7 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #aaa;">V11.6 完美運鏡版</p>
+        <p style="color: #aaa;">V11.8 手勢精準版</p>
         <p style="color: #8ec5fc; font-size: 14px; margin-top:5px;">支援 Meta Quest / WebXR 手勢互動</p>
         <button class="start-btn" onclick="initApp()">進入教室</button>
         <div class="loading-spinner" id="spinner"></div>
@@ -498,9 +498,9 @@
             const vrButton = createVRButton(renderer);
             document.body.appendChild(vrButton);
 
-            // --- VR Dolly Setup (修復視角卡床底問題) ---
+            // --- VR Dolly Setup (優化位置：更靠近床邊) ---
             dolly = new THREE.Group();
-            dolly.position.set(0.5, 0.8, 1.5); // 墊高 0.8m，往後 1.5m，往右 0.5m
+            dolly.position.set(0.5, 0.7, 1.2); // 更靠近床 (1.2m)，高度稍降 (0.7m)
             scene.add(dolly);
             dolly.add(camera);
 
@@ -525,6 +525,7 @@
             renderer.setAnimationLoop(() => {
                 if (renderer.xr.isPresenting) {
                     handleVRInteractionLogic(); // VR 專屬互動邏輯
+                    handleVRMovement(); // 處理搖桿移動
                 } else {
                     controls.update();
                 }
@@ -580,14 +581,12 @@
                 // Controller Grip
                 const controllerGrip = renderer.xr.getControllerGrip(i);
                 controllerGrip.add(controllerModelFactory.createControllerModel(controllerGrip));
-                // 注意：這裡將控制器加入 dolly 而不是 scene，確保跟隨增高墊移動
                 dolly.add(controllerGrip);
 
                 // Controller Ray
                 const controller = renderer.xr.getController(i);
                 controller.addEventListener('selectstart', () => { isDragging = true; }); 
                 controller.addEventListener('selectend', () => { isDragging = false; });
-                // 這裡也加入 dolly
                 dolly.add(controller);
                 
                 // 視覺化射線
@@ -597,7 +596,7 @@
                 line.scale.z = 5;
                 controller.add(line);
                 
-                // 碰撞偵測球
+                // 控制器碰撞球
                 const hitSphere = new THREE.Mesh(
                     new THREE.SphereGeometry(0.05, 8, 8),
                     new THREE.MeshBasicMaterial({ color: 0x00ff00, transparent: true, opacity: 0.3, wireframe: true })
@@ -611,24 +610,49 @@
                 const hand = renderer.xr.getHand(i);
                 hand.add(handModelFactory.createHandModel(hand)); 
                 
+                // 手部碰撞球 - 初始設在手掌中心，之後會更新到食指尖
                 const handHitSphere = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.04, 8, 8),
-                    new THREE.MeshBasicMaterial({ color: 0x00ffff, transparent: true, opacity: 0.5 })
+                    new THREE.SphereGeometry(0.02, 16, 16),
+                    new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 }) // 黃色高亮
                 );
+                // 標記為手部碰撞球
+                handHitSphere.userData.isHandSphere = true;
                 
                 hand.addEventListener('connected', (event) => {
                     const xrHand = event.data.hand;
                     if(xrHand) {
                          hand.userData.isHand = true;
+                         hand.userData.xrHand = xrHand; 
                     }
                 });
                 
                 hand.add(handHitSphere);
                 vrInteractionObjects.push(handHitSphere);
                 vrHands.push(hand);
-                // 手部也加入 dolly
                 dolly.add(hand);
             }
+        }
+
+        // 新增：處理 VR 搖桿移動
+        function handleVRMovement() {
+            if (!vrControllers || vrControllers.length === 0) return;
+
+            const speed = 0.05; 
+
+            vrControllers.forEach((controller) => {
+                if (controller.gamepad) { 
+                    const axes = controller.gamepad.axes;
+                    if (axes && axes.length >= 4) {
+                        const x = Math.abs(axes[2]) > 0.1 ? axes[2] : 0;
+                        const y = Math.abs(axes[3]) > 0.1 ? axes[3] : 0;
+
+                        if (x !== 0 || y !== 0) {
+                            dolly.position.x += x * speed;
+                            dolly.position.z += y * speed;
+                        }
+                    }
+                }
+            });
         }
 
         // VR 核心互動邏輯
@@ -641,15 +665,32 @@
 
             if (!startObj) return;
 
+            // 更新手部碰撞球位置到食指尖
+            vrHands.forEach(hand => {
+                if (hand.userData.xrHand && hand.children) {
+                    const hitSphere = hand.children.find(c => c.userData.isHandSphere);
+                    // 嘗試抓取食指尖 (index-finger-tip)
+                    const indexTip = hand.getObjectByName('index-finger-tip'); 
+                    if (indexTip && hitSphere) {
+                         const worldPos = new THREE.Vector3();
+                         indexTip.getWorldPosition(worldPos);
+                         // 將世界座標轉回 hand group 的本地座標
+                         hand.worldToLocal(worldPos);
+                         hitSphere.position.copy(worldPos);
+                    }
+                }
+            });
+
             for (let collider of vrInteractionObjects) {
                 const colliderPos = new THREE.Vector3();
                 collider.getWorldPosition(colliderPos); // 確保取得世界座標
 
                 const distToStart = colliderPos.distanceTo(startObj.position);
                 
+                // 加大偵測範圍到 0.25 (25公分)
                 if (step.type === 'click' || step.type === 'press') {
-                    if (distToStart < 0.15) { 
-                        collider.material.color.set(0xff0000); 
+                    if (distToStart < 0.25) { 
+                        collider.material.color.set(0xff0000); // 碰到變紅
                         if (!vrHitStatus.touchStartTime) {
                             vrHitStatus.touchStartTime = Date.now();
                         } else {
@@ -661,20 +702,25 @@
                             }
                         }
                     } else {
-                        collider.material.color.set(collider.parent.userData.isHand ? 0x00ffff : 0x00ff00); 
+                        // 恢復顏色 (手是黃色，控制器是綠色)
+                        if (collider.userData.isHandSphere) {
+                            collider.material.color.set(0xffff00);
+                        } else {
+                            collider.material.color.set(0x00ff00);
+                        }
                         vrHitStatus.touchStartTime = 0;
                     }
                 } 
                 else if (step.type === 'drag') {
                     if (!vrHitStatus.isTouchingStart) {
-                        if (distToStart < 0.15) {
+                        if (distToStart < 0.25) {
                             vrHitStatus.isTouchingStart = true;
                             startObj.children[1].material.color.set(0xffff00); 
                         }
                     } else {
                         if (endObj) {
                             const distToEnd = colliderPos.distanceTo(endObj.position);
-                            if (distToEnd < 0.15) {
+                            if (distToEnd < 0.25) {
                                 completeStepVR();
                                 vrHitStatus.isTouchingStart = false;
                             }
