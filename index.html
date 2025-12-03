@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V12.0 強化手勢版)</title>
-    <!-- 引入核心庫 -->
+    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V12.1 修復版)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
-    
-    <!-- VR 控制器與手勢模型工廠 -->
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/XRControllerModelFactory.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/webxr/XRHandModelFactory.js"></script>
 
@@ -155,7 +152,6 @@
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        /* VR 狀態指示器 */
         .vr-status {
             position: absolute; top: 80px; right: 20px;
             background: rgba(0,0,0,0.8); padding: 10px 15px;
@@ -178,15 +174,14 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #aaa;">V12.0 強化手勢版</p>
-        <p style="color: #8ec5fc; font-size: 14px; margin-top:5px;">✨ 支援 Meta Quest 手勢追蹤</p>
+        <p style="color: #aaa;">V12.1 修復版</p>
+        <p style="color: #8ec5fc; font-size: 14px; margin-top:5px;">✨ 優化視角 + 強化手勢互動</p>
         <button class="start-btn" onclick="initApp()">進入教室</button>
         <div class="loading-spinner" id="spinner"></div>
     </div>
 
     <div id="canvas-container" style="width:100vw; height:100vh;"></div>
     
-    <!-- 桌面版 UI -->
     <div class="ui-layer" id="ui" style="display:none;">
         <div class="top-bar">
             <div style="font-weight: bold; font-size: 18px; display:flex; align-items:center; gap:10px;">
@@ -200,9 +195,8 @@
             </div>
         </div>
 
-        <!-- VR 狀態指示器 -->
         <div class="vr-status" id="vr-status">
-            🔍 手部追蹤: <span id="hand-track-status">未連接</span>
+            👋 手部追蹤: <span id="hand-track-status">未連接</span>
         </div>
 
         <div class="side-menu" id="side-menu">
@@ -279,7 +273,7 @@
 
         const learningData = {
             1: [
-                { id: "1.1", text: "毛巾管理與開場", note: "將手移動到大腿根部，點擊毛巾處。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.25, z: 0}, image: "" }, 
+                { id: "1.1", text: "毛巾管理與開場", note: "將手移動到大腿根部，點擊毛巾處。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.25, z: 0} }, 
                 { id: "1.2", text: "均勻上油", note: "將手放在膝蓋油瓶處，停留2秒。", type: "press", tool: "oil", icon: "🧴", pos: {x: CONFIG.COORDS.KNEE, y: 0.2, z: 0}, duration: 2 },
                 { id: "1.3", text: "開場大安撫", note: "用手從腳踝滑動至大腿。", type: "drag", tool: "hand", icon: "✨", start: {x: CONFIG.COORDS.FOOT, y: -0.35, z: CONFIG.LEFT_LEG_Z}, end: {x: CONFIG.COORDS.THIGH_ROOT, y: -0.2, z: CONFIG.LEFT_LEG_Z} },
                 { id: "1.4", text: "右腳保暖", note: "將毛巾覆蓋右腳。", type: "click", tool: "towel", icon: "TOWEL_ICON", pos: {x: CONFIG.COORDS.KNEE, y: -0.2, z: CONFIG.RIGHT_LEG_Z} }
@@ -343,29 +337,33 @@
             rightRaised: { leftThigh: 0, leftKnee: 0, leftAnkle: 45, rightThigh: -45, rightKnee: -90, rightAnkle: 45 }
         };
 
-        // ========== VR 強化變數 ==========
+        // ========== VR 變數 ==========
         let vrControllers = [];
         let vrHands = [];
-        let vrHandData = []; // 儲存每隻手的追蹤數據
+        let vrHandData = [];
         let handModelFactory, controllerModelFactory;
-        let dolly; // VR 用戶組
+        let dolly;
         let vrHitStatus = { 
             isTouchingStart: false, 
             isTouchingEnd: false, 
             touchStartTime: 0,
-            activeHand: null // 記錄哪隻手正在互動
+            activeHand: null
         };
-        let vrDebugText = null; // 3D 文字面板
-        let isStepCompleting = false; // 防止重複觸發
+        let vrDebugText = null;
+        let isStepCompleting = false;
+        
+        // 虛擬手部模型
+        let virtualHands = { left: null, right: null };
 
-        // VR 互動參數（可調整）
+        // VR 設定（可調整）
         const VR_CONFIG = {
-            DETECTION_RADIUS: 0.15,      // 碰撞檢測半徑 (15公分)
-            PRESS_DURATION: 0.5,         // 短按時間 (秒)
-            HAND_INDICATOR_SIZE: 0.03,   // 手部指示器大小
-            HAPTIC_INTENSITY: 0.8,       // 震動強度
-            HAPTIC_DURATION: 100,        // 震動時長 (毫秒)
-            DEBUG_MODE: true             // 是否顯示 VR 調試信息
+            DETECTION_RADIUS: 0.20,      // 偵測範圍 20cm（加大）
+            PRESS_DURATION: 0.5,
+            HAND_INDICATOR_SIZE: 0.04,   // 指示器加大
+            HAPTIC_INTENSITY: 1.0,       // 震動加強
+            HAPTIC_DURATION: 150,
+            DEBUG_MODE: true,
+            VIRTUAL_HAND_OPACITY: 0.6    // 虛擬手透明度
         };
 
         // === DOM Helpers ===
@@ -383,61 +381,65 @@
         function triggerDebugMode() {
             debugClickCount++;
             if(debugClickCount >= 5) {
-                alert("🔧 VR 診斷模式：\n偵測半徑: " + VR_CONFIG.DETECTION_RADIUS + "m\n按壓時間: " + VR_CONFIG.PRESS_DURATION + "s");
+                const info = `🔧 VR 參數配置\n━━━━━━━━━━━\n偵測半徑: ${VR_CONFIG.DETECTION_RADIUS}m\n按壓時間: ${VR_CONFIG.PRESS_DURATION}s\n初始位置: (${dolly.position.x.toFixed(1)}, ${dolly.position.y.toFixed(1)}, ${dolly.position.z.toFixed(1)})`;
+                alert(info);
                 debugClickCount = 0;
             }
         }
 
-        // ========== 內建 VRButton ==========
+        // ========== VRButton ==========
         function createVRButton(renderer) {
             const button = document.createElement('button');
             button.id = 'VRButton';
             button.style.display = 'none';
             button.style.position = 'absolute';
             button.style.bottom = '20px';
-            button.style.padding = '12px 20px';
+            button.style.padding = '14px 24px';
             button.style.border = '2px solid #fff';
-            button.style.borderRadius = '8px';
-            button.style.background = 'rgba(102, 126, 234, 0.9)';
+            button.style.borderRadius = '10px';
+            button.style.background = 'linear-gradient(135deg, #667eea, #764ba2)';
             button.style.color = '#fff';
-            button.style.font = 'bold 16px sans-serif';
+            button.style.font = 'bold 18px sans-serif';
             button.style.textAlign = 'center';
             button.style.outline = 'none';
             button.style.zIndex = '999';
             button.style.cursor = 'pointer';
-            button.style.left = 'calc(50% - 75px)';
-            button.style.width = '150px';
-            button.style.boxShadow = '0 4px 15px rgba(0,0,0,0.5)';
+            button.style.left = 'calc(50% - 85px)';
+            button.style.width = '170px';
+            button.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
             button.style.transition = 'all 0.3s';
 
-            button.onmouseover = () => { button.style.transform = 'scale(1.05)'; };
-            button.onmouseout = () => { button.style.transform = 'scale(1)'; };
+            button.onmouseover = () => { 
+                button.style.transform = 'scale(1.05)'; 
+                button.style.boxShadow = '0 8px 25px rgba(102, 126, 234, 0.8)';
+            };
+            button.onmouseout = () => { 
+                button.style.transform = 'scale(1)'; 
+                button.style.boxShadow = '0 6px 20px rgba(102, 126, 234, 0.6)';
+            };
 
             function showEnterVR() {
                 let currentSession = null;
                 async function onSessionStarted(session) {
                     session.addEventListener('end', onSessionEnded);
                     await renderer.xr.setSession(session);
-                    button.textContent = '退出 VR';
+                    button.textContent = '🚪 退出 VR';
                     currentSession = session;
                     
-                    // 顯示 VR 狀態
                     const statusEl = document.getElementById('vr-status');
                     if (statusEl) statusEl.classList.add('active');
                 }
 
                 function onSessionEnded() {
                     currentSession.removeEventListener('end', onSessionEnded);
-                    button.textContent = '進入 VR';
+                    button.textContent = '🥽 進入 VR';
                     currentSession = null;
                     
-                    // 隱藏 VR 狀態
                     const statusEl = document.getElementById('vr-status');
                     if (statusEl) statusEl.classList.remove('active');
                 }
 
                 button.style.display = '';
-                button.style.cursor = 'pointer';
                 button.innerHTML = '🥽 進入 VR';
 
                 button.onclick = function() {
@@ -446,13 +448,13 @@
                             optionalFeatures: [ 
                                 'local-floor', 
                                 'bounded-floor', 
-                                'hand-tracking' // 啟用手部追蹤
+                                'hand-tracking'
                             ] 
                         };
                         navigator.xr.requestSession('immersive-vr', sessionInit)
                             .then(onSessionStarted)
                             .catch((err) => {
-                                alert("VR 啟動失敗: " + err.message + "\n\n請確認：\n1. 使用 HTTPS\n2. Quest 已連接\n3. 允許手部追蹤權限");
+                                alert("❌ VR 啟動失敗\n\n可能原因：\n1. 未使用 HTTPS\n2. Quest 未連接\n3. 未開啟手部追蹤\n\n錯誤: " + err.message);
                                 console.error(err);
                             });
                     } else {
@@ -474,9 +476,8 @@
                 button.style.cursor = 'pointer';
                 button.style.width = '200px';
                 button.style.left = 'calc(50% - 100px)';
-                button.style.backgroundColor = 'rgba(255,100,100,0.9)';
+                button.style.background = 'rgba(255,100,100,0.9)';
                 button.innerHTML = '⚠️ 需要 HTTPS';
-                button.title = "WebXR 需要安全連線";
                 button.onclick = () => alert("WebXR 僅支援 HTTPS 或 localhost\n當前: " + window.location.protocol);
             }
 
@@ -494,34 +495,56 @@
             return button;
         }
 
-        // ========== VR 3D 文字面板 ==========
+        // ========== VR 3D 文字面板（修正位置）==========
         function createVRDebugText() {
             const canvas = document.createElement('canvas');
-            canvas.width = 512;
-            canvas.height = 256;
+            canvas.width = 1024;
+            canvas.height = 512;
             const ctx = canvas.getContext('2d');
             
             function updateText(lines) {
-                ctx.fillStyle = 'rgba(0,0,0,0.7)';
-                ctx.fillRect(0, 0, 512, 256);
+                ctx.fillStyle = 'rgba(0,0,0,0.85)';
+                ctx.fillRect(0, 0, 1024, 512);
+                
+                // 邊框
+                ctx.strokeStyle = '#667eea';
+                ctx.lineWidth = 8;
+                ctx.strokeRect(4, 4, 1016, 504);
+                
+                // 標題
                 ctx.fillStyle = '#8ec5fc';
-                ctx.font = 'bold 24px Arial';
+                ctx.font = 'bold 48px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('📋 操作指引', 512, 70);
+                
+                // 內容
+                ctx.fillStyle = 'white';
+                ctx.font = '36px Arial';
                 ctx.textAlign = 'left';
-                ctx.textBaseline = 'top';
                 
                 lines.forEach((line, i) => {
-                    ctx.fillText(line, 20, 20 + i * 35);
+                    ctx.fillText(line, 50, 150 + i * 60);
                 });
             }
             
-            updateText(['🔍 正在偵測手部...', '請將雙手伸到前方']);
+            updateText(['🔍 正在搜尋手部...', '請將雙手伸到前方', '等待綠色指示器出現']);
             
             const texture = new THREE.CanvasTexture(canvas);
             const mesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(1, 0.5),
-                new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.9 })
+                new THREE.PlaneGeometry(2, 1),
+                new THREE.MeshBasicMaterial({ 
+                    map: texture, 
+                    transparent: true, 
+                    opacity: 0.95,
+                    side: THREE.DoubleSide
+                })
             );
-            mesh.position.set(0, 1.6, -1.5);
+            
+            // 🔥 關鍵修正：位置改為「模特兒上方」
+            // 相對於 dolly 的位置，讓文字板浮在視線中央上方
+            mesh.position.set(0, 0.8, -2);  // 上移 + 前移
+            mesh.rotation.x = -0.2;  // 稍微向下傾斜，方便閱讀
+            
             dolly.add(mesh);
             
             return { mesh, ctx, texture, canvas, updateText };
@@ -561,16 +584,20 @@
             const vrButton = createVRButton(renderer);
             document.body.appendChild(vrButton);
 
-            // === VR Dolly Setup ===
+            // 🔥 VR Dolly 位置優化：模仿桌面視角
             dolly = new THREE.Group();
-            dolly.position.set(0.5, 0.7, 1.5); // 適中距離
+            // 位置：站在床的右側，高度適中，距離適中
+            dolly.position.set(1.5, 1.8, 2.0);  
+            // 角度：稍微向下看床
+            dolly.rotation.y = -0.3;  // 向左轉約 17 度
+            
             scene.add(dolly);
             dolly.add(camera);
             
-            // 創建 VR 調試面板
+            // 創建 VR 文字面板（位置已修正）
             vrDebugText = createVRDebugText();
 
-            // === 設置 VR 手部追蹤 ===
+            // 設置 VR 手部
             setupVRHands();
 
             controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -588,11 +615,12 @@
             canvas.addEventListener('touchend', onPointerUp);
             window.addEventListener('resize', onWindowResize);
 
-            // === 主渲染循環 ===
+            // 主渲染循環
             renderer.setAnimationLoop(() => {
                 if (renderer.xr.isPresenting) {
-                    handleVRInteraction(); // VR 手勢互動
-                    handleVRMovement();     // 搖桿移動
+                    handleVRInteraction();
+                    handleVRMovement();
+                    updateVirtualHands(); // 更新虛擬手部
                 } else {
                     controls.update();
                 }
@@ -613,7 +641,7 @@
         // ========== VR 手部設置（強化版）==========
         function setupVRHands() {
             if (typeof THREE.XRHandModelFactory === 'undefined' || typeof THREE.XRControllerModelFactory === 'undefined') {
-                console.warn("⚠️ VR 模型工廠未載入，跳過手部設置");
+                console.warn("⚠️ VR 模型工廠未載入");
                 return;
             }
 
@@ -621,7 +649,7 @@
             controllerModelFactory = new THREE.XRControllerModelFactory();
 
             for (let i = 0; i < 2; i++) {
-                // === 控制器設置 (備用方案) ===
+                // 控制器（備用）
                 const controllerGrip = renderer.xr.getControllerGrip(i);
                 controllerGrip.add(controllerModelFactory.createControllerModel(controllerGrip));
                 dolly.add(controllerGrip);
@@ -631,71 +659,73 @@
                 controller.addEventListener('selectend', () => { isDragging = false; });
                 dolly.add(controller);
                 
-                // 射線視覺化
                 const geometry = new THREE.BufferGeometry().setFromPoints([
                     new THREE.Vector3(0, 0, 0), 
                     new THREE.Vector3(0, 0, -3)
                 ]);
                 const line = new THREE.Line(
                     geometry, 
-                    new THREE.LineBasicMaterial({ color: 0x667eea, linewidth: 2 })
+                    new THREE.LineBasicMaterial({ color: 0x667eea, linewidth: 2, transparent: true, opacity: 0.3 })
                 );
                 line.name = 'ray';
-                line.scale.z = 1;
                 controller.add(line);
-                
                 vrControllers.push(controller);
 
-                // === 手部追蹤設置（主要方案）===
+                // === 手部追蹤 ===
                 const hand = renderer.xr.getHand(i);
-                
-                // 使用 spheres 模式（保證顯示）
                 const handModel = handModelFactory.createHandModel(hand, "spheres");
                 hand.add(handModel);
                 
-                // 創建手部數據物件
                 const handData = {
                     hand: hand,
-                    handedness: null, // 'left' or 'right'
+                    handedness: null,
                     isTracking: false,
                     joints: {},
                     indexTip: null,
                     thumbTip: null,
-                    indicator: null, // 食指尖指示器
+                    indicator: null,
+                    virtualHand: null  // 虛擬手部模型
                 };
                 
-                // 創建食指尖視覺指示器
+                // 🔥 加大指示器，更醒目
                 const indicator = new THREE.Mesh(
                     new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 16, 16),
-                    new THREE.MeshBasicMaterial({ 
+                    new THREE.MeshStandardMaterial({ 
                         color: 0x00ff00, 
                         transparent: true, 
-                        opacity: 0.8 
+                        opacity: 0.9,
+                        emissive: 0x00ff00,
+                        emissiveIntensity: 0.5
                     })
                 );
                 indicator.visible = false;
                 hand.add(indicator);
                 handData.indicator = indicator;
                 
-                // 手部連接事件
+                // 創建虛擬手部模型（半透明手掌）
+                createVirtualHand(handData);
+                
+                // 連接事件
                 hand.addEventListener('connected', (event) => {
                     const xrInputSource = event.data;
                     handData.handedness = xrInputSource.handedness;
                     handData.isTracking = true;
                     
-                    console.log(`✅ ${handData.handedness} 手已連接`);
+                    console.log(`✅ ${handData.handedness.toUpperCase()} 手已連接`);
                     updateVRDebug(
                         `✅ ${handData.handedness.toUpperCase()} 手已連接`,
-                        '伸出食指開始互動'
+                        '👆 伸出食指觸碰目標',
+                        '🟢 綠色 = 待機 🔴 紅色 = 觸碰'
                     );
                     
-                    // 更新 UI 狀態
-                    safeSetText('hand-track-status', '已連接 (' + handData.handedness + ')');
+                    safeSetText('hand-track-status', `已連接 (${handData.handedness})`);
                 });
                 
                 hand.addEventListener('disconnected', () => {
                     handData.isTracking = false;
                     handData.indicator.visible = false;
+                    if (handData.virtualHand) handData.virtualHand.visible = false;
+                    
                     console.log(`❌ ${handData.handedness} 手斷線`);
                     updateVRDebug('🔍 手部斷線', '請重新伸出雙手');
                     safeSetText('hand-track-status', '未連接');
@@ -707,7 +737,54 @@
             }
         }
 
-        // ========== VR 手勢互動邏輯（核心）==========
+        // ========== 創建虛擬手部模型 ==========
+        function createVirtualHand(handData) {
+            // 簡單的手掌形狀
+            const handGeometry = new THREE.BoxGeometry(0.08, 0.12, 0.03);
+            const handMaterial = new THREE.MeshStandardMaterial({
+                color: 0xffdbac,
+                transparent: true,
+                opacity: VR_CONFIG.VIRTUAL_HAND_OPACITY,
+                roughness: 0.8
+            });
+            
+            const virtualHand = new THREE.Mesh(handGeometry, handMaterial);
+            virtualHand.visible = false;
+            handData.hand.add(virtualHand);
+            handData.virtualHand = virtualHand;
+            
+            // 儲存到全局變量
+            if (handData.handedness === 'left') {
+                virtualHands.left = virtualHand;
+            } else if (handData.handedness === 'right') {
+                virtualHands.right = virtualHand;
+            }
+        }
+
+        // ========== 更新虛擬手部位置 ==========
+        function updateVirtualHands() {
+            vrHandData.forEach(handData => {
+                if (!handData.isTracking || !handData.virtualHand) return;
+                
+                // 獲取手腕位置作為基準
+                const wrist = handData.hand.joints['wrist'];
+                const middleTip = handData.hand.joints['middle-finger-tip'];
+                
+                if (wrist && middleTip) {
+                    // 虛擬手跟隨手腕
+                    handData.virtualHand.position.copy(wrist.position);
+                    
+                    // 計算朝向（從手腕指向中指尖）
+                    const direction = new THREE.Vector3();
+                    direction.subVectors(middleTip.position, wrist.position).normalize();
+                    handData.virtualHand.lookAt(middleTip.position);
+                    
+                    handData.virtualHand.visible = true;
+                }
+            });
+        }
+
+        // ========== VR 手勢互動（核心邏輯）==========
         function handleVRInteraction() {
             if (!interactables.length || isStepCompleting) return;
 
@@ -717,28 +794,23 @@
 
             if (!startObj) return;
 
-            // 遍歷每隻手
             vrHandData.forEach(handData => {
                 if (!handData.isTracking) return;
 
-                // 更新食指尖位置
                 updateHandJoints(handData);
                 
                 if (!handData.indexTip || !handData.indicator) return;
 
-                // 獲取食指尖的世界座標
                 const indexTipWorldPos = new THREE.Vector3();
                 handData.indexTip.getWorldPosition(indexTipWorldPos);
                 
-                // 更新指示器位置
-                handData.hand.worldToLocal(indexTipWorldPos.clone());
+                // 🔥 修正指示器位置：跟隨食指尖
                 handData.indicator.position.copy(handData.indexTip.position);
                 handData.indicator.visible = true;
 
-                // 計算到起始點的距離
                 const distToStart = indexTipWorldPos.distanceTo(startObj.position);
                 
-                // === 互動判定 ===
+                // 互動判定
                 if (step.type === 'click') {
                     handleClickInteraction(distToStart, handData, startObj);
                 } 
@@ -754,7 +826,8 @@
         // === 點擊互動 ===
         function handleClickInteraction(distance, handData, targetObj) {
             if (distance < VR_CONFIG.DETECTION_RADIUS) {
-                handData.indicator.material.color.set(0xff0000); // 紅色 = 觸碰中
+                handData.indicator.material.color.set(0xff0000);
+                handData.indicator.material.emissive.set(0xff0000);
                 
                 if (!vrHitStatus.touchStartTime) {
                     vrHitStatus.touchStartTime = Date.now();
@@ -762,16 +835,21 @@
                     
                     triggerHaptic(handData);
                     playClickFeedback(targetObj);
+                    updateVRDebug(
+                        `🔴 ${handData.handedness.toUpperCase()} 手觸碰中...`,
+                        '保持 0.3 秒完成點擊'
+                    );
                 } else {
                     const elapsed = (Date.now() - vrHitStatus.touchStartTime) / 1000;
-                    if (elapsed >= 0.3) { // 0.3秒即可完成點擊
+                    if (elapsed >= 0.3) {
                         completeStepVR();
                         vrHitStatus.touchStartTime = 0;
                         vrHitStatus.activeHand = null;
                     }
                 }
             } else {
-                handData.indicator.material.color.set(0x00ff00); // 綠色 = 待機
+                handData.indicator.material.color.set(0x00ff00);
+                handData.indicator.material.emissive.set(0x00ff00);
                 if (vrHitStatus.activeHand === handData.handedness) {
                     vrHitStatus.touchStartTime = 0;
                     vrHitStatus.activeHand = null;
@@ -782,7 +860,8 @@
         // === 長按互動 ===
         function handlePressInteraction(distance, handData, targetObj, requiredDuration) {
             if (distance < VR_CONFIG.DETECTION_RADIUS) {
-                handData.indicator.material.color.set(0xffff00); // 黃色 = 按壓中
+                handData.indicator.material.color.set(0xffff00);
+                handData.indicator.material.emissive.set(0xffff00);
                 
                 if (!vrHitStatus.touchStartTime) {
                     vrHitStatus.touchStartTime = Date.now();
@@ -792,12 +871,11 @@
                     const elapsed = (Date.now() - vrHitStatus.touchStartTime) / 1000;
                     const progress = Math.min(elapsed / requiredDuration, 1);
                     
-                    // 視覺反饋：物體脈衝
                     targetObj.scale.setScalar(1 + progress * 0.3);
                     
-                    // 更新 VR 顯示
                     updateVRDebug(
-                        `⏱️ 按壓進度: ${Math.floor(progress * 100)}%`,
+                        `🟡 ${handData.handedness.toUpperCase()} 手按壓中...`,
+                        `⏱️ 進度: ${Math.floor(progress * 100)}%`,
                         `剩餘: ${(requiredDuration - elapsed).toFixed(1)}秒`
                     );
                     
@@ -809,6 +887,7 @@
                 }
             } else {
                 handData.indicator.material.color.set(0x00ff00);
+                handData.indicator.material.emissive.set(0x00ff00);
                 if (vrHitStatus.activeHand === handData.handedness) {
                     vrHitStatus.touchStartTime = 0;
                     vrHitStatus.activeHand = null;
@@ -820,37 +899,38 @@
         // === 拖曳互動 ===
         function handleDragInteraction(distToStart, indexPos, handData, startObj, endObj) {
             if (!vrHitStatus.isTouchingStart) {
-                // 階段1: 偵測起始點觸碰
                 if (distToStart < VR_CONFIG.DETECTION_RADIUS) {
                     vrHitStatus.isTouchingStart = true;
                     vrHitStatus.activeHand = handData.handedness;
-                    handData.indicator.material.color.set(0xffff00); // 黃色 = 拖曳中
+                    handData.indicator.material.color.set(0xffff00);
+                    handData.indicator.material.emissive.set(0xffff00);
                     
                     triggerHaptic(handData);
-                    startObj.children[1].material.color.set(0xffff00); // 起點變黃
+                    startObj.children[1].material.color.set(0xffff00);
                     
-                    if (endObj) endObj.visible = true; // 顯示終點
+                    if (endObj) endObj.visible = true;
                     
                     updateVRDebug(
-                        `🟡 ${handData.handedness} 手抓取成功`,
-                        '請拖曳到藍色終點'
+                        `🟡 ${handData.handedness.toUpperCase()} 手抓取成功`,
+                        '➡️ 拖曳到藍色終點',
+                        '保持食指接觸模特兒'
                     );
                 }
             } else if (vrHitStatus.activeHand === handData.handedness) {
-                // 階段2: 檢查是否到達終點
-                handData.indicator.material.color.set(0xffa500); // 橘色 = 移動中
+                handData.indicator.material.color.set(0xffa500);
+                handData.indicator.material.emissive.set(0xffa500);
                 
                 if (endObj) {
                     const distToEnd = indexPos.distanceTo(endObj.position);
                     const totalDist = startObj.position.distanceTo(endObj.position);
                     const progress = 1 - Math.min(distToEnd / totalDist, 1);
                     
-                    // 視覺反饋：路徑漸變
                     startObj.children[1].material.opacity = 0.3 + progress * 0.7;
                     
                     updateVRDebug(
-                        `🔵 拖曳進度: ${Math.floor(progress * 100)}%`,
-                        `距離: ${distToEnd.toFixed(2)}m`
+                        `🟠 ${handData.handedness.toUpperCase()} 手拖曳中...`,
+                        `📊 進度: ${Math.floor(progress * 100)}%`,
+                        `📏 距離終點: ${distToEnd.toFixed(2)}m`
                     );
                     
                     if (distToEnd < VR_CONFIG.DETECTION_RADIUS) {
@@ -862,15 +942,12 @@
             }
         }
 
-        // === 更新手部關節位置 ===
+        // === 更新手部關節 ===
         function updateHandJoints(handData) {
             const hand = handData.hand;
-            
-            // 查找食指尖關節
             handData.indexTip = hand.joints['index-finger-tip'];
             handData.thumbTip = hand.joints['thumb-tip'];
             
-            // 儲存所有關節（用於進階手勢識別）
             if (hand.joints) {
                 Object.keys(hand.joints).forEach(jointName => {
                     handData.joints[jointName] = hand.joints[jointName];
@@ -880,7 +957,6 @@
 
         // === 震動反饋 ===
         function triggerHaptic(handData, intensity = VR_CONFIG.HAPTIC_INTENSITY, duration = VR_CONFIG.HAPTIC_DURATION) {
-            // 嘗試從對應的控制器觸發震動
             vrControllers.forEach(controller => {
                 if (controller.gamepad && controller.gamepad.hapticActuators && controller.gamepad.hapticActuators.length > 0) {
                     controller.gamepad.hapticActuators[0].pulse(intensity, duration);
@@ -891,49 +967,52 @@
         // === 視覺反饋 ===
         function playClickFeedback(obj) {
             gsap.to(obj.scale, { 
-                x: 1.3, y: 1.3, z: 1.3, 
-                duration: 0.15, 
+                x: 1.4, y: 1.4, z: 1.4, 
+                duration: 0.2, 
                 yoyo: true, 
                 repeat: 1,
-                ease: "power2.out"
+                ease: "elastic.out(1, 0.3)"
             });
         }
 
-        // === 完成步驟（VR 專用）===
+        // === 完成步驟 ===
         function completeStepVR() {
             if (isStepCompleting) return;
             isStepCompleting = true;
             
-            // 清除所有互動標記
-            interactables.forEach(obj => {
-                gsap.to(obj.scale, { x: 0, y: 0, z: 0, duration: 0.3 });
+            // 強力震動反饋
+            vrHandData.forEach(handData => {
+                if (handData.isTracking) {
+                    triggerHaptic(handData, 1.0, 200);
+                }
             });
             
-            updateVRDebug('✅ 完成！', '準備下一步...');
+            interactables.forEach(obj => {
+                gsap.to(obj.scale, { x: 0, y: 0, z: 0, duration: 0.4, ease: "back.in" });
+            });
+            
+            updateVRDebug('✅ 完成！', '🎉 做得好！', '準備下一步...');
             
             setTimeout(() => {
                 nextStep();
                 isStepCompleting = false;
-            }, 800);
+            }, 1000);
         }
 
         // ========== VR 移動控制 ==========
         function handleVRMovement() {
             if (!vrControllers || vrControllers.length === 0) return;
 
-            const speed = 0.05;
-            const rotSpeed = 0.03;
+            const speed = 0.08;  // 加快移動速度
 
             vrControllers.forEach((controller) => {
                 if (controller.gamepad) {
                     const axes = controller.gamepad.axes;
                     if (axes && axes.length >= 4) {
-                        // 左搖桿：移動
                         const moveX = Math.abs(axes[2]) > 0.1 ? axes[2] : 0;
                         const moveZ = Math.abs(axes[3]) > 0.1 ? axes[3] : 0;
                         
                         if (moveX !== 0 || moveZ !== 0) {
-                            // 相對於視角方向移動
                             const forward = new THREE.Vector3(0, 0, -1);
                             forward.applyQuaternion(dolly.quaternion);
                             forward.y = 0;
@@ -947,18 +1026,12 @@
                             dolly.position.addScaledVector(forward, moveZ * speed);
                             dolly.position.addScaledVector(right, moveX * speed);
                         }
-                        
-                        // 右搖桿：旋轉（可選）
-                        // const rotX = Math.abs(axes[0]) > 0.1 ? axes[0] : 0;
-                        // if (rotX !== 0) {
-                        //     dolly.rotateY(-rotX * rotSpeed);
-                        // }
                     }
                 }
             });
         }
 
-        // ========== 桌面版互動邏輯 ==========
+        // ========== 桌面版互動 ==========
         function checkIntersection() {
             const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -model.position.y);
             const point = new THREE.Vector3();
@@ -1027,7 +1100,7 @@
             }
         }
 
-        // ========== 環境與模型載入 ==========
+        // ========== 環境與模型 ==========
         function loadEnvironment() {
             const loader = new THREE.GLTFLoader();
             loader.load(BASE_URL + 'A01.glb', (gltf) => {
@@ -1079,7 +1152,6 @@
                     }
                 });
 
-                // 偵測骨骼
                 bones = {};
                 model.traverse(child => {
                     if (child.isBone) {
@@ -1211,7 +1283,7 @@
             });
         }
 
-        // ========== 教學步驟控制 ==========
+        // ========== 教學步驟 ==========
         function setPhase(p) {
             currentPhase = p;
             currentStepIndex = 0;
@@ -1255,7 +1327,6 @@
             if (step.pose) applyPose(step.pose);
             else applyPose('flat');
 
-            // 重置 VR 狀態
             vrHitStatus = {
                 isTouchingStart: false,
                 isTouchingEnd: false,
@@ -1276,10 +1347,10 @@
 
             autoFocusCamera(step);
             
-            // 更新 VR 提示
             updateVRDebug(
                 `📍 ${step.text}`,
-                step.note
+                step.note,
+                `🎯 伸出手指開始操作`
             );
         }
 
@@ -1439,7 +1510,7 @@
                 if (renderer.xr.isPresenting) {
                     updateVRDebug(
                         `🎉 階段 ${currentPhase} 完成！`,
-                        learningData[currentPhase + 1] ? '進入下一階段' : '恭喜完成所有療程！'
+                        learningData[currentPhase + 1] ? '✨ 進入下一階段' : '🏆 恭喜完成所有療程！'
                     );
                 } else {
                     alert(`🎉 階段 ${currentPhase} 完成！`);
@@ -1450,7 +1521,7 @@
                 } else {
                     setTimeout(() => {
                         if (renderer.xr.isPresenting) {
-                            updateVRDebug('✅ 療程完成！', '感謝使用 VR 教學系統');
+                            updateVRDebug('🏆 療程完成！', '感謝使用 VR 教學系統', '🎊 恭喜你！');
                         } else {
                             alert("恭喜完成所有療程！");
                         }
@@ -1471,7 +1542,7 @@
             nextStep();
         }
 
-        // ========== 桌面版事件處理 ==========
+        // ========== 事件處理 ==========
         function onTouchStart(e) {
             e.preventDefault();
             onPointerDown(e.touches[0]);
