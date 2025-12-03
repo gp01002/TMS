@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (自由移動版)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (瞬間移動版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -161,15 +161,15 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 自由移動版 v4.0</p>
-        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 新增：捏合手指拖曳移動世界</p>
+        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 瞬間移動版 v5.0</p>
+        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 新增：指尖射線瞬間移動 (Teleport)</p>
         
         <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px;">
             <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 Quest 3 快速設定</p>
             <div style="text-align: left; color: #ccc; line-height: 2;">
                 <p>1️⃣ Quest 設定 → <span style="color:#00ff00">動作</span> → 手部追蹤 → <span style="color:#00ff00">開啟</span></p>
                 <p>2️⃣ 使用 <span style="color:#00ff00">Quest Browser</span> 進入此網頁</p>
-                <p>3️⃣ <b>移動方式：</b>對著空中「捏住」食指與拇指，然後拖曳即可移動！</p>
+                <p>3️⃣ <b>移動方式：</b>捏合食指拇指瞄準地板，放開後傳送</p>
             </div>
         </div>
         
@@ -196,11 +196,10 @@
             </div>
         </div>
 
-        <!-- 移到左下角 -->
         <div class="vr-status" id="vr-status">
             <div style="font-weight: bold; color: #00ff00; margin-bottom: 5px; font-size: 14px;">🔍 VR 診斷</div>
             <div class="vr-status-line">👋 手勢: <span id="hand-track-status" style="color: #ffff00;">等待中...</span></div>
-            <div class="vr-status-line">🏃 移動: <span id="move-status">捏合拖曳</span></div>
+            <div class="vr-status-line">🚀 移動: <span id="move-status">捏合傳送</span></div>
         </div>
 
         <div class="side-menu" id="side-menu">
@@ -323,6 +322,11 @@
         };
         let vrDebugText = null;
         let isStepCompleting = false;
+        
+        // ========== 傳送移動變數 ==========
+        let teleportLine, teleportReticle;
+        let isTeleporting = false;
+        let teleportTarget = new THREE.Vector3();
 
         // VR 設定
         const VR_CONFIG = {
@@ -331,7 +335,7 @@
             HAND_INDICATOR_SIZE: 0.10,     
             HAPTIC_INTENSITY: 1.0,
             HAPTIC_DURATION: 200,
-            PINCH_THRESHOLD: 0.02 // 捏合觸發距離
+            PINCH_THRESHOLD: 0.02
         };
 
         function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
@@ -342,7 +346,6 @@
             setTimeout(initThreeJS, 100);
         }
 
-        // ========== 極簡 VRButton ==========
         function createVRButton(renderer) {
             const button = document.createElement('button');
             button.style.position = 'absolute';
@@ -375,7 +378,6 @@
                 
                 async function onSessionStarted(session) {
                     console.log("✅ ========== VR Session 啟動成功 ==========");
-                    
                     session.addEventListener('end', onSessionEnded);
                     await renderer.xr.setSession(session);
                     button.textContent = '🚪 退出 VR';
@@ -383,13 +385,11 @@
                     button.style.color = '#ff6b6b';
                     button.style.boxShadow = '0 0 30px rgba(255,107,107,0.8)';
                     currentSession = session;
-                    
                     document.getElementById('vr-status').classList.add('active');
                     safeSetText('hand-track-status', '正在連接...');
                 }
 
                 function onSessionEnded() {
-                    console.log("🚪 VR Session 結束");
                     currentSession.removeEventListener('end', onSessionEnded);
                     button.textContent = '🥽 進入 VR';
                     button.style.borderColor = '#00ff00';
@@ -404,17 +404,10 @@
 
                 button.onclick = function() {
                     if (currentSession === null) {
-                        const sessionInit = { 
-                            optionalFeatures: [ 
-                                'local-floor',
-                                'hand-tracking'
-                            ] 
-                        };
+                        const sessionInit = { optionalFeatures: ['local-floor', 'hand-tracking'] };
                         navigator.xr.requestSession('immersive-vr', sessionInit)
                             .then(onSessionStarted)
-                            .catch((err) => {
-                                alert("❌ VR 啟動失敗: " + err.message);
-                            });
+                            .catch((err) => { alert("❌ VR 啟動失敗: " + err.message); });
                     } else {
                         currentSession.end();
                     }
@@ -424,9 +417,8 @@
             if ('xr' in navigator) {
                 navigator.xr.isSessionSupported('immersive-vr')
                     .then(function(supported) {
-                        if (supported) {
-                            showEnterVR();
-                        } else {
+                        if (supported) { showEnterVR(); } 
+                        else {
                             button.style.display = '';
                             button.innerHTML = '❌ 不支援 VR';
                             button.style.borderColor = '#888';
@@ -437,11 +429,9 @@
                 button.style.display = '';
                 button.innerHTML = '❌ 無 WebXR';
             }
-            
             return button;
         }
 
-        // ========== VR 3D 狀態面板 (縮小並往下移) ==========
         function createVRDebugText() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
@@ -449,55 +439,33 @@
             const ctx = canvas.getContext('2d');
             
             function updateText(title, ...lines) {
-                ctx.fillStyle = 'rgba(0,0,0,0.9)'; // 更透明
+                ctx.fillStyle = 'rgba(0,0,0,0.9)'; 
                 ctx.fillRect(0, 0, 1024, 512);
-                
-                // 綠色邊框
                 ctx.strokeStyle = '#00ff00';
                 ctx.lineWidth = 4;
                 ctx.strokeRect(2, 2, 1020, 508);
-                
-                // 標題
                 ctx.fillStyle = '#00ff00';
-                ctx.font = 'bold 50px "Microsoft JhengHei", Arial'; // 稍微縮小字體
+                ctx.font = 'bold 50px "Microsoft JhengHei", Arial';
                 ctx.textAlign = 'center';
                 ctx.fillText(title, 512, 80);
-                
-                // 內容
                 ctx.fillStyle = 'white';
                 ctx.font = '36px "Microsoft JhengHei", Arial';
                 ctx.textAlign = 'left';
-                
-                lines.forEach((line, i) => {
-                    ctx.fillText(line, 50, 160 + i * 55);
-                });
+                lines.forEach((line, i) => { ctx.fillText(line, 50, 160 + i * 55); });
             }
             
-            updateText(
-                '🔍 準備就緒',
-                '請將雙手伸到前方',
-                '捏合手指以移動位置'
-            );
+            updateText('🔍 準備就緒', '捏合食指拇指瞄準', '放開後傳送');
             
             const texture = new THREE.CanvasTexture(canvas);
             const mesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(1.5, 0.75), // 縮小尺寸 (原本 2x1)
-                new THREE.MeshBasicMaterial({ 
-                    map: texture, 
-                    transparent: true, 
-                    opacity: 0.9,
-                    side: THREE.DoubleSide,
-                    depthTest: false // 讓它永遠顯示在最上層
-                })
+                new THREE.PlaneGeometry(1.5, 0.75),
+                new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.9, side: THREE.DoubleSide, depthTest: false })
             );
             
-            // 🔥 移到視線下方，避免擋住視線
             mesh.position.set(0, -0.4, -1.5); 
-            mesh.rotation.x = -0.3; // 稍微仰角
+            mesh.rotation.x = -0.3;
             mesh.renderOrder = 999;
-            
             dolly.add(mesh);
-            
             return { mesh, ctx, texture, canvas, updateText };
         }
 
@@ -507,17 +475,37 @@
             vrDebugText.texture.needsUpdate = true;
         }
 
-        // ========== Three.js 初始化 ==========
-        function initThreeJS() {
-            console.log("🎬 開始初始化 Three.js");
+        // ========== 新增：建立傳送視覺元件 ==========
+        function createTeleportVisuals() {
+            // 1. 傳送線 (拋物線)
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(30 * 3); // 30個點
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
             
+            teleportLine = new THREE.Line(
+                geometry, 
+                new THREE.LineBasicMaterial({ color: 0x00ffff, linewidth: 2 })
+            );
+            teleportLine.visible = false;
+            scene.add(teleportLine);
+
+            // 2. 地板游標 (光圈)
+            const ringGeo = new THREE.RingGeometry(0.15, 0.2, 32);
+            ringGeo.rotateX(-Math.PI / 2); // 平躺
+            teleportReticle = new THREE.Mesh(
+                ringGeo,
+                new THREE.MeshBasicMaterial({ color: 0x00ffff, side: THREE.DoubleSide })
+            );
+            teleportReticle.visible = false;
+            scene.add(teleportReticle);
+        }
+
+        function initThreeJS() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x1a1a1a);
             scene.fog = new THREE.Fog(0x1a1a1a, 5, 15);
-            
             scene.add(new THREE.AmbientLight(0xffffff, 0.7));
-            
             const spotLight = new THREE.SpotLight(0xffeeb1, 1.5);
             spotLight.position.set(2, 6, 2);
             scene.add(spotLight);
@@ -530,25 +518,20 @@
             renderer.shadowMap.enabled = true;
             renderer.xr.enabled = true; 
             container.appendChild(renderer.domElement);
-            
-            console.log("✅ Three.js 基礎設置完成");
 
             const vrButton = createVRButton(renderer);
             document.body.appendChild(vrButton);
 
-            // VR Dolly
             dolly = new THREE.Group();
-            
-            // 🔥 修正初始位置：直接設在按摩床右側 (適合操作的位置)
             dolly.position.set(0.8, 1.6, 0.5); 
-            dolly.rotation.y = 0.5; // 面向床鋪
-
+            dolly.rotation.y = 0.5;
             scene.add(dolly);
             dolly.add(camera);
             
-            console.log("✅ VR Dolly 創建完成");
-            
             vrDebugText = createVRDebugText();
+            
+            // 初始化傳送視覺
+            createTeleportVisuals();
 
             setupVRHands();
 
@@ -566,39 +549,29 @@
             canvas.addEventListener('touchend', onPointerUp);
             window.addEventListener('resize', onWindowResize);
 
-            // 主循環
             renderer.setAnimationLoop(() => {
                 if (renderer.xr.isPresenting) {
                     handleVRInteraction();
-                    handleHandMovement(); // 🔥 新增：手勢移動
+                    handleTeleportation(); // 🔥 替換為傳送邏輯
                     updateVRStatus(); 
                 } else {
                     controls.update();
                 }
-
                 interactables.forEach(obj => { if(obj.tick) obj.tick(); });
-                
                 if (ghostHand && ghostHand.visible && !renderer.xr.isPresenting) {
                     ghostHand.lookAt(camera.position);
                 }
-                
                 renderer.render(scene, camera);
             });
 
             loadEnvironment();
-            
-            console.log("✅ Three.js 初始化完成");
         }
 
-        // ========== VR 手部設置 ==========
         function setupVRHands() {
-            console.log("🤲 ========== 開始設置 VR 手部 ==========");
-            
             handModelFactory = new XRHandModelFactory();
             controllerModelFactory = new XRControllerModelFactory();
             
             for (let i = 0; i < 2; i++) {
-                // 控制器
                 const controllerGrip = renderer.xr.getControllerGrip(i);
                 const controllerModel = controllerModelFactory.createControllerModel(controllerGrip);
                 controllerGrip.add(controllerModel);
@@ -608,14 +581,12 @@
                 dolly.add(controller);
                 vrControllers.push(controller);
                 
-                // === 手部追蹤 ===
                 const hand = renderer.xr.getHand(i);
                 dolly.add(hand);
 
                 try {
                     const handModel = handModelFactory.createHandModel(hand, "mesh"); 
                     hand.add(handModel);
-                    console.log(` ✅ 手部模型 ${i} 創建成功 (Mesh)`);
                 } catch (e) {
                     console.error(` ❌ 手部模型 ${i} 創建失敗:`, e);
                 }
@@ -627,19 +598,15 @@
                     isTracking: false,
                     indexTip: null,
                     thumbTip: null,
+                    wrist: null, // 新增手腕節點追蹤
                     indicator: null,
-                    isPinching: false, // 追蹤捏合狀態
-                    pinchStartPos: new THREE.Vector3() // 追蹤捏合起始位置
+                    isPinching: false
                 };
                 
                 const indicator = new THREE.Mesh(
                     new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 32, 32),
                     new THREE.MeshStandardMaterial({ 
-                        color: 0x00ff00, 
-                        transparent: true, 
-                        opacity: 0.3, 
-                        emissive: 0x00ff00,
-                        emissiveIntensity: 1.0,
+                        color: 0x00ff00, transparent: true, opacity: 0.3, emissive: 0x00ff00, emissiveIntensity: 1.0,
                     })
                 );
                 indicator.visible = false;
@@ -650,15 +617,8 @@
                     const xrInputSource = event.data;
                     handData.handedness = xrInputSource.handedness;
                     handData.isTracking = true;
-                    
-                    console.log(`\n✅ ${handData.handedness} 手已連接`);
                     safeSetText('hand-track-status', `${handData.handedness} ✅`);
-                    
-                    updateVRDebug(
-                        `✅ ${handData.handedness.toUpperCase()} 已連接`,
-                        '👋 準備就緒',
-                        '🤏 空中捏合可移動視角'
-                    );
+                    updateVRDebug(`✅ ${handData.handedness.toUpperCase()} 已連接`, '👋 準備就緒', '🤏 捏合手指傳送');
                 });
                 
                 hand.addEventListener('disconnected', () => {
@@ -672,21 +632,18 @@
             }
         }
 
-        // ========== 更新 VR 狀態顯示與關節 ==========
         function updateVRStatus() {
             vrHandData.forEach(handData => {
                 if (!handData.isTracking) return;
-                
                 const hand = handData.hand;
-                
                 if (hand.joints) {
                     if (hand.joints['index-finger-tip']) handData.indexTip = hand.joints['index-finger-tip'];
                     if (hand.joints['thumb-tip']) handData.thumbTip = hand.joints['thumb-tip'];
+                    if (hand.joints['wrist']) handData.wrist = hand.joints['wrist']; // 獲取手腕
                     
                     if (handData.indexTip) {
                         const worldPos = new THREE.Vector3();
                         handData.indexTip.getWorldPosition(worldPos);
-                        
                         if (handData.indicator) {
                             handData.indicator.position.copy(worldPos);
                             handData.indicator.visible = true;
@@ -698,57 +655,131 @@
             });
         }
 
-        // ========== 🔥 新增：手勢移動邏輯 (Pinch to Move) ==========
-        function handleHandMovement() {
-            if (isStepCompleting) return; // 完成動作時鎖定移動
+        // ========== 🔥 新增：捏合傳送邏輯 (Pinch to Teleport) ==========
+        function handleTeleportation() {
+            if (isStepCompleting) return; // 互動中鎖定移動
+
+            let anyHandPinching = false;
 
             vrHandData.forEach(handData => {
-                if (!handData.isTracking || !handData.indexTip || !handData.thumbTip) return;
+                if (!handData.isTracking || !handData.indexTip || !handData.thumbTip || !handData.wrist) return;
 
-                // 1. 計算捏合 (Pinch)
+                // 1. 檢測捏合
                 const indexPos = new THREE.Vector3();
                 const thumbPos = new THREE.Vector3();
+                const wristPos = new THREE.Vector3();
+                
                 handData.indexTip.getWorldPosition(indexPos);
                 handData.thumbTip.getWorldPosition(thumbPos);
+                handData.wrist.getWorldPosition(wristPos);
                 
-                const distance = indexPos.distanceTo(thumbPos);
-                const currentlyPinching = distance < VR_CONFIG.PINCH_THRESHOLD;
+                const pinchDist = indexPos.distanceTo(thumbPos);
+                const isPinching = pinchDist < VR_CONFIG.PINCH_THRESHOLD;
 
-                // 2. 檢查是否正在與物體互動 (如果是，則不移動世界)
-                // 簡單判斷：如果指示器變色(接觸中)，則視為互動中
+                // 2. 檢查是否正在互動 (避免誤觸傳送)
                 const isInteracting = handData.indicator.material.color.getHex() !== 0x00ff00;
+                if (isInteracting) return;
 
-                if (isInteracting) {
-                    handData.isPinching = false; // 強制結束移動捏合
-                    return;
-                }
+                if (isPinching) {
+                    anyHandPinching = true;
+                    handData.isPinching = true;
+                    safeSetText('move-status', '瞄準中...');
 
-                if (currentlyPinching) {
-                    if (!handData.isPinching) {
-                        // 剛開始捏合
-                        handData.isPinching = true;
-                        handData.pinchStartPos.copy(indexPos); // 記錄起始點
-                        
-                        safeSetText('move-status', '移動中...');
-                    } else {
-                        // 正在捏合拖曳
-                        const delta = new THREE.Vector3().subVectors(indexPos, handData.pinchStartPos);
-                        
-                        // 反向移動 Dolly (世界被拉動 = 攝影機反向移動)
-                        dolly.position.sub(delta.multiplyScalar(2.0)); // 2.0 倍靈敏度
-                        
-                        // 更新起始點 (避免飛走)
-                        // 注意：這裡不能直接用 indexPos，因為 Dolly 移動了，手的世界座標也會變
-                        // 所以用增量更新即可，下一幀重新抓位置
-                        handData.pinchStartPos.copy(indexPos); 
+                    // 3. 計算射線方向 (手腕 -> 食指尖)
+                    const direction = new THREE.Vector3().subVectors(indexPos, wristPos).normalize();
+                    
+                    // 4. 拋物線計算 (簡易版)
+                    // 起點: 食指尖
+                    const startPoint = indexPos.clone();
+                    // 控制點: 前方 2米處，高度稍微拉高 (模擬拋物線)
+                    const controlPoint = startPoint.clone().add(direction.clone().multiplyScalar(2.0));
+                    controlPoint.y += 1.0; 
+
+                    // 終點: 簡單射線檢測與地板平面 (y=0) 的交點
+                    // 這裡簡化：假設射線一定往下，計算與 y=0 的交點
+                    // t = (0 - start.y) / dir.y
+                    let targetPoint = new THREE.Vector3();
+                    let hitFloor = false;
+
+                    // 如果手是指向下的
+                    if (direction.y < -0.1) { 
+                        const t = -startPoint.y / direction.y;
+                        if (t > 0 && t < 10) { // 限制最大傳送距離 10米
+                            targetPoint.copy(startPoint).add(direction.multiplyScalar(t));
+                            hitFloor = true;
+                        }
+                    } 
+                    
+                    // 如果沒有射到地板，就投射到前方固定距離
+                    if (!hitFloor) {
+                        targetPoint.copy(startPoint).add(direction.clone().multiplyScalar(5.0)); // 預設 5 米
+                        targetPoint.y = 0; // 強制落地
                     }
+
+                    // 5. 更新視覺效果
+                    updateTeleportCurve(startPoint, targetPoint);
+                    teleportReticle.position.copy(targetPoint);
+                    teleportReticle.visible = true;
+                    teleportLine.visible = true;
+                    
+                    teleportTarget.copy(targetPoint);
+                    isTeleporting = true;
+
                 } else {
+                    // 6. 放開手指 -> 執行傳送
                     if (handData.isPinching) {
                         handData.isPinching = false;
-                        safeSetText('move-status', '待機');
+                        if (isTeleporting) {
+                            // 執行傳送：移動 Dolly
+                            // 我們只移動 X 和 Z，保留原本的高度
+                            dolly.position.x = teleportTarget.x;
+                            dolly.position.z = teleportTarget.z;
+                            
+                            safeSetText('move-status', '傳送完成');
+                            triggerHaptic(handData, 1.0, 100); // 震動回饋
+                            
+                            // 隱藏視覺
+                            teleportLine.visible = false;
+                            teleportReticle.visible = false;
+                            isTeleporting = false;
+                        }
                     }
                 }
             });
+
+            if (!anyHandPinching) {
+                if (isTeleporting) {
+                    teleportLine.visible = false;
+                    teleportReticle.visible = false;
+                    isTeleporting = false;
+                    safeSetText('move-status', '待機');
+                }
+            }
+        }
+
+        // 更新貝茲曲線幾何
+        function updateTeleportCurve(start, end) {
+            const positions = teleportLine.geometry.attributes.position.array;
+            
+            // 簡單的二次貝茲曲線
+            // P(t) = (1-t)^2 * P0 + 2(1-t)t * P1 + t^2 * P2
+            const p0 = start;
+            const p2 = end;
+            // P1 (控制點) 取起點和終點的中間，並拉高高度
+            const p1 = new THREE.Vector3().lerpVectors(p0, p2, 0.5);
+            p1.y += 1.5; 
+
+            for (let i = 0; i < 30; i++) {
+                const t = i / 29;
+                const tx = (1-t)*(1-t)*p0.x + 2*(1-t)*t*p1.x + t*t*p2.x;
+                const ty = (1-t)*(1-t)*p0.y + 2*(1-t)*t*p1.y + t*t*p2.y;
+                const tz = (1-t)*(1-t)*p0.z + 2*(1-t)*t*p1.z + t*t*p2.z;
+                
+                positions[i * 3] = tx;
+                positions[i * 3 + 1] = ty;
+                positions[i * 3 + 2] = tz;
+            }
+            teleportLine.geometry.attributes.position.needsUpdate = true;
         }
 
         // ========== VR 互動邏輯 ==========
@@ -930,7 +961,6 @@
             }, 1000);
         }
 
-        // ========== 桌面版互動 ==========
         function checkIntersection() {
             const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -model.position.y);
             const point = new THREE.Vector3();
@@ -977,7 +1007,6 @@
             }
         }
 
-        // ========== 環境與模型 ==========
         function loadEnvironment() {
             const loader = new GLTFLoader(); 
             loader.load(BASE_URL + 'A01.glb', (gltf) => {
@@ -996,7 +1025,6 @@
 
         function loadModel(type) {
             if (model) scene.remove(model);
-            
             activeModelType = type;
             const config = MODEL_CONFIG[type];
             modelPos = { ...config.pos };
@@ -1015,12 +1043,9 @@
                         child.castShadow = true;
                         child.receiveShadow = true;
                         child.frustumCulled = false;
-
                         if (child.material) {
                             child.material = new THREE.MeshStandardMaterial({
-                                color: child.material.color,
-                                map: child.material.map,
-                                skinning: true
+                                color: child.material.color, map: child.material.map, skinning: true
                             });
                         }
                     }
@@ -1037,13 +1062,9 @@
                     }
                 });
 
-                if (Object.keys(bones).length > 0) {
-                    safeSetText('bone-status', "(✅)");
-                }
-
+                if (Object.keys(bones).length > 0) { safeSetText('bone-status', "(✅)"); }
                 scene.add(model);
                 applyPose('flat');
-                
                 document.getElementById('welcome').style.display = 'none';
                 document.getElementById('ui').style.display = 'block';
                 createGhostHand();
@@ -1051,7 +1072,6 @@
             });
         }
 
-        // ========== 姿勢控制 ==========
         function onSliderChange() {
             const lThighEl = document.getElementById('range-left-thigh');
             if (!lThighEl) return;
@@ -1070,18 +1090,13 @@
         function applyPose(poseName) {
             const pose = POSES[poseName];
             if (!pose) return;
-            
             document.querySelectorAll('.pose-btn').forEach(btn => btn.classList.remove('active'));
             const activeBtn = document.getElementById(`btn-pose-${poseName}`);
             if (activeBtn) activeBtn.classList.add('active');
             
             gsap.to(poseControls, {
-                leftThigh: pose.leftThigh,
-                leftKnee: pose.leftKnee,
-                rightThigh: pose.rightThigh,
-                rightKnee: pose.rightKnee,
-                duration: 0.5,
-                onUpdate: updatePose
+                leftThigh: pose.leftThigh, leftKnee: pose.leftKnee, rightThigh: pose.rightThigh, rightKnee: pose.rightKnee,
+                duration: 0.5, onUpdate: updatePose
             });
         }
 
@@ -1096,7 +1111,6 @@
             if (menu) menu.classList.toggle('show');
         }
 
-        // ========== 教學步驟 ==========
         function setPhase(p) {
             currentPhase = p;
             currentStepIndex = 0;
@@ -1122,11 +1136,7 @@
             if (step.pose) applyPose(step.pose);
             else applyPose('flat');
 
-            vrHitStatus = {
-                isTouchingStart: false,
-                touchStartTime: 0,
-                activeHand: null
-            };
+            vrHitStatus = { isTouchingStart: false, touchStartTime: 0, activeHand: null };
 
             if (step.type === 'drag') {
                 const startObj = createInteractable(step.start, '🟢', 'start');
@@ -1138,205 +1148,95 @@
                 createInteractable(step.pos, step.icon, 'click');
                 showGhostGuide(step.pos, step.pos, false);
             }
-            
-            updateVRDebug(
-                `📍 ${step.text}`,
-                step.note,
-                '',
-                '🤏 捏合手指可移動'
-            );
+            updateVRDebug(`📍 ${step.text}`, step.note, '', '🤏 捏合手指傳送移動');
         }
 
         function createInteractable(pos, icon, type, isHidden = false) {
             const group = new THREE.Group();
-            group.position.set(
-                pos.x + model.position.x,
-                pos.y + model.position.y + 0.1,
-                pos.z + model.position.z
-            );
-
+            group.position.set(pos.x + model.position.x, pos.y + model.position.y + 0.1, pos.z + model.position.z);
             const map = createEmojiTexture(icon);
-            const iconMesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(0.5, 0.5),
-                new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false })
-            );
-            
-            const ring = new THREE.Mesh(
-                new THREE.RingGeometry(0.22, 0.26, 32),
-                new THREE.MeshBasicMaterial({
-                    color: 0x667eea,
-                    side: THREE.DoubleSide,
-                    transparent: true,
-                    opacity: 0.7,
-                    depthTest: false
-                })
-            );
-            
-            const hitBox = new THREE.Mesh(
-                new THREE.SphereGeometry(VR_CONFIG.DETECTION_RADIUS, 16, 16),
-                new THREE.MeshBasicMaterial({ visible: false })
-            );
-
-            group.add(iconMesh);
-            group.add(ring);
-            group.add(hitBox);
-            
+            const iconMesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5), new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false }));
+            const ring = new THREE.Mesh(new THREE.RingGeometry(0.22, 0.26, 32), new THREE.MeshBasicMaterial({ color: 0x667eea, side: THREE.DoubleSide, transparent: true, opacity: 0.7, depthTest: false }));
+            const hitBox = new THREE.Mesh(new THREE.SphereGeometry(VR_CONFIG.DETECTION_RADIUS, 16, 16), new THREE.MeshBasicMaterial({ visible: false }));
+            group.add(iconMesh); group.add(ring); group.add(hitBox);
             if (isHidden) group.visible = false;
-
-            scene.add(group);
-            interactables.push(group);
-
+            scene.add(group); interactables.push(group);
             gsap.to(iconMesh.scale, { x: 1.2, y: 1.2, duration: 0.8, yoyo: true, repeat: -1 });
-
-            group.tick = () => {
-                iconMesh.lookAt(camera.position);
-                ring.lookAt(camera.position);
-            };
-            
+            group.tick = () => { iconMesh.lookAt(camera.position); ring.lookAt(camera.position); };
             return group;
         }
 
         function createEmojiTexture(emoji) {
-            const c = document.createElement('canvas');
-            c.width = 128; c.height = 128;
-            const ctx = c.getContext('2d');
-            ctx.font = '100px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(emoji, 64, 64);
-            return new THREE.CanvasTexture(c);
+            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d'); ctx.font = '100px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, 64, 64); return new THREE.CanvasTexture(c);
         }
 
         function createGhostHand() {
             const texture = createEmojiTexture('✋');
             const geometry = new THREE.PlaneGeometry(0.5, 0.5);
-            const material = new THREE.MeshBasicMaterial({
-                map: texture, transparent: true, opacity: 0.8,
-                depthTest: false, side: THREE.DoubleSide
-            });
-            ghostHand = new THREE.Mesh(geometry, material);
-            ghostHand.renderOrder = 999;
-            scene.add(ghostHand);
-            ghostHand.visible = false;
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8, depthTest: false, side: THREE.DoubleSide });
+            ghostHand = new THREE.Mesh(geometry, material); ghostHand.renderOrder = 999;
+            scene.add(ghostHand); ghostHand.visible = false;
         }
 
         function showGhostGuide(startRel, endRel, isMove) {
             if (!ghostHand) return;
             ghostHand.visible = true;
-            const start = {
-                x: startRel.x + model.position.x,
-                y: startRel.y + model.position.y + 0.2,
-                z: startRel.z + model.position.z
-            };
-            
+            const start = { x: startRel.x + model.position.x, y: startRel.y + model.position.y + 0.2, z: startRel.z + model.position.z };
             if (isMove) {
-                const end = {
-                    x: endRel.x + model.position.x,
-                    y: endRel.y + model.position.y + 0.2,
-                    z: endRel.z + model.position.z
-                };
+                const end = { x: endRel.x + model.position.x, y: endRel.y + model.position.y + 0.2, z: endRel.z + model.position.z };
                 ghostHand.position.set(start.x, start.y, start.z);
                 tweenAnim = gsap.timeline({ repeat: -1, repeatDelay: 1 });
-                tweenAnim.to(ghostHand.position, {
-                    x: end.x, y: end.y, z: end.z,
-                    duration: 1.5, ease: "power2.inOut"
-                }).to(ghostHand.material, { opacity: 0, duration: 0.5 });
+                tweenAnim.to(ghostHand.position, { x: end.x, y: end.y, z: end.z, duration: 1.5, ease: "power2.inOut" }).to(ghostHand.material, { opacity: 0, duration: 0.5 });
             } else {
                 ghostHand.position.set(start.x, start.y + 0.2, start.z);
-                tweenAnim = gsap.to(ghostHand.position, {
-                    y: start.y, duration: 0.8, yoyo: true, repeat: -1
-                });
+                tweenAnim = gsap.to(ghostHand.position, { y: start.y, duration: 0.8, yoyo: true, repeat: -1 });
             }
         }
 
         function nextStep() {
             const list = learningData[currentPhase];
-            if (currentStepIndex < list.length - 1) {
-                currentStepIndex++;
-                setupStep();
-            } else {
-                if (renderer.xr.isPresenting) {
-                    updateVRDebug(
-                        `🎉 階段 ${currentPhase} 完成`,
-                        learningData[currentPhase + 1] ? '進入下一階段' : '完成所有療程'
-                    );
-                }
-                
-                if (learningData[currentPhase + 1]) {
-                    setTimeout(() => setPhase(currentPhase + 1), 2000);
-                } else {
-                    setTimeout(() => setPhase(1), 2000);
-                }
+            if (currentStepIndex < list.length - 1) { currentStepIndex++; setupStep(); } 
+            else {
+                if (renderer.xr.isPresenting) { updateVRDebug(`🎉 階段 ${currentPhase} 完成`, learningData[currentPhase + 1] ? '進入下一階段' : '完成所有療程'); }
+                if (learningData[currentPhase + 1]) { setTimeout(() => setPhase(currentPhase + 1), 2000); } 
+                else { setTimeout(() => setPhase(1), 2000); }
             }
         }
 
-        function prevStep() {
-            if (currentStepIndex > 0) {
-                currentStepIndex--;
-                setupStep();
-            }
-        }
-
+        function prevStep() { if (currentStepIndex > 0) { currentStepIndex--; setupStep(); } }
         function forceComplete() { nextStep(); }
 
-        // ========== 事件處理 ==========
         function onTouchStart(e) { e.preventDefault(); onPointerDown(e.touches[0]); }
         function onTouchMove(e) { e.preventDefault(); onPointerMove(e.touches[0]); }
 
         function onPointerDown(e) {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
-            
             const intersects = raycaster.intersectObjects(interactables, true);
-            if (intersects.length > 0) {
-                isDragging = true;
-                controls.enabled = false;
-                checkIntersection();
-            } else {
-                controls.enabled = true;
-            }
+            if (intersects.length > 0) { isDragging = true; controls.enabled = false; checkIntersection(); } 
+            else { controls.enabled = true; }
         }
 
         function onPointerMove(e) {
-            mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-            mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-            if (isDragging) {
-                raycaster.setFromCamera(mouse, camera);
-                checkIntersection();
-            }
+            mouse.x = (e.clientX / window.innerWidth) * 2 - 1; mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            if (isDragging) { raycaster.setFromCamera(mouse, camera); checkIntersection(); }
         }
 
         function onPointerUp() {
-            if (isDragging) {
-                checkIntersection();
-                isDragging = false;
-                if (!isCameraLocked) controls.enabled = true;
-                if (ghostHand) ghostHand.visible = false;
-            }
+            if (isDragging) { checkIntersection(); isDragging = false; if (!isCameraLocked) controls.enabled = true; if (ghostHand) ghostHand.visible = false; }
         }
 
-        function resetCam() {
-            if (!renderer.xr.isPresenting) {
-                controls.reset();
-            }
-        }
-
+        function resetCam() { if (!renderer.xr.isPresenting) { controls.reset(); } }
         function onWindowResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
+            camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        window.initApp = initApp;
-        window.toggleCameraLock = toggleCameraLock;
-        window.toggleMenu = toggleMenu;
-        window.applyPose = applyPose;
-        window.setPhase = setPhase;
-        window.resetCam = resetCam;
-        window.toggleModel = toggleModel;
-        window.prevStep = prevStep;
-        window.forceComplete = forceComplete;
+        window.initApp = initApp; window.toggleCameraLock = toggleCameraLock; window.toggleMenu = toggleMenu;
+        window.applyPose = applyPose; window.setPhase = setPhase; window.resetCam = resetCam;
+        window.toggleModel = toggleModel; window.prevStep = prevStep; window.forceComplete = forceComplete;
         window.onSliderChange = onSliderChange;
     </script>
 </body>
