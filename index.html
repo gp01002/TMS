@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (終極優化版 v25.9)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (終極優化版 v26.0)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -101,8 +101,8 @@
         <div class="welcome-slide" id="slide-instructions">
             <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
             <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典式腿部按摩 SOP</h1>
-            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">終極優化版 v25.9</p>
-            <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 優化：修正 3D 提示板位置，解決遮擋問題</p>
+            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">終極優化版 v26.0</p>
+            <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 支援手機雙指縮放 + 優化指南位置</p>
             
             <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px; margin-left: auto; margin-right: auto;">
                 <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 操作指南</p>
@@ -110,7 +110,7 @@
                     <p>📱 <b>手機操作：</b></p>
                     <p style="margin-left: 20px;">• <b>拖曳背景</b>：旋轉/移動視角</p>
                     <p style="margin-left: 20px;">• <b>操作球體</b>：點擊或拖曳球體執行動作</p>
-                    <p style="margin-left: 20px;">• <b>雙指縮放</b>：放大/縮小</p>
+                    <p style="margin-left: 20px;">• <b>雙指縮放</b>：放大/縮小畫面</p>
                     <p style="margin-top: 10px;">🥽 <b>VR 操作：</b></p>
                     <p style="margin-left: 20px;">• 食指靠近球體即可觸發</p>
                     <p style="margin-left: 20px;">• 遠離球體後捏合傳送</p>
@@ -176,7 +176,7 @@
             <div class="instruction-text" id="action-text">載入中...</div>
             <div class="instruction-note" id="action-note">請參閱 SOP 手冊</div>
             <div style="color: #8ec5fc; font-size: 12px; margin-bottom: 10px;">
-                💡 智慧操作：<span style="color: #ffff00;">拖曳空白處</span>旋轉，<span style="color: #ffff00;">點擊球體</span>操作
+                💡 智慧操作：<span style="color: #ffff00;">拖曳空白處</span>旋轉，<span style="color: #ffff00;">雙指</span>縮放
             </div>
             <div style="display:flex; justify-content: center; gap:10px;">
                 <button class="nav-btn" onclick="prevStep()">上一步</button>
@@ -268,8 +268,8 @@
         let currentPhase = 1, currentStepIndex = 0;
         let isDragging = false;
         let ghostHand, tweenAnim, activeModelType = 'male';
-        let currentFloatingIcon = null; // 🔥 新增：當前懸浮圖示
-        let autoNextTimeout = null; // 🔥 新增：自動跳轉計時器，用於修復 Phase 5 錯誤
+        let currentFloatingIcon = null; 
+        let autoNextTimeout = null; 
         
         let modelPos = { ...MODEL_CONFIG.male.pos };
         let modelRot = { ...MODEL_CONFIG.male.rot };
@@ -444,8 +444,8 @@
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.9 });
             const mesh = new THREE.Mesh(geometry, material);
             
-            // 🔥 移動到更右側以避免遮擋 (原: 1.0 -> 改: 2.5)
-            mesh.position.set(2.5, 3.2, -2.0); 
+            // 🔥 移動到更右側以避免遮擋 (原: 1.0 -> 改: 1.2, 剛好在綠色按鈕旁邊)
+            mesh.position.set(1.2, 3.2, -2.0); 
             // 🔥 稍微旋轉面向使用者
             mesh.rotation.set(0, -0.3, 0); 
             
@@ -1016,6 +1016,12 @@
         }
         
         function onTouchStart(e) { 
+            // 🔥 新增：檢測雙指操作，啟用 OrbitControls
+            if (e.touches.length > 1) {
+                controls.enabled = true;
+                isDragging = false;
+                return;
+            }
             e.preventDefault(); 
             touchStartPos.x = e.touches[0].clientX;
             touchStartPos.y = e.touches[0].clientY;
@@ -1025,6 +1031,11 @@
         }
         
         function onTouchMove(e) { 
+            // 🔥 新增：雙指操作時直接交給 OrbitControls
+            if (e.touches.length > 1) {
+                controls.enabled = true;
+                return;
+            }
             e.preventDefault(); 
             if (isDragging) {
                 controls.enabled = false;
