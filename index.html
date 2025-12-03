@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (擬真手部版)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (自由移動版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -134,20 +134,23 @@
         }
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
+        /* 修改 VR 狀態視窗的位置到左下角，避免遮擋 */
         .vr-status {
-            position: absolute; top: 10px; right: 10px;
-            background: rgba(0,0,0,0.9); padding: 15px 20px;
-            border-radius: 15px; color: #fff;
-            font-size: 14px; display: none;
-            border: 2px solid #00ff00;
-            box-shadow: 0 0 20px rgba(0,255,0,0.5);
+            position: absolute; bottom: 20px; left: 20px; 
+            top: auto; right: auto;
+            background: rgba(0,0,0,0.8); padding: 10px 15px;
+            border-radius: 10px; color: #fff;
+            font-size: 12px; display: none;
+            border: 1px solid #00ff00;
+            box-shadow: 0 0 10px rgba(0,255,0,0.3);
             font-family: 'Courier New', monospace;
-            min-width: 250px;
+            min-width: 200px;
+            z-index: 100;
         }
         .vr-status.active { display: block; }
         .vr-status-line { 
-            margin: 5px 0; 
-            padding: 5px 0;
+            margin: 3px 0; 
+            padding: 3px 0;
             border-bottom: 1px solid rgba(255,255,255,0.1);
         }
         .vr-status-line:last-child { border-bottom: none; }
@@ -158,15 +161,15 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 擬真手部版 v3.0</p>
-        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 真實手部模型 + 完整瑞典式療程</p>
+        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 自由移動版 v4.0</p>
+        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 新增：捏合手指拖曳移動世界</p>
         
         <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px;">
             <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 Quest 3 快速設定</p>
             <div style="text-align: left; color: #ccc; line-height: 2;">
                 <p>1️⃣ Quest 設定 → <span style="color:#00ff00">動作</span> → 手部追蹤 → <span style="color:#00ff00">開啟</span></p>
                 <p>2️⃣ 使用 <span style="color:#00ff00">Quest Browser</span> 進入此網頁</p>
-                <p>3️⃣ 進入後請等待幾秒，手部模型即會出現</p>
+                <p>3️⃣ <b>移動方式：</b>對著空中「捏住」食指與拇指，然後拖曳即可移動！</p>
             </div>
         </div>
         
@@ -193,11 +196,11 @@
             </div>
         </div>
 
+        <!-- 移到左下角 -->
         <div class="vr-status" id="vr-status">
-            <div style="font-weight: bold; color: #00ff00; margin-bottom: 10px; font-size: 16px;">🔍 VR 診斷</div>
-            <div class="vr-status-line">👋 手部: <span id="hand-track-status" style="color: #ffff00;">等待中...</span></div>
-            <div class="vr-status-line">📍 位置: <span id="position-status">-</span></div>
-            <div class="vr-status-line">🎯 距離: <span id="distance-status">-</span></div>
+            <div style="font-weight: bold; color: #00ff00; margin-bottom: 5px; font-size: 14px;">🔍 VR 診斷</div>
+            <div class="vr-status-line">👋 手勢: <span id="hand-track-status" style="color: #ffff00;">等待中...</span></div>
+            <div class="vr-status-line">🏃 移動: <span id="move-status">捏合拖曳</span></div>
         </div>
 
         <div class="side-menu" id="side-menu">
@@ -265,24 +268,23 @@
             THIGH_ROOT: -3.3, THIGH_MID: -2.4, KNEE: -1.5, CALF_MID: -0.7, ANKLE: 0.1, FOOT: 0.3            
         };
 
-        // ========== 新增：擬真瑞典按摩療程資料 ==========
         const learningData = {
-            1: [ // 勻油與輕撫 (Effleurage)
+            1: [ 
                 { id: "1.1", text: "取油", note: "點擊精油瓶", type: "click", tool: "oil", icon: "🧴", pos: {x: -1.0, y: 0.2, z: 0.5} }, 
                 { id: "1.2", text: "溫熱雙手", note: "雙手合十搓熱 (模擬：停留3秒)", type: "press", tool: "hands", icon: "🔥", pos: {x: COORDS.KNEE, y: 0.3, z: 0}, duration: 3 },
                 { id: "1.3", text: "大腿輕撫 (Effleurage)", note: "雙手從膝蓋滑向大腿根部", type: "drag", tool: "hand", icon: "🌊", start: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
                 { id: "1.4", text: "小腿輕撫 (Effleurage)", note: "雙手從腳踝滑向膝蓋", type: "drag", tool: "hand", icon: "🌊", start: {x: COORDS.ANKLE, y: -0.30, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z} }
             ],
-            2: [ // 深層揉捏 (Petrissage)
+            2: [ 
                 { id: "2.1", text: "小腿揉捏 (Kneading)", note: "用手掌抓握小腿肚 (點擊確認)", type: "click", tool: "hand", icon: "✊", pos: {x: COORDS.CALF_MID, y: -0.25, z: LEFT_LEG_Z} },
                 { id: "2.2", text: "小腿扭轉 (Wringing)", note: "雙手反向扭轉肌肉 (停留模擬)", type: "press", tool: "hand", icon: "🔄", pos: {x: COORDS.CALF_MID, y: -0.25, z: LEFT_LEG_Z}, duration: 2 },
                 { id: "2.3", text: "大腿揉捏 (Kneading)", note: "用手掌抓握大腿外側", type: "click", tool: "hand", icon: "✊", pos: {x: COORDS.THIGH_MID, y: -0.20, z: LEFT_LEG_Z} },
             ],
-            3: [ // 拇指推壓 (Friction)
+            3: [ 
                 { id: "3.1", text: "膽經推壓", note: "大腿外側深層推壓", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z + 0.15}, end: {x: COORDS.THIGH_MID, y: -0.20, z: LEFT_LEG_Z + 0.15} },
                 { id: "3.2", text: "委中穴按壓", note: "膝蓋後方深壓 3 秒", type: "press", tool: "thumb", icon: "📍", pos: {x: COORDS.KNEE, y: -0.35, z: LEFT_LEG_Z}, duration: 3 },
             ],
-            4: [ // 結尾安撫 (Finish)
+            4: [ 
                 { id: "4.1", text: "全腿長推安撫", note: "從腳踝一路推至大腿根部", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.ANKLE, y: -0.30, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
                 { id: "4.2", text: "蓋上毛巾", note: "完成療程", type: "click", tool: "towel", icon: "⬜", pos: {x: COORDS.THIGH_MID, y: -0.15, z: LEFT_LEG_Z} },
             ]
@@ -328,7 +330,8 @@
             PRESS_DURATION: 0.5,
             HAND_INDICATOR_SIZE: 0.10,     
             HAPTIC_INTENSITY: 1.0,
-            HAPTIC_DURATION: 200
+            HAPTIC_DURATION: 200,
+            PINCH_THRESHOLD: 0.02 // 捏合觸發距離
         };
 
         function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
@@ -438,7 +441,7 @@
             return button;
         }
 
-        // ========== VR 3D 狀態面板 ==========
+        // ========== VR 3D 狀態面板 (縮小並往下移) ==========
         function createVRDebugText() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
@@ -446,51 +449,52 @@
             const ctx = canvas.getContext('2d');
             
             function updateText(title, ...lines) {
-                ctx.fillStyle = 'rgba(0,0,0,0.95)';
+                ctx.fillStyle = 'rgba(0,0,0,0.9)'; // 更透明
                 ctx.fillRect(0, 0, 1024, 512);
                 
                 // 綠色邊框
                 ctx.strokeStyle = '#00ff00';
-                ctx.lineWidth = 6;
-                ctx.strokeRect(3, 3, 1018, 506);
+                ctx.lineWidth = 4;
+                ctx.strokeRect(2, 2, 1020, 508);
                 
                 // 標題
                 ctx.fillStyle = '#00ff00';
-                ctx.font = 'bold 56px "Courier New"';
+                ctx.font = 'bold 50px "Microsoft JhengHei", Arial'; // 稍微縮小字體
                 ctx.textAlign = 'center';
                 ctx.fillText(title, 512, 80);
                 
                 // 內容
                 ctx.fillStyle = 'white';
-                ctx.font = '40px "Courier New"';
+                ctx.font = '36px "Microsoft JhengHei", Arial';
                 ctx.textAlign = 'left';
                 
                 lines.forEach((line, i) => {
-                    ctx.fillText(line, 50, 160 + i * 60);
+                    ctx.fillText(line, 50, 160 + i * 55);
                 });
             }
             
             updateText(
-                '🔍 Quest 3 手部診斷',
-                '⏳ 正在啟動...',
-                '',
-                '請將雙手伸到頭顯前方',
-                '等待綠色發光球出現'
+                '🔍 準備就緒',
+                '請將雙手伸到前方',
+                '捏合手指以移動位置'
             );
             
             const texture = new THREE.CanvasTexture(canvas);
             const mesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(2, 1),
+                new THREE.PlaneGeometry(1.5, 0.75), // 縮小尺寸 (原本 2x1)
                 new THREE.MeshBasicMaterial({ 
                     map: texture, 
                     transparent: true, 
-                    opacity: 0.95,
-                    side: THREE.DoubleSide
+                    opacity: 0.9,
+                    side: THREE.DoubleSide,
+                    depthTest: false // 讓它永遠顯示在最上層
                 })
             );
             
-            mesh.position.set(0, 1.0, -2.5);
-            mesh.rotation.x = -0.15;
+            // 🔥 移到視線下方，避免擋住視線
+            mesh.position.set(0, -0.4, -1.5); 
+            mesh.rotation.x = -0.3; // 稍微仰角
+            mesh.renderOrder = 999;
             
             dolly.add(mesh);
             
@@ -534,8 +538,11 @@
 
             // VR Dolly
             dolly = new THREE.Group();
-            dolly.position.set(1.5, 1.8, 2.0);
-            dolly.rotation.y = -0.3;
+            
+            // 🔥 修正初始位置：直接設在按摩床右側 (適合操作的位置)
+            dolly.position.set(0.8, 1.6, 0.5); 
+            dolly.rotation.y = 0.5; // 面向床鋪
+
             scene.add(dolly);
             dolly.add(camera);
             
@@ -563,7 +570,7 @@
             renderer.setAnimationLoop(() => {
                 if (renderer.xr.isPresenting) {
                     handleVRInteraction();
-                    handleVRMovement();
+                    handleHandMovement(); // 🔥 新增：手勢移動
                     updateVRStatus(); 
                 } else {
                     controls.update();
@@ -606,7 +613,6 @@
                 dolly.add(hand);
 
                 try {
-                    // 🔥 關鍵修改：將 "boxes" 改為 "mesh" 以載入真實手部模型
                     const handModel = handModelFactory.createHandModel(hand, "mesh"); 
                     hand.add(handModel);
                     console.log(` ✅ 手部模型 ${i} 創建成功 (Mesh)`);
@@ -620,16 +626,18 @@
                     handedness: null,
                     isTracking: false,
                     indexTip: null,
-                    indicator: null
+                    thumbTip: null,
+                    indicator: null,
+                    isPinching: false, // 追蹤捏合狀態
+                    pinchStartPos: new THREE.Vector3() // 追蹤捏合起始位置
                 };
                 
-                // 仍保留超大發光指示器作為邏輯觸發點，但為了美觀可以稍微調高透明度或縮小
                 const indicator = new THREE.Mesh(
                     new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 32, 32),
                     new THREE.MeshStandardMaterial({ 
                         color: 0x00ff00, 
                         transparent: true, 
-                        opacity: 0.5, // 稍微透明一點，讓使用者看得到自己的 Mesh 手
+                        opacity: 0.3, 
                         emissive: 0x00ff00,
                         emissiveIntensity: 1.0,
                     })
@@ -648,8 +656,8 @@
                     
                     updateVRDebug(
                         `✅ ${handData.handedness.toUpperCase()} 已連接`,
-                        '若沒看到手，請揮動雙手',
-                        '或確認環境光線充足'
+                        '👋 準備就緒',
+                        '🤏 空中捏合可移動視角'
                     );
                 });
                 
@@ -664,29 +672,81 @@
             }
         }
 
-        // ========== 更新 VR 狀態顯示 ==========
+        // ========== 更新 VR 狀態顯示與關節 ==========
         function updateVRStatus() {
             vrHandData.forEach(handData => {
                 if (!handData.isTracking) return;
                 
                 const hand = handData.hand;
                 
-                if (hand.joints && hand.joints['index-finger-tip']) {
-                    handData.indexTip = hand.joints['index-finger-tip'];
+                if (hand.joints) {
+                    if (hand.joints['index-finger-tip']) handData.indexTip = hand.joints['index-finger-tip'];
+                    if (hand.joints['thumb-tip']) handData.thumbTip = hand.joints['thumb-tip'];
                     
-                    const worldPos = new THREE.Vector3();
-                    handData.indexTip.getWorldPosition(worldPos);
-                    
-                    if (handData.indicator) {
-                        handData.indicator.position.copy(worldPos);
-                        handData.indicator.visible = true;
+                    if (handData.indexTip) {
+                        const worldPos = new THREE.Vector3();
+                        handData.indexTip.getWorldPosition(worldPos);
+                        
+                        if (handData.indicator) {
+                            handData.indicator.position.copy(worldPos);
+                            handData.indicator.visible = true;
+                        }
                     }
-
-                    safeSetText('position-status', 
-                        `(${worldPos.x.toFixed(2)}, ${worldPos.y.toFixed(2)}, ${worldPos.z.toFixed(2)})`
-                    );
                 } else {
                     if (handData.indicator) handData.indicator.visible = false;
+                }
+            });
+        }
+
+        // ========== 🔥 新增：手勢移動邏輯 (Pinch to Move) ==========
+        function handleHandMovement() {
+            if (isStepCompleting) return; // 完成動作時鎖定移動
+
+            vrHandData.forEach(handData => {
+                if (!handData.isTracking || !handData.indexTip || !handData.thumbTip) return;
+
+                // 1. 計算捏合 (Pinch)
+                const indexPos = new THREE.Vector3();
+                const thumbPos = new THREE.Vector3();
+                handData.indexTip.getWorldPosition(indexPos);
+                handData.thumbTip.getWorldPosition(thumbPos);
+                
+                const distance = indexPos.distanceTo(thumbPos);
+                const currentlyPinching = distance < VR_CONFIG.PINCH_THRESHOLD;
+
+                // 2. 檢查是否正在與物體互動 (如果是，則不移動世界)
+                // 簡單判斷：如果指示器變色(接觸中)，則視為互動中
+                const isInteracting = handData.indicator.material.color.getHex() !== 0x00ff00;
+
+                if (isInteracting) {
+                    handData.isPinching = false; // 強制結束移動捏合
+                    return;
+                }
+
+                if (currentlyPinching) {
+                    if (!handData.isPinching) {
+                        // 剛開始捏合
+                        handData.isPinching = true;
+                        handData.pinchStartPos.copy(indexPos); // 記錄起始點
+                        
+                        safeSetText('move-status', '移動中...');
+                    } else {
+                        // 正在捏合拖曳
+                        const delta = new THREE.Vector3().subVectors(indexPos, handData.pinchStartPos);
+                        
+                        // 反向移動 Dolly (世界被拉動 = 攝影機反向移動)
+                        dolly.position.sub(delta.multiplyScalar(2.0)); // 2.0 倍靈敏度
+                        
+                        // 更新起始點 (避免飛走)
+                        // 注意：這裡不能直接用 indexPos，因為 Dolly 移動了，手的世界座標也會變
+                        // 所以用增量更新即可，下一幀重新抓位置
+                        handData.pinchStartPos.copy(indexPos); 
+                    }
+                } else {
+                    if (handData.isPinching) {
+                        handData.isPinching = false;
+                        safeSetText('move-status', '待機');
+                    }
                 }
             });
         }
@@ -734,8 +794,7 @@
                     
                     updateVRDebug(
                         `🔴 觸碰中`,
-                        `📏 ${distance.toFixed(2)}m`,
-                        '保持 0.3 秒'
+                        `保持 0.3 秒`
                     );
                 } else {
                     const elapsed = (Date.now() - vrHitStatus.touchStartTime) / 1000;
@@ -770,7 +829,6 @@
                     
                     updateVRDebug(
                         `🟡 按壓中`,
-                        `⏱️ ${Math.floor(progress * 100)}%`,
                         `⏳ ${(requiredDuration - elapsed).toFixed(1)}s`
                     );
                     
@@ -870,37 +928,6 @@
                 nextStep();
                 isStepCompleting = false;
             }, 1000);
-        }
-
-        function handleVRMovement() {
-            if (!vrControllers || vrControllers.length === 0) return;
-
-            const speed = 0.08;
-
-            vrControllers.forEach((controller) => {
-                if (controller.gamepad) {
-                    const axes = controller.gamepad.axes;
-                    if (axes && axes.length >= 4) {
-                        const moveX = Math.abs(axes[2]) > 0.1 ? axes[2] : 0;
-                        const moveZ = Math.abs(axes[3]) > 0.1 ? axes[3] : 0;
-                        
-                        if (moveX !== 0 || moveZ !== 0) {
-                            const forward = new THREE.Vector3(0, 0, -1);
-                            forward.applyQuaternion(dolly.quaternion);
-                            forward.y = 0;
-                            forward.normalize();
-                            
-                            const right = new THREE.Vector3(1, 0, 0);
-                            right.applyQuaternion(dolly.quaternion);
-                            right.y = 0;
-                            right.normalize();
-                            
-                            dolly.position.addScaledVector(forward, moveZ * speed);
-                            dolly.position.addScaledVector(right, moveX * speed);
-                        }
-                    }
-                }
-            });
         }
 
         // ========== 桌面版互動 ==========
@@ -1116,7 +1143,7 @@
                 `📍 ${step.text}`,
                 step.note,
                 '',
-                '🎯 伸出食指開始'
+                '🤏 捏合手指可移動'
             );
         }
 
