@@ -374,11 +374,14 @@
             });
             
             const texture = new THREE.CanvasTexture(canvas);
-            const geometry = new THREE.PlaneGeometry(2, 1.5);
-            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true });
+            const geometry = new THREE.PlaneGeometry(1.5, 1.2);  // 🔥 稍微縮小尺寸
+            const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.9 });
             const mesh = new THREE.Mesh(geometry, material);
-            mesh.position.set(-1, 2, 0.5);
-            mesh.rotation.y = Math.PI / 4;
+            
+            // 🔥 放在教學板右側，對面牆上
+            mesh.position.set(1.0, 3.2, -2.0);  // 與教學板同高度，右側位置
+            mesh.rotation.set(0, 0, 0);  // 面向用戶
+            
             scene.add(mesh);
         }
 
