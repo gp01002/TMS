@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (優化版 v24)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (3D 互動版 v25)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -38,7 +38,6 @@
         .nav-btn.primary { background: #667eea; }
         .lock-btn { border: 1px solid #666; }
         .lock-btn.locked { background: #667eea; border: 1px solid #667eea; box-shadow: 0 0 10px rgba(102, 126, 234, 0.5); }
-        .gesture-hint { position: absolute; background: rgba(102, 126, 234, 0.9); color: white; padding: 8px 16px; border-radius: 20px; font-weight: bold; font-size: 14px; pointer-events: none; opacity: 0; transition: opacity 0.3s; transform: translate(-50%, -100%); white-space: nowrap; z-index: 100; }
         .welcome-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(20, 20, 20, 0.95); z-index: 1000; display: flex; flex-direction: column; justify-content: center; align-items: center; color: white; text-align: center; padding: 20px; }
         .start-btn { background: linear-gradient(135deg, #667eea, #764ba2); color: white; border: none; padding: 15px 50px; font-size: 20px; border-radius: 50px; margin-top: 30px; cursor: pointer; }
         .vr-status { position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.8); padding: 10px 15px; border-radius: 10px; color: #fff; font-size: 12px; display: none; border: 1px solid #00ff00; font-family: 'Courier New', monospace; z-index: 100; }
@@ -52,16 +51,16 @@
     <div class="welcome-overlay" id="welcome">
         <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典式腿部按摩 SOP</h1>
-        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">優化操作版 v24.0</p>
-        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 改進 VR 互動體驗 + 更清晰的視覺反饋</p>
+        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">3D 互動版 v25.0</p>
+        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 3D 球體互動 + 範圍視覺化 + 更準確的碰撞</p>
         
         <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px;">
             <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 VR 操作指南</p>
             <div style="text-align: left; color: #ccc; line-height: 2;">
-                <p>1️⃣ <b>黑板：</b>位於床的對面牆上（高處），正面朝向您</p>
-                <p>2️⃣ <b>軌跡：</b>跟隨 <span style="color:#ffff00">黃色虛線</span> 與 <span style="color:#00ffff">青色光環</span> 進行操作</p>
-                <p>3️⃣ <b>傳送：</b>捏合手指 1.5 秒即可瞬移</p>
-                <p>4️⃣ <b>啟動：</b>點擊對面牆上的綠色方塊進入 VR</p>
+                <p>1️⃣ <b>綠色球體</b>：起點（手指靠近即可觸發）</p>
+                <p>2️⃣ <b>紅色球體</b>：終點（拖拽操作時顯示）</p>
+                <p>3️⃣ <b>青色區域</b>：表示操作覆蓋範圍</p>
+                <p>4️⃣ <b>黃色虛線</b>：跟隨軌跡移動手指</p>
             </div>
         </div>
         
@@ -88,6 +87,7 @@
             <div style="margin-top:5px;" class="vr-status-line">👋 手勢: <span id="hand-track-status" style="color: #ffff00;">...</span></div>
             <div class="vr-status-line">🚀 移動: <span id="move-status">自動定位</span></div>
             <div class="vr-status-line">🎯 距離: <span id="distance-status">--</span></div>
+            <div class="vr-status-line">📍 狀態: <span id="interaction-status">待機中</span></div>
         </div>
 
         <div class="side-menu" id="side-menu">
@@ -164,32 +164,32 @@
             }
         };
 
-        // SOP 標準流程資料庫
+        // 🔥 改進 SOP 資料 - 為所有操作添加範圍定義
         const learningData = {
-            "1": [ // 2.0 準備與開場
-                { id: "2.1", text: "毛巾安撫 (Effleurage)", note: "雙手從大腿根部沿兩側滑順至腳底", type: "drag", tool: "towel", icon: "⬜", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, end: {x: COORDS.FOOT, y: -0.3, z: 0}, view: "overview", pose: "flat" },
-                { id: "2.2", text: "腿部定位", note: "放置毛巾捲於雙腿之間", type: "click", tool: "towel_roll", icon: "🌀", pos: {x: COORDS.KNEE, y: -0.2, z: 0}, view: "knee", pose: "flat" },
+            "1": [
+                { id: "2.1", text: "毛巾安撫", note: "雙手從大腿根部沿兩側滑順至腳底", type: "drag", tool: "towel", icon: "⬜", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, end: {x: COORDS.FOOT, y: -0.3, z: 0}, view: "overview", pose: "flat" },
+                { id: "2.2", text: "腿部定位", note: "放置毛巾捲於雙腿之間", type: "click", tool: "towel_roll", icon: "🌀", start: {x: COORDS.KNEE, y: -0.2, z: 0}, end: {x: COORDS.KNEE, y: -0.2, z: 0}, view: "knee", pose: "flat" },
                 { id: "2.3", text: "初步舒緩", note: "雙手由跟腱向上長距離撫順至大腿", type: "drag", tool: "hands", icon: "✨", start: {x: COORDS.FOOT, y: -0.3, z: 0}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, view: "overview", pose: "flat" },
-                { id: "2.4", text: "單腿準備", note: "覆蓋右腿，準備操作左腿", type: "click", tool: "towel", icon: "🛡️", pos: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
+                { id: "2.4", text: "單腿準備", note: "覆蓋右腿，準備操作左腿", type: "click", tool: "towel", icon: "🛡️", start: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: -0.2, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
                 { id: "2.5", text: "上油與開場", note: "左腿上油並執行大安撫", type: "drag", tool: "oil", icon: "🧴", start: {x: COORDS.FOOT, y: -0.3, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" }
             ],
-            "2": [ // 3.0 左腿流程
+            "2": [
                 { id: "3.1", text: "大腿長推撫", note: "拇指併排，從膝蓋推至大腿根部", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: -0.2, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" },
                 { id: "3.1.2", text: "S型抓捏 (大腿)", note: "雙手交替S型提拉肌束", type: "drag", tool: "hand", icon: "✊", start: {x: COORDS.KNEE, y: -0.2, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: -0.15, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" },
                 { id: "3.2", text: "推至委中穴", note: "小腿長推至膝窩中心", type: "drag", tool: "hand", icon: "☝️", start: {x: COORDS.ANKLE, y: -0.3, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, view: "calf", pose: "flat" },
-                { id: "3.2.2", text: "膝窩分區按壓", note: "按壓委中穴周邊 (內中外循環)", type: "press", tool: "thumb", icon: "📍", pos: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, duration: 3, view: "knee", pose: "flat" },
+                { id: "3.2.2", text: "膝窩分區按壓", note: "按壓委中穴周邊 (內中外循環)", type: "press", tool: "thumb", icon: "📍", start: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, duration: 3, view: "knee", pose: "flat" },
                 { id: "3.3", text: "足部：湧泉穴打圈", note: "抬腿90度，拇指順時鐘按壓湧泉", type: "drag", tool: "thumb", icon: "🦶", start: {x: COORDS.FOOT, y: 0.2, z: LEFT_LEG_Z}, end: {x: COORDS.FOOT, y: 0.3, z: LEFT_LEG_Z}, view: "foot", pose: "leftRaised" }
             ],
-            "3": [ // 4.0 右腿流程
+            "3": [
                 { id: "4.1", text: "右大腿長推", note: "拇指併排，對稱操作", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: RIGHT_LEG_Z}, view: "thigh", pose: "flat" },
                 { id: "4.2", text: "S型抓捏 (右腿)", note: "雙手交替S型提拉", type: "drag", tool: "hand", icon: "✊", start: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: -0.15, z: RIGHT_LEG_Z}, view: "thigh", pose: "flat" },
                 { id: "4.3", text: "右足湧泉穴", note: "抬右腿90度，按壓湧泉", type: "drag", tool: "thumb", icon: "🦶", start: {x: COORDS.FOOT, y: 0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.FOOT, y: 0.3, z: RIGHT_LEG_Z}, view: "foot", pose: "rightRaised" }
             ],
-            "4": [ // 5.0 結束程序
+            "4": [
                 { id: "5.1", text: "右腿單邊安撫", note: "完成右腿後進行長推撫", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.ANKLE, y: -0.3, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
                 { id: "5.2", text: "整體大安撫", note: "雙腿同時長推，整合感受", type: "drag", tool: "hands", icon: "🌊", start: {x: COORDS.ANKLE, y: -0.3, z: 0}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, view: "overview", pose: "flat" },
-                { id: "5.3", text: "足底靜置", note: "掌心覆蓋足底，停留接地 (Grounding)", type: "press", tool: "hands", icon: "🧘", pos: {x: COORDS.FOOT, y: -0.35, z: 0}, duration: 5, view: "foot", pose: "flat" },
-                { id: "5.4", text: "最終覆蓋", note: "蓋上大毛巾，完成療程", type: "click", tool: "towel", icon: "✅", pos: {x: COORDS.THIGH_MID, y: -0.1, z: 0}, view: "overview", pose: "flat" }
+                { id: "5.3", text: "足底靜置", note: "掌心覆蓋足底，停留接地", type: "press", tool: "hands", icon: "🧘", start: {x: COORDS.FOOT, y: -0.35, z: 0}, end: {x: COORDS.FOOT, y: -0.35, z: 0}, duration: 5, view: "foot", pose: "flat" },
+                { id: "5.4", text: "最終覆蓋", note: "蓋上大毛巾，完成療程", type: "click", tool: "towel", icon: "✅", start: {x: COORDS.THIGH_MID, y: -0.1, z: 0}, end: {x: COORDS.KNEE, y: -0.1, z: 0}, view: "overview", pose: "flat" }
             ]
         };
 
@@ -230,19 +230,21 @@
         let isTeleporting = false;
         let teleportTarget = new THREE.Vector3();
         let pinchStartTime = 0; 
-        const TELEPORT_DELAY = 1500; // 🔥 改為 1.5 秒
+        const TELEPORT_DELAY = 1500;
         
         let interactionLine;
-        let trajectoryLine; 
+        let trajectoryLine;
+        let areaIndicator; // 🔥 新增：範圍指示器
 
-        // 🔥 優化後的 VR 配置
+        // 🔥 優化 VR 配置
         const VR_CONFIG = {
-            DETECTION_RADIUS: 0.45,        // 🔥 增加檢測範圍
-            PRESS_DURATION: 0.4,           // 🔥 縮短按壓時間
-            HAND_INDICATOR_SIZE: 0.12,     // 🔥 增大指示器
+            DETECTION_RADIUS: 0.50,        // 🔥 再增大一些
+            PRESS_DURATION: 0.4,
+            HAND_INDICATOR_SIZE: 0.12,
             HAPTIC_INTENSITY: 1.0,
-            HAPTIC_DURATION: 150,          // 🔥 縮短震動時間
-            PINCH_THRESHOLD: 0.04          // 🔥 放寬捏合檢測
+            HAPTIC_DURATION: 150,
+            PINCH_THRESHOLD: 0.04,
+            SPHERE_SIZE: 0.15              // 🔥 3D 球體大小
         };
 
         function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
@@ -292,7 +294,6 @@
             instructionBoardMesh.rotation.set(0, 0, 0); 
             scene.add(instructionBoardMesh);
             
-            // 3D 進入 VR 按鈕
             const btnGeo = new THREE.BoxGeometry(0.5, 0.5, 0.1);
             const btnMat = new THREE.MeshBasicMaterial({ color: 0x00aa00 });
             vr3DButtonMesh = new THREE.Mesh(btnGeo, btnMat);
@@ -345,7 +346,6 @@
             teleportReticleInner.visible = false; teleportReticleInner.scale.set(0, 0, 0); teleportReticle.add(teleportReticleInner);
         }
 
-        // 🔥 新增：VR 操作說明板
         function createVRInstructions() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
@@ -363,14 +363,14 @@
             ctx.font = '36px "Microsoft JhengHei"';
             ctx.textAlign = 'left';
             const tips = [
-                '👆 將食指接近綠色圓點開始操作',
-                '🤏 捏合手指並保持 1.5 秒傳送',
-                '👋 跟隨黃色虛線和幽靈手指引',
-                '🎯 橘色光點：拖拽中 / 黃色：已觸碰',
-                '💚 綠色外圈：可互動範圍擴大'
+                '🟢 綠色球體：起點（靠近開始）',
+                '🔴 紅色球體：終點（拖拽目標）',
+                '🔵 青色區域：操作覆蓋範圍',
+                '👆 食指靠近綠球即可觸發',
+                '🤏 捏合手指 1.5 秒傳送'
             ];
             tips.forEach((tip, i) => {
-                ctx.fillText(tip, 100, 200 + i * 100);
+                ctx.fillText(tip, 100, 200 + i * 90);
             });
             
             const texture = new THREE.CanvasTexture(canvas);
@@ -413,18 +413,16 @@
             dolly.add(cameraOffset);
             cameraOffset.add(camera);
             
-            // 🔥 改進互動引導線 - 更明顯的青色
             const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
             interactionLine = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ 
-                color: 0x00ffff,     // 🔥 改為青色
-                linewidth: 3,         // 🔥 增加線寬
+                color: 0x00ffff,
+                linewidth: 3,
                 transparent: true,
                 opacity: 0.7
             }));
             interactionLine.visible = false;
             scene.add(interactionLine);
 
-            // 軌跡引導線
             const trajGeo = new THREE.BufferGeometry();
             const trajPos = new Float32Array(50 * 3);
             trajGeo.setAttribute('position', new THREE.BufferAttribute(trajPos, 3));
@@ -436,7 +434,7 @@
             createInstructionBoard();
             createTeleportVisuals();
             createGhostHand(); 
-            createVRInstructions(); // 🔥 添加 VR 操作說明板
+            createVRInstructions();
             setupVRHands();
 
             controls = new OrbitControls(camera, renderer.domElement);
@@ -515,15 +513,14 @@
                 
                 const handData = { hand: hand, handIndex: i, handedness: null, isTracking: false, indexTip: null, thumbTip: null, wrist: null, indicator: null, isPinching: false };
                 
-                // 🔥 改進指示器 - 增加發光效果
                 const indicator = new THREE.Mesh(
                     new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 32, 32), 
                     new THREE.MeshStandardMaterial({ 
                         color: 0x00ff00, 
                         transparent: true, 
-                        opacity: 0.6,           // 🔥 提高不透明度
-                        emissive: 0x00ff00,     // 🔥 添加自發光
-                        emissiveIntensity: 0.5  // 🔥 發光強度
+                        opacity: 0.6,
+                        emissive: 0x00ff00,
+                        emissiveIntensity: 0.5
                     })
                 );
                 indicator.visible = false; scene.add(indicator); handData.indicator = indicator;
@@ -552,7 +549,6 @@
                 }
             });
             
-            // 🔥 顯示距離信息
             const currentData = learningData[String(currentPhase)];
             if (currentData && interactables.length > 0) {
                 const startObj = interactables.find(obj => obj.userData.isStart || (!obj.userData.isEnd && !obj.userData.isStart));
@@ -648,7 +644,6 @@
                 const indexTipWorldPos = handData.indicator.position;
                 const distToStart = indexTipWorldPos.distanceTo(startObj.position);
                 
-                // 🔥 改進互動連線顯示
                 if (distToStart < 0.8) {
                     interactionLine.visible = true;
                     const points = interactionLine.geometry.attributes.position.array;
@@ -666,17 +661,24 @@
         function handleClickInteraction(distance, handData, targetObj) {
             if (distance < VR_CONFIG.DETECTION_RADIUS) {
                 handData.indicator.material.color.set(0xff0000);
-                handData.indicator.material.emissiveIntensity = 1.0; // 🔥 增強發光
+                handData.indicator.material.emissiveIntensity = 1.0;
+                safeSetText('interaction-status', '🔴 點擊中');
                 if (!vrHitStatus.touchStartTime) {
                     vrHitStatus.touchStartTime = Date.now(); vrHitStatus.activeHand = handData.handedness;
-                    triggerHaptic(handData, 0.8, 100); // 🔥 增強震動
+                    triggerHaptic(handData, 0.8, 100);
                     playClickFeedback(targetObj);
                 } else {
-                    if ((Date.now() - vrHitStatus.touchStartTime) / 1000 >= 0.3) { completeStepVR(); vrHitStatus.touchStartTime = 0; }
+                    if ((Date.now() - vrHitStatus.touchStartTime) / 1000 >= 0.3) { 
+                        safeSetText('interaction-status', '✅ 完成');
+                        completeStepVR(); 
+                        vrHitStatus.touchStartTime = 0; 
+                    }
                 }
             } else { 
                 handData.indicator.material.color.set(0x00ff00); 
-                handData.indicator.material.emissiveIntensity = 0.5; // 🔥 恢復正常發光
+                handData.indicator.material.emissiveIntensity = 0.5;
+                if (distance < 1.0) safeSetText('interaction-status', '🟡 接近中');
+                else safeSetText('interaction-status', '⚪ 待機中');
                 if(vrHitStatus.activeHand === handData.handedness) vrHitStatus.touchStartTime = 0; 
             }
         }
@@ -684,13 +686,21 @@
         function handlePressInteraction(distance, handData, targetObj, requiredDuration) {
             if (distance < VR_CONFIG.DETECTION_RADIUS) {
                 handData.indicator.material.color.set(0xffff00);
-                handData.indicator.material.emissiveIntensity = 1.0; // 🔥 增強發光
-                if (!vrHitStatus.touchStartTime) { vrHitStatus.touchStartTime = Date.now(); vrHitStatus.activeHand = handData.handedness; triggerHaptic(handData, 0.5, 50); }
+                handData.indicator.material.emissiveIntensity = 1.0;
+                if (!vrHitStatus.touchStartTime) { 
+                    vrHitStatus.touchStartTime = Date.now(); 
+                    vrHitStatus.activeHand = handData.handedness; 
+                    triggerHaptic(handData, 0.5, 50); 
+                    safeSetText('interaction-status', '🟡 按壓中...');
+                }
                 else {
                     const elapsed = (Date.now() - vrHitStatus.touchStartTime) / 1000;
+                    const progress = Math.min(elapsed / requiredDuration, 1.0) * 100;
+                    safeSetText('interaction-status', `🟡 按壓 ${progress.toFixed(0)}%`);
                     targetObj.scale.setScalar(1 + Math.min(elapsed / requiredDuration, 1) * 0.3);
                     if (elapsed >= requiredDuration) { 
-                        triggerHaptic(handData, 1.0, 200); // 🔥 完成時強烈震動
+                        triggerHaptic(handData, 1.0, 200);
+                        safeSetText('interaction-status', '✅ 完成');
                         completeStepVR(); 
                         vrHitStatus.touchStartTime = 0; 
                     }
@@ -699,23 +709,24 @@
                 handData.indicator.material.color.set(0x00ff00); 
                 handData.indicator.material.emissiveIntensity = 0.5;
                 targetObj.scale.set(1,1,1); 
+                if (distance < 1.0) safeSetText('interaction-status', '🟢 接近中');
+                else safeSetText('interaction-status', '⚪ 待機中');
                 if(vrHitStatus.activeHand === handData.handedness) vrHitStatus.touchStartTime = 0; 
             }
         }
 
-        // 🔥 改進拖拽操作反饋
         function handleDragInteraction(distToStart, indexPos, handData, startObj, endObj) {
             if (!vrHitStatus.isTouchingStart) {
                 if (distToStart < VR_CONFIG.DETECTION_RADIUS) {
                     vrHitStatus.isTouchingStart = true; vrHitStatus.activeHand = handData.handedness;
                     handData.indicator.material.color.set(0xffff00);
-                    handData.indicator.scale.setScalar(1.5);  // 🔥 放大指示器
-                    handData.indicator.material.emissiveIntensity = 1.0; // 🔥 增強發光
-                    triggerHaptic(handData, 0.8, 100);  // 🔥 增強觸覺反饋
-                    startObj.children[1].material.color.set(0xffff00); 
+                    handData.indicator.scale.setScalar(1.5);
+                    handData.indicator.material.emissiveIntensity = 1.0;
+                    triggerHaptic(handData, 0.8, 100);
+                    safeSetText('interaction-status', '🟡 開始拖拽');
+                    if (startObj.userData.sphere) startObj.userData.sphere.material.color.set(0xffff00);
                     if (endObj) {
                         endObj.visible = true;
-                        // 🔥 讓終點閃爍
                         gsap.to(endObj.scale, { x: 1.3, y: 1.3, z: 1.3, duration: 0.5, yoyo: true, repeat: -1 });
                     }
                 }
@@ -726,15 +737,16 @@
                     const totalDist = startObj.position.distanceTo(endObj.position);
                     const progress = 1 - Math.min(distToEnd / totalDist, 1);
                     
-                    // 🔥 進度視覺反饋
-                    startObj.children[1].material.opacity = 0.3 + progress * 0.7;
-                    handData.indicator.material.emissiveIntensity = progress;  // 🔥 根據進度調整發光
+                    safeSetText('interaction-status', `🟠 進度 ${(progress * 100).toFixed(0)}%`);
+                    if (startObj.userData.sphere) startObj.userData.sphere.material.opacity = 0.3 + progress * 0.7;
+                    handData.indicator.material.emissiveIntensity = progress;
                     
-                    if (distToEnd < VR_CONFIG.DETECTION_RADIUS * 1.2) {  // 🔥 稍微放寬終點判定
-                        triggerHaptic(handData, 1.0, 200);  // 🔥 完成時強烈震動
+                    if (distToEnd < VR_CONFIG.DETECTION_RADIUS * 1.2) {
+                        triggerHaptic(handData, 1.0, 200);
+                        safeSetText('interaction-status', '✅ 完成');
                         completeStepVR(); 
                         vrHitStatus.isTouchingStart = false;
-                        handData.indicator.scale.setScalar(1);  // 🔥 恢復大小
+                        handData.indicator.scale.setScalar(1);
                     }
                 }
             }
@@ -747,6 +759,7 @@
         function completeStepVR() {
             if (isStepCompleting) return; isStepCompleting = true;
             interactables.forEach(obj => gsap.to(obj.scale, { x: 0, y: 0, z: 0, duration: 0.4 }));
+            if (areaIndicator) gsap.to(areaIndicator.scale, { x: 0, y: 0, z: 0, duration: 0.4 });
             setTimeout(() => { nextStep(); isStepCompleting = false; }, 1000);
         }
 
@@ -864,6 +877,7 @@
         function setupStep() {
             interactables.forEach(obj => { if (obj !== vr3DButtonMesh) scene.remove(obj); });
             interactables = [vr3DButtonMesh]; 
+            if (areaIndicator) { scene.remove(areaIndicator); areaIndicator = null; }
 
             const currentData = learningData[String(currentPhase)];
             if (!currentData) { console.warn("Learning data undefined for phase:", currentPhase); return; }
@@ -880,66 +894,106 @@
             
             vrHitStatus = { isTouchingStart: false, touchStartTime: 0, activeHand: null };
 
+            // 🔥 創建範圍指示器（無論什麼類型）
+            createAreaIndicator(step.start, step.end);
+
             if (step.type === 'drag') {
-                const startObj = createInteractable(step.start, '🟢', 'start'); startObj.userData.isStart = true;
-                const endObj = createInteractable(step.end, '🏁', 'end', true); endObj.userData.isEnd = true;
+                const startObj = create3DInteractable(step.start, 0x00ff00, 'start'); 
+                startObj.userData.isStart = true;
+                const endObj = create3DInteractable(step.end, 0xff0000, 'end', true); 
+                endObj.userData.isEnd = true;
                 showGhostGuide(step.start, step.end, true);
             } else {
-                createInteractable(step.pos, step.icon, 'click');
-                showGhostGuide(step.pos, step.pos, false);
+                create3DInteractable(step.start, 0x00ff00, step.type);
+                showGhostGuide(step.start, step.end || step.start, false);
             }
         }
 
-        // 🔥 改進互動物體 - 添加外圈光環
-        function createInteractable(pos, icon, type, isHidden = false) {
+        // 🔥 新增：創建範圍指示器
+        function createAreaIndicator(start, end) {
+            const startPos = new THREE.Vector3(start.x + model.position.x, start.y + model.position.y, start.z + model.position.z);
+            const endPos = new THREE.Vector3(end.x + model.position.x, end.y + model.position.y, end.z + model.position.z);
+            
+            const distance = startPos.distanceTo(endPos);
+            const center = new THREE.Vector3().lerpVectors(startPos, endPos, 0.5);
+            
+            // 創建半透明青色圓柱體表示範圍
+            const geometry = new THREE.CylinderGeometry(0.15, 0.15, Math.max(distance, 0.2), 32);
+            const material = new THREE.MeshBasicMaterial({ 
+                color: 0x00ffff, 
+                transparent: true, 
+                opacity: 0.2,
+                side: THREE.DoubleSide
+            });
+            areaIndicator = new THREE.Mesh(geometry, material);
+            
+            // 定位並旋轉
+            areaIndicator.position.copy(center);
+            if (distance > 0.1) {
+                const direction = new THREE.Vector3().subVectors(endPos, startPos).normalize();
+                areaIndicator.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), direction);
+            }
+            
+            scene.add(areaIndicator);
+            
+            // 脈動動畫
+            gsap.to(areaIndicator.material, { opacity: 0.35, duration: 1, yoyo: true, repeat: -1, ease: "sine.inOut" });
+        }
+
+        // 🔥 全新：創建 3D 互動球體
+        function create3DInteractable(pos, color, type, isHidden = false) {
             const group = new THREE.Group();
             group.position.set(pos.x + model.position.x, pos.y + model.position.y + 0.1, pos.z + model.position.z);
             
-            const map = createEmojiTexture(icon);
-            const iconMesh = new THREE.Mesh(
-                new THREE.PlaneGeometry(0.6, 0.6),  // 🔥 增大圖示
-                new THREE.MeshBasicMaterial({ map: map, transparent: true, depthTest: false })
-            );
+            // 🔥 核心球體（更大更容易點擊）
+            const sphereGeometry = new THREE.SphereGeometry(VR_CONFIG.SPHERE_SIZE, 32, 32);
+            const sphereMaterial = new THREE.MeshStandardMaterial({ 
+                color: color,
+                emissive: color,
+                emissiveIntensity: 0.5,
+                transparent: true,
+                opacity: 0.8,
+                metalness: 0.3,
+                roughness: 0.4
+            });
+            const sphere = new THREE.Mesh(sphereGeometry, sphereMaterial);
+            group.add(sphere);
             
-            // 🔥 添加外圈光環
-            const ring = new THREE.Mesh(
-                new THREE.RingGeometry(0.4, 0.45, 32),  // 🔥 調整大小匹配檢測範圍
-                new THREE.MeshBasicMaterial({ 
-                    color: 0x00ffff,  // 🔥 青色
-                    transparent: true, 
-                    opacity: 0.4,
-                    side: THREE.DoubleSide
-                })
-            );
+            // 🔥 外圈光環
+            const ringGeometry = new THREE.RingGeometry(VR_CONFIG.DETECTION_RADIUS * 0.8, VR_CONFIG.DETECTION_RADIUS, 32);
+            const ringMaterial = new THREE.MeshBasicMaterial({ 
+                color: color,
+                transparent: true,
+                opacity: 0.3,
+                side: THREE.DoubleSide
+            });
+            const ring = new THREE.Mesh(ringGeometry, ringMaterial);
+            group.add(ring);
             
+            // 🔥 碰撞檢測球體（更大）
             const hitBox = new THREE.Mesh(
                 new THREE.SphereGeometry(VR_CONFIG.DETECTION_RADIUS, 16, 16), 
                 new THREE.MeshBasicMaterial({ visible: false })
             );
-            
-            group.add(iconMesh); 
-            group.add(ring);  // 🔥 添加光環
             group.add(hitBox);
+            
+            // 儲存球體引用
+            group.userData.sphere = sphere;
+            group.userData.ring = ring;
             
             if (isHidden) group.visible = false;
             scene.add(group); 
             interactables.push(group);
             
-            // 🔥 光環脈動動畫
-            gsap.to(ring.scale, { x: 1.15, y: 1.15, duration: 1, yoyo: true, repeat: -1, ease: "sine.inOut" });
-            gsap.to(iconMesh.scale, { x: 1.15, y: 1.15, duration: 0.8, yoyo: true, repeat: -1 });
+            // 🔥 動畫
+            gsap.to(sphere.scale, { x: 1.2, y: 1.2, z: 1.2, duration: 1, yoyo: true, repeat: -1, ease: "sine.inOut" });
+            gsap.to(ring.scale, { x: 1.15, y: 1.15, duration: 1.2, yoyo: true, repeat: -1, ease: "sine.inOut" });
+            gsap.to(sphere.rotation, { y: Math.PI * 2, duration: 4, repeat: -1, ease: "none" });
             
             group.tick = () => { 
-                iconMesh.lookAt(camera.position); 
-                ring.lookAt(camera.position);  // 🔥 光環也朝向相機
+                ring.lookAt(camera.position);
             };
             return group;
-        }
-
-        function createEmojiTexture(emoji) {
-            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
-            const ctx = c.getContext('2d'); ctx.font = '100px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(emoji, 64, 64); return new THREE.CanvasTexture(c);
         }
 
         function createGhostHand() {
@@ -948,6 +1002,12 @@
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.8, depthTest: false, side: THREE.DoubleSide });
             ghostHand = new THREE.Mesh(geometry, material); ghostHand.renderOrder = 999;
             scene.add(ghostHand); ghostHand.visible = false;
+        }
+
+        function createEmojiTexture(emoji) {
+            const c = document.createElement('canvas'); c.width = 128; c.height = 128;
+            const ctx = c.getContext('2d'); ctx.font = '100px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText(emoji, 64, 64); return new THREE.CanvasTexture(c);
         }
 
         function showGhostGuide(startRel, endRel, isMove) {
