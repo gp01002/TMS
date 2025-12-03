@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (對面高掛版 v20)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (高度修正版 v21)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -97,15 +97,15 @@
     <div class="welcome-overlay" id="welcome">
         <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 對面高掛版 v20.0</p>
-        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 黑板移至對面高處 + 視距拉遠 + 趴姿優化</p>
+        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 高度修正版 v21.0</p>
+        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 2.75米視角 + 互動引導線 + 修正觸碰問題</p>
         
         <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px;">
             <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 操作說明</p>
             <div style="text-align: left; color: #ccc; line-height: 2;">
-                <p>1️⃣ <b>看對面：</b>教學板懸掛在床的對面牆上 (高處)</p>
-                <p>2️⃣ <b>自動：</b>系統會自動移動位置，保持舒適操作距離</p>
-                <p>3️⃣ <b>點擊：</b>直接點擊對面綠色的 3D 方塊進入 VR</p>
+                <p>1️⃣ <b>高度：</b>已將視角拉高至 2.75m，以配合巨型模型</p>
+                <p>2️⃣ <b>觸摸：</b>現在伸手應該能輕鬆摸到模特兒背部</p>
+                <p>3️⃣ <b>提示：</b>靠近目標時會出現白色引導線，確認接觸</p>
             </div>
         </div>
         
@@ -183,23 +183,22 @@
             THIGH_ROOT: -3.3, THIGH_MID: -2.4, KNEE: -1.5, CALF_MID: -0.7, ANKLE: 0.1, FOOT: 0.3            
         };
 
-        // 🔥 智慧運鏡：VR 距離稍微拉遠 (Z=1.3)
         const VIEW_PRESETS = {
             overview: { 
                 pcPos: {x: 2.0, y: 2.0, z: 2.0}, pcTarget: {x: 0, y: 0.5, z: 0}, 
-                vrPos: {x: 0.8, z: 0.8} // 總覽
+                vrPos: {x: 0.8, z: 0.8} 
             },
             thigh: { 
                 pcPos: {x: -2.0, y: 1.5, z: 1.0}, pcTarget: {x: -2.5, y: 0.5, z: 0},
-                vrPos: {x: -1.5, z: 1.3} // 大腿 (距離1.3)
+                vrPos: {x: -1.5, z: 1.3} 
             },
             knee: {
                 pcPos: {x: -1.0, y: 1.2, z: 1.0}, pcTarget: {x: -1.5, y: 1.0, z: 0},
-                vrPos: {x: -1.0, z: 1.3} // 膝蓋 (距離1.3)
+                vrPos: {x: -1.0, z: 1.3} 
             },
             calf: {
                 pcPos: {x: 0.5, y: 1.2, z: 1.0}, pcTarget: {x: -0.5, y: 0.5, z: 0},
-                vrPos: {x: 0.5, z: 1.3} // 小腿 (距離1.3)
+                vrPos: {x: 0.5, z: 1.3} 
             }
         };
 
@@ -259,9 +258,13 @@
         let teleportTarget = new THREE.Vector3();
         let pinchStartTime = 0; 
         const TELEPORT_DELAY = 2500; 
+        
+        // 🔥 互動線 (Visual Line)
+        let interactionLine; 
 
+        // 🔥 擴大偵測範圍 (35cm)
         const VR_CONFIG = {
-            DETECTION_RADIUS: 0.30,        
+            DETECTION_RADIUS: 0.35,        
             PRESS_DURATION: 0.5,
             HAND_INDICATOR_SIZE: 0.10,     
             HAPTIC_INTENSITY: 1.0,
@@ -301,7 +304,6 @@
             }
         }
 
-        // 🔥 修改：3D 黑板位置 - 移到對面 (Z=-2.0)，高度提升 (Y=3.2)
         function createInstructionBoard() {
             const canvas = document.createElement('canvas');
             canvas.width = 1024;
@@ -314,20 +316,15 @@
             const geometry = new THREE.PlaneGeometry(1.8, 0.9);
             instructionBoardMesh = new THREE.Mesh(geometry, material);
             
-            // 位置：X=-1.0 (大致中間), Y=3.2 (高處), Z=-2.0 (對面牆)
-            instructionBoardMesh.position.set(-1.0, 3.2, -2.0); 
-            
-            // 旋轉：面向 Z 正向 (面向使用者)
+            // 位置：左側 (-2.5), 高度 (3.2)
+            instructionBoardMesh.position.set(-2.5, 3.2, -2.0); 
             instructionBoardMesh.rotation.set(0, 0, 0); 
             
             scene.add(instructionBoardMesh);
             
-            // 3D 進入 VR 按鈕 (放在板子右側)
             const btnGeo = new THREE.BoxGeometry(0.5, 0.5, 0.1);
             const btnMat = new THREE.MeshBasicMaterial({ color: 0x00aa00 });
             vr3DButtonMesh = new THREE.Mesh(btnGeo, btnMat);
-            
-            // 放在板子右側 (X+1.2)
             vr3DButtonMesh.position.set(1.2, 0, 0.1); 
             
             const btnCanvas = document.createElement('canvas');
@@ -400,15 +397,22 @@
             const vrButton = createVRButton(renderer);
             document.body.appendChild(vrButton);
 
-            // 🔥 初始位置：距離稍微拉開一點點 (Z=1.0)
+            // 🔥 初始設定：Dolly (水平位置), Offset (垂直高度)
             dolly = new THREE.Group();
             dolly.position.set(0.7, 0, 1.0); 
             scene.add(dolly);
             
+            // 🔥 關鍵高度修正：拉高到 2.75m
             cameraOffset = new THREE.Group();
-            cameraOffset.position.y = 1.65; 
+            cameraOffset.position.y = 2.75; 
             dolly.add(cameraOffset);
             cameraOffset.add(camera);
+            
+            // 🔥 互動引導線
+            const lineGeo = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0), new THREE.Vector3(0,0,-1)]);
+            interactionLine = new THREE.Line(lineGeo, new THREE.LineBasicMaterial({ color: 0xffffff }));
+            interactionLine.visible = false;
+            scene.add(interactionLine);
             
             createInstructionBoard();
             createTeleportVisuals();
@@ -596,6 +600,17 @@
                 const indexTipWorldPos = handData.indicator.position;
                 const distToStart = indexTipWorldPos.distanceTo(startObj.position);
                 
+                // 🔥 互動連線：當距離 < 0.8m 時顯示連線
+                if (distToStart < 0.8) {
+                    interactionLine.visible = true;
+                    const points = interactionLine.geometry.attributes.position.array;
+                    points[0] = indexTipWorldPos.x; points[1] = indexTipWorldPos.y; points[2] = indexTipWorldPos.z;
+                    points[3] = startObj.position.x; points[4] = startObj.position.y; points[5] = startObj.position.z;
+                    interactionLine.geometry.attributes.position.needsUpdate = true;
+                } else {
+                    interactionLine.visible = false;
+                }
+                
                 if (step.type === 'click') handleClickInteraction(distToStart, handData, startObj);
                 else if (step.type === 'press') handlePressInteraction(distToStart, handData, startObj, step.duration || VR_CONFIG.PRESS_DURATION);
                 else if (step.type === 'drag') handleDragInteraction(distToStart, indexTipWorldPos, handData, startObj, endObj);
@@ -678,6 +693,9 @@
             if (point && isDragging) {
                 if (ghostHand) {
                     ghostHand.visible = true; ghostHand.position.copy(point); ghostHand.position.y += 0.2;
+                    const currentData = learningData[String(currentPhase)];
+                    if (!currentData) return;
+                    
                     const step = currentData[currentStepIndex];
                     if (step.type === 'drag') {
                         const endPos = new THREE.Vector3(step.end.x + model.position.x, step.end.y + model.position.y, step.end.z + model.position.z);
