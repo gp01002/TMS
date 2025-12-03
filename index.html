@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V11.8 手勢精準版)</title>
-    <!-- 引入核心庫 -->
+    <title>艾柏國際芳療 - VR 瑞典按摩教學 (V11.9 球體手勢版)</title>
+    <!-- 引入核心庫 (統一使用 unpkg 以確保版本一致性) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
@@ -174,7 +174,7 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #aaa;">V11.8 手勢精準版</p>
+        <p style="color: #aaa;">V11.9 球體手勢版 (必現)</p>
         <p style="color: #8ec5fc; font-size: 14px; margin-top:5px;">支援 Meta Quest / WebXR 手勢互動</p>
         <button class="start-btn" onclick="initApp()">進入教室</button>
         <div class="loading-spinner" id="spinner"></div>
@@ -352,6 +352,7 @@
         let dolly; // VR 用戶組
         const vrTempMatrix = new THREE.Matrix4();
         let vrHitStatus = { isTouchingStart: false, isTouchingEnd: false, touchStartTime: 0 };
+        let vrDebugPanel = null; // VR 文字診斷面板
 
         // --- DOM Helpers ---
         function safeSetValue(id, value) { const el = document.getElementById(id); if (el) el.value = value; }
@@ -471,6 +472,38 @@
             return button;
         }
 
+        function createVRDebugPanel() {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512;
+            canvas.height = 128;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0,0,512,128);
+            ctx.fillStyle = 'white';
+            ctx.font = '30px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('VR 狀態: 正在搜尋手部...', 256, 64);
+            
+            const texture = new THREE.CanvasTexture(canvas);
+            const mesh = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.125), new THREE.MeshBasicMaterial({map: texture, transparent: true}));
+            mesh.position.set(0, 1.5, -1);
+            dolly.add(mesh);
+            
+            return { mesh, ctx, texture, canvas };
+        }
+
+        function updateVRDebug(text) {
+            if(!vrDebugPanel) return;
+            const ctx = vrDebugPanel.ctx;
+            ctx.clearRect(0,0,512,128);
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(0,0,512,128);
+            ctx.fillStyle = 'white';
+            ctx.fillText(text, 256, 64);
+            vrDebugPanel.texture.needsUpdate = true;
+        }
+
         function initThreeJS() {
             const container = document.getElementById('canvas-container');
             scene = new THREE.Scene();
@@ -503,6 +536,8 @@
             dolly.position.set(0.5, 0.7, 1.2); // 更靠近床 (1.2m)，高度稍降 (0.7m)
             scene.add(dolly);
             dolly.add(camera);
+            
+            vrDebugPanel = createVRDebugPanel();
 
             // Setup VR Controllers & Hands
             setupVR();
@@ -608,21 +643,22 @@
 
                 // Setup Hands
                 const hand = renderer.xr.getHand(i);
-                hand.add(handModelFactory.createHandModel(hand)); 
+                // 關鍵修改：使用 "spheres" 設定檔，不使用外部 Mesh，確保一定顯示
+                hand.add(handModelFactory.createHandModel(hand, "spheres")); 
                 
-                // 手部碰撞球 - 初始設在手掌中心，之後會更新到食指尖
+                // 手部碰撞球
                 const handHitSphere = new THREE.Mesh(
                     new THREE.SphereGeometry(0.02, 16, 16),
                     new THREE.MeshBasicMaterial({ color: 0xffff00, transparent: true, opacity: 0.8 }) // 黃色高亮
                 );
-                // 標記為手部碰撞球
                 handHitSphere.userData.isHandSphere = true;
                 
                 hand.addEventListener('connected', (event) => {
                     const xrHand = event.data.hand;
                     if(xrHand) {
                          hand.userData.isHand = true;
-                         hand.userData.xrHand = xrHand; 
+                         hand.userData.xrHand = xrHand;
+                         updateVRDebug("手部已連線: " + event.data.handedness);
                     }
                 });
                 
@@ -670,6 +706,7 @@
                 if (hand.userData.xrHand && hand.children) {
                     const hitSphere = hand.children.find(c => c.userData.isHandSphere);
                     // 嘗試抓取食指尖 (index-finger-tip)
+                    // 在 'spheres' 模式下，關節名稱物件應該存在
                     const indexTip = hand.getObjectByName('index-finger-tip'); 
                     if (indexTip && hitSphere) {
                          const worldPos = new THREE.Vector3();
@@ -702,7 +739,7 @@
                             }
                         }
                     } else {
-                        // 恢復顏色 (手是黃色，控制器是綠色)
+                        // 恢復顏色
                         if (collider.userData.isHandSphere) {
                             collider.material.color.set(0xffff00);
                         } else {
