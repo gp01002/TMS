@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (Quest 3 模組化修復版)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (擬真手部版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
-    <!-- 1. 使用 Import Map 定義模組來源 -->
+    <!-- 使用 Import Map 定義模組來源 -->
     <script type="importmap">
         {
             "imports": {
@@ -158,17 +158,15 @@
     <div class="welcome-overlay" id="welcome">
         <div class="main-title">艾柏國際芳療</div>
         <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典按摩教學</h1>
-        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 模組化版 v2.0</p>
-        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 修復 ModelFactory 載入錯誤</p>
+        <p style="color: #00ff00; font-size: 20px; font-weight: bold;">Quest 3 擬真手部版 v3.0</p>
+        <p style="color: #8ec5fc; font-size: 14px; margin-top:10px;">✨ 真實手部模型 + 完整瑞典式療程</p>
         
         <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px;">
             <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 Quest 3 快速設定</p>
             <div style="text-align: left; color: #ccc; line-height: 2;">
                 <p>1️⃣ Quest 設定 → <span style="color:#00ff00">動作</span> → 手部追蹤 → <span style="color:#00ff00">開啟</span></p>
-                <p>2️⃣ 使用 <span style="color:#00ff00">Quest Browser</span>（內建瀏覽器）</p>
-                <p>3️⃣ 確認網址是 <span style="color:#00ff00">https://</span></p>
-                <p>4️⃣ 點擊下方按鈕進入 VR</p>
-                <p>5️⃣ 在瀏覽器跳出權限請求時，選擇「允許」</p>
+                <p>2️⃣ 使用 <span style="color:#00ff00">Quest Browser</span> 進入此網頁</p>
+                <p>3️⃣ 進入後請等待幾秒，手部模型即會出現</p>
             </div>
         </div>
         
@@ -176,7 +174,7 @@
         <div class="loading-spinner" id="spinner"></div>
         
         <p style="margin-top: 20px; color: #ff6b6b; font-size: 12px;">
-            ⚠️ 必須使用 HTTPS 協定，否則 VR 功能無法啟動
+            ⚠️ 必須使用 HTTPS 協定
         </p>
     </div>
 
@@ -221,10 +219,10 @@
             </div>
             
             <div class="menu-title">療程階段選單</div>
-            <button class="phase-btn active" onclick="setPhase(1)" id="p1">1. 準備與起始</button>
-            <button class="phase-btn" onclick="setPhase(2)" id="p2">2. 左腿按摩</button>
-            <button class="phase-btn" onclick="setPhase(3)" id="p3">3. 右腿按摩</button>
-            <button class="phase-btn" onclick="setPhase(4)" id="p4">4. 結尾安撫</button>
+            <button class="phase-btn active" onclick="setPhase(1)" id="p1">1. 勻油與輕撫 (Effleurage)</button>
+            <button class="phase-btn" onclick="setPhase(2)" id="p2">2. 深層揉捏 (Petrissage)</button>
+            <button class="phase-btn" onclick="setPhase(3)" id="p3">3. 拇指推壓 (Friction)</button>
+            <button class="phase-btn" onclick="setPhase(4)" id="p4">4. 結尾安撫 (Finish)</button>
             
             <div class="menu-title" style="margin-top:20px;">一般設定</div>
             <button class="phase-btn" onclick="resetCam()">🔄 重置視角</button>
@@ -246,7 +244,6 @@
         </div>
     </div>
 
-    <!-- 2. 改用 type="module" -->
     <script type="module">
         import * as THREE from 'three';
         import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
@@ -268,20 +265,26 @@
             THIGH_ROOT: -3.3, THIGH_MID: -2.4, KNEE: -1.5, CALF_MID: -0.7, ANKLE: 0.1, FOOT: 0.3            
         };
 
+        // ========== 新增：擬真瑞典按摩療程資料 ==========
         const learningData = {
-            1: [
-                { id: "1.1", text: "毛巾管理", note: "點擊毛巾", type: "click", tool: "towel", icon: "⬜", pos: {x: COORDS.THIGH_ROOT, y: -0.25, z: 0} }, 
-                { id: "1.2", text: "上油", note: "停留2秒", type: "press", tool: "oil", icon: "🧴", pos: {x: COORDS.KNEE, y: 0.2, z: 0}, duration: 2 },
-                { id: "1.3", text: "開場安撫", note: "腳踝滑到大腿", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.FOOT, y: -0.35, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
+            1: [ // 勻油與輕撫 (Effleurage)
+                { id: "1.1", text: "取油", note: "點擊精油瓶", type: "click", tool: "oil", icon: "🧴", pos: {x: -1.0, y: 0.2, z: 0.5} }, 
+                { id: "1.2", text: "溫熱雙手", note: "雙手合十搓熱 (模擬：停留3秒)", type: "press", tool: "hands", icon: "🔥", pos: {x: COORDS.KNEE, y: 0.3, z: 0}, duration: 3 },
+                { id: "1.3", text: "大腿輕撫 (Effleurage)", note: "雙手從膝蓋滑向大腿根部", type: "drag", tool: "hand", icon: "🌊", start: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
+                { id: "1.4", text: "小腿輕撫 (Effleurage)", note: "雙手從腳踝滑向膝蓋", type: "drag", tool: "hand", icon: "🌊", start: {x: COORDS.ANKLE, y: -0.30, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z} }
             ],
-            2: [
-                { id: "2.1", text: "大腿長推", note: "膝蓋往上", type: "drag", tool: "hand", icon: "👍", start: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
+            2: [ // 深層揉捏 (Petrissage)
+                { id: "2.1", text: "小腿揉捏 (Kneading)", note: "用手掌抓握小腿肚 (點擊確認)", type: "click", tool: "hand", icon: "✊", pos: {x: COORDS.CALF_MID, y: -0.25, z: LEFT_LEG_Z} },
+                { id: "2.2", text: "小腿扭轉 (Wringing)", note: "雙手反向扭轉肌肉 (停留模擬)", type: "press", tool: "hand", icon: "🔄", pos: {x: COORDS.CALF_MID, y: -0.25, z: LEFT_LEG_Z}, duration: 2 },
+                { id: "2.3", text: "大腿揉捏 (Kneading)", note: "用手掌抓握大腿外側", type: "click", tool: "hand", icon: "✊", pos: {x: COORDS.THIGH_MID, y: -0.20, z: LEFT_LEG_Z} },
             ],
-            3: [
-                { id: "3.1", text: "右腿長推", note: "膝蓋往上", type: "drag", tool: "hand", icon: "👍", start: {x: COORDS.KNEE, y: -0.25, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: RIGHT_LEG_Z} },
+            3: [ // 拇指推壓 (Friction)
+                { id: "3.1", text: "膽經推壓", note: "大腿外側深層推壓", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z + 0.15}, end: {x: COORDS.THIGH_MID, y: -0.20, z: LEFT_LEG_Z + 0.15} },
+                { id: "3.2", text: "委中穴按壓", note: "膝蓋後方深壓 3 秒", type: "press", tool: "thumb", icon: "📍", pos: {x: COORDS.KNEE, y: -0.35, z: LEFT_LEG_Z}, duration: 3 },
             ],
-            4: [
-                { id: "4.1", text: "雙腿安撫", note: "腳踝到大腿", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.FOOT, y: -0.35, z: 0}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0} },
+            4: [ // 結尾安撫 (Finish)
+                { id: "4.1", text: "全腿長推安撫", note: "從腳踝一路推至大腿根部", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.ANKLE, y: -0.30, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z} },
+                { id: "4.2", text: "蓋上毛巾", note: "完成療程", type: "click", tool: "towel", icon: "⬜", pos: {x: COORDS.THIGH_MID, y: -0.15, z: LEFT_LEG_Z} },
             ]
         };
 
@@ -542,7 +545,6 @@
 
             setupVRHands();
 
-            // 改用 import 進來的 OrbitControls
             controls = new OrbitControls(camera, renderer.domElement);
             controls.enableDamping = true;
             controls.maxDistance = 6;
@@ -585,7 +587,6 @@
         function setupVRHands() {
             console.log("🤲 ========== 開始設置 VR 手部 ==========");
             
-            // 直接使用導入的 Class，不再有 THREE. 前綴問題
             handModelFactory = new XRHandModelFactory();
             controllerModelFactory = new XRControllerModelFactory();
             
@@ -605,9 +606,10 @@
                 dolly.add(hand);
 
                 try {
-                    const handModel = handModelFactory.createHandModel(hand, "boxes"); 
+                    // 🔥 關鍵修改：將 "boxes" 改為 "mesh" 以載入真實手部模型
+                    const handModel = handModelFactory.createHandModel(hand, "mesh"); 
                     hand.add(handModel);
-                    console.log(` ✅ 手部模型 ${i} 創建成功`);
+                    console.log(` ✅ 手部模型 ${i} 創建成功 (Mesh)`);
                 } catch (e) {
                     console.error(` ❌ 手部模型 ${i} 創建失敗:`, e);
                 }
@@ -621,15 +623,15 @@
                     indicator: null
                 };
                 
-                // 🔥 超大發光指示器
+                // 仍保留超大發光指示器作為邏輯觸發點，但為了美觀可以稍微調高透明度或縮小
                 const indicator = new THREE.Mesh(
                     new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 32, 32),
                     new THREE.MeshStandardMaterial({ 
                         color: 0x00ff00, 
                         transparent: true, 
-                        opacity: 0.9,
+                        opacity: 0.5, // 稍微透明一點，讓使用者看得到自己的 Mesh 手
                         emissive: 0x00ff00,
-                        emissiveIntensity: 2.0,
+                        emissiveIntensity: 1.0,
                     })
                 );
                 indicator.visible = false;
@@ -950,7 +952,7 @@
 
         // ========== 環境與模型 ==========
         function loadEnvironment() {
-            const loader = new GLTFLoader(); // 直接使用 GLTFLoader
+            const loader = new GLTFLoader(); 
             loader.load(BASE_URL + 'A01.glb', (gltf) => {
                 const room = gltf.scene;
                 room.scale.set(20, 20, 20);
@@ -974,7 +976,7 @@
             modelRot = { ...config.rot };
             modelScale = config.scale;
 
-            const loader = new GLTFLoader(); // 直接使用 GLTFLoader
+            const loader = new GLTFLoader();
             loader.load(BASE_URL + (type === 'male' ? 'B01.glb' : 'B02.glb'), (gltf) => {
                 model = gltf.scene;
                 model.position.set(modelPos.x, modelPos.y, modelPos.z);
@@ -1299,7 +1301,6 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
         }
 
-        // ⚠️ 關鍵：因為是 Module，需要手動將函式掛載到 window，HTML 按鈕才能呼叫
         window.initApp = initApp;
         window.toggleCameraLock = toggleCameraLock;
         window.toggleMenu = toggleMenu;
