@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (流暢優化版 v27.3)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (VR 互動修正版 v27.5)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -97,8 +97,8 @@
         <div class="welcome-slide" id="slide-instructions">
             <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
             <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典式腿部按摩 SOP</h1>
-            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">流暢優化版 v27.3</p>
-            <p style="color: #ffaa00; font-size: 14px; margin-top: 5px;">✨ 修正：點選靈敏度、攝影機流暢度、互動回饋</p>
+            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">VR 互動修正版 v27.5</p>
+            <p style="color: #ffaa00; font-size: 14px; margin-top: 5px;">✨ 修正：VR 互動距離、座標補償、詳細除錯</p>
             
             <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px; margin-left: auto; margin-right: auto;">
                 <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 操作指南</p>
@@ -308,7 +308,8 @@
             HAPTIC_DURATION: 150,
             PINCH_THRESHOLD: 0.025,
             SPHERE_SIZE: 0.15,
-            INTERACTION_ZONE: 1.5
+            INTERACTION_ZONE: 1.5,
+            VR_INTERACTION_DISTANCE: 2.0  // 🔥 新增：VR 專用的互動距離（考慮 dolly scale）
         };
 
         function safeSetText(id, text) { const el = document.getElementById(id); if (el) el.innerText = text; }
@@ -557,11 +558,24 @@
                             const session = await navigator.xr.requestSession('immersive-vr', sessionInit);
                             currentSession = session;
                             session.addEventListener('end', () => { 
-                                currentSession = null; button.textContent = '🥽 進入 VR'; vr3DButtonMesh.visible = true; document.body.classList.remove('vr-active'); 
+                                currentSession = null; 
+                                button.textContent = '🥽 進入 VR'; 
+                                vr3DButtonMesh.visible = true; 
+                                document.body.classList.remove('vr-active');
+                                // 🔥 隱藏 VR 狀態監控
+                                document.getElementById('vr-status').classList.remove('active');
                             });
                             await renderer.xr.setSession(session);
-                            button.textContent = '🚪 退出 VR'; vr3DButtonMesh.visible = false; document.body.classList.add('vr-active');
-                        } catch(e) { alert("VR Error: " + e.message); }
+                            button.textContent = '🚪 退出 VR'; 
+                            vr3DButtonMesh.visible = false; 
+                            document.body.classList.add('vr-active');
+                            // 🔥 顯示 VR 狀態監控
+                            document.getElementById('vr-status').classList.add('active');
+                            console.log('✅ VR 已啟動，監控面板已顯示');
+                        } catch(e) { 
+                            alert("VR Error: " + e.message); 
+                            console.error("VR 錯誤:", e);
+                        }
                     } else { currentSession.end(); }
                 };
                 button.onclick = enterVR; globalEnterVRFunc = enterVR; 
@@ -626,11 +640,14 @@
         }
 
         function updateVRStatus() {
+            let hasAnyHand = false;
+            
             vrHandData.forEach(handData => {
                 let activePos = null;
 
                 handData.hand.updateMatrixWorld(true);
 
+                // 🔥 優先使用手勢追蹤
                 if (handData.isHandTracking && handData.hand.joints && handData.hand.joints['index-finger-tip']) {
                     handData.indexTip = handData.hand.joints['index-finger-tip'];
                     handData.thumbTip = handData.hand.joints['thumb-tip']; 
@@ -639,12 +656,21 @@
                     const worldPos = new THREE.Vector3();
                     handData.indexTip.getWorldPosition(worldPos);
                     activePos = worldPos;
+                    hasAnyHand = true;
+                    
+                    // 🔥 Debug
+                    console.log(`👋 手勢追蹤: ${handData.handedness}, 位置:`, worldPos);
                 }
+                // 🔥 降級使用手腕
                 else if (handData.isHandTracking) {
                      const worldPos = new THREE.Vector3();
                      handData.hand.getWorldPosition(worldPos);
                      activePos = worldPos;
+                     hasAnyHand = true;
+                     
+                     console.log(`✋ 手腕追蹤: ${handData.handedness}, 位置:`, worldPos);
                 }
+                // 🔥 最後使用控制器
                 else if (handData.isControllerActive) {
                     const worldPos = new THREE.Vector3();
                     const direction = new THREE.Vector3();
@@ -656,8 +682,12 @@
                     worldPos.add(direction);
                     
                     activePos = worldPos;
+                    hasAnyHand = true;
+                    
+                    console.log(`🎮 控制器: ${handData.handedness}, 位置:`, worldPos);
                 }
 
+                // 🔥 更新指示器
                 if (activePos && handData.indicator) {
                     handData.indicator.position.copy(activePos);
                     handData.indicator.visible = true;
@@ -666,15 +696,27 @@
                 }
             });
             
+            // 🔥 如果沒有任何手部追蹤，顯示警告
+            if (!hasAnyHand) {
+                safeSetText('hand-track-status', '❌ 未檢測到手部');
+                console.warn('⚠️ VR: 沒有檢測到任何手部或控制器');
+            }
+            
+            // 🔥 距離檢測（考慮 dolly scale）
             const currentData = learningData[String(currentPhase)];
             if (currentData && interactables.length > 0) {
                 const startObj = interactables.find(obj => obj.userData.isStart || (!obj.userData.isEnd && !obj.userData.isStart));
                 if (startObj) {
+                    const dollyScale = dolly.scale.x;  // 2.5
+                    
                     vrHandData.forEach(handData => {
                         if (handData.indicator && handData.indicator.visible) {
-                            const dist = handData.indicator.position.distanceTo(startObj.position);
+                            const rawDist = handData.indicator.position.distanceTo(startObj.position);
+                            const dist = rawDist / dollyScale;  // 🔥 調整距離
+                            
                             if (dist < 1.0) {
                                 safeSetText('distance-status', `${(dist * 100).toFixed(0)}cm`);
+                                console.log(`📏 距離球體: ${(dist * 100).toFixed(0)}cm (原始: ${(rawDist * 100).toFixed(0)}cm)`);
                             }
                         }
                     });
@@ -817,34 +859,80 @@
             vrHandData.forEach(handData => {
                 if (!handData.indicator || !handData.indicator.visible) return;
                 
-                const indexTipWorldPos = handData.indicator.position;
-                const distToStart = indexTipWorldPos.distanceTo(startObj.position);
+                const indexTipWorldPos = handData.indicator.position.clone();
+                const dollyScale = dolly.scale.x; // 2.5
                 
-                if (distToStart < 0.8) {
+                // 🔥 計算原始距離和調整後距離
+                const rawDist = indexTipWorldPos.distanceTo(startObj.position);
+                const adjustedDist = rawDist / dollyScale;
+                
+                // 🔥 詳細日誌
+                console.log(`📍 VR 檢測 [${handData.handedness}]:`, {
+                    手部位置: indexTipWorldPos,
+                    球體位置: startObj.position,
+                    原始距離: `${(rawDist * 100).toFixed(0)}cm`,
+                    調整距離: `${(adjustedDist * 100).toFixed(0)}cm`,
+                    判定閾值: `${(VR_CONFIG.VR_INTERACTION_DISTANCE * 100).toFixed(0)}cm`,
+                    能否互動: adjustedDist < VR_CONFIG.VR_INTERACTION_DISTANCE ? '✅ 是' : '❌ 否'
+                });
+                
+                // 🔥 視覺反饋：根據距離改變指示球顏色
+                if (adjustedDist < VR_CONFIG.VR_INTERACTION_DISTANCE) {
+                    // 距離夠近，變成黃色
+                    handData.indicator.material.color.set(0xffff00);
+                    handData.indicator.material.emissiveIntensity = 1.0;
+                    safeSetText('interaction-status', `🟡 可互動 (${(adjustedDist * 100).toFixed(0)}cm)`);
+                } else if (adjustedDist < VR_CONFIG.VR_INTERACTION_DISTANCE * 1.5) {
+                    // 接近中，橙色
+                    handData.indicator.material.color.set(0xffa500);
+                    handData.indicator.material.emissiveIntensity = 0.8;
+                    safeSetText('interaction-status', `🟠 接近中 (${(adjustedDist * 100).toFixed(0)}cm)`);
+                } else {
+                    // 太遠，綠色
+                    handData.indicator.material.color.set(0x00ff00);
+                    handData.indicator.material.emissiveIntensity = 0.5;
+                    safeSetText('interaction-status', `⚪ 待機中 (${(adjustedDist * 100).toFixed(0)}cm)`);
+                }
+                
+                // 🔥 連線視覺
+                if (adjustedDist < VR_CONFIG.VR_INTERACTION_DISTANCE * 1.5) {
                     interactionLine.visible = true;
                     const points = interactionLine.geometry.attributes.position.array;
                     points[0] = indexTipWorldPos.x; points[1] = indexTipWorldPos.y; points[2] = indexTipWorldPos.z;
                     points[3] = startObj.position.x; points[4] = startObj.position.y; points[5] = startObj.position.z;
                     interactionLine.geometry.attributes.position.needsUpdate = true;
-                } else { interactionLine.visible = false; }
+                } else { 
+                    interactionLine.visible = false; 
+                }
                 
-                if (step.type === 'click') handleClickInteraction(distToStart, handData, startObj);
-                else if (step.type === 'press') handlePressInteraction(distToStart, handData, startObj, step.duration || VR_CONFIG.PRESS_DURATION);
-                else if (step.type === 'drag') handleDragInteraction(distToStart, indexTipWorldPos, handData, startObj, endObj);
+                // 🔥 觸發互動邏輯
+                if (step.type === 'click') handleClickInteraction(adjustedDist, handData, startObj);
+                else if (step.type === 'press') handlePressInteraction(adjustedDist, handData, startObj, step.duration || VR_CONFIG.PRESS_DURATION);
+                else if (step.type === 'drag') handleDragInteraction(adjustedDist, indexTipWorldPos, handData, startObj, endObj);
             });
         }
 
         function handleClickInteraction(distance, handData, targetObj) {
-            if (distance < VR_CONFIG.DETECTION_RADIUS) {
+            // 🔥 使用 VR 專用距離（2.0m）
+            if (distance < VR_CONFIG.VR_INTERACTION_DISTANCE) {
                 handData.indicator.material.color.set(0xff0000);
                 handData.indicator.material.emissiveIntensity = 1.0;
                 safeSetText('interaction-status', '🔴 點擊中');
+                
+                console.log(`🔴 VR 點擊觸發: 距離 ${(distance * 100).toFixed(0)}cm < 閾值 ${(VR_CONFIG.VR_INTERACTION_DISTANCE * 100).toFixed(0)}cm`);
+                
                 if (!vrHitStatus.touchStartTime) {
-                    vrHitStatus.touchStartTime = Date.now(); vrHitStatus.activeHand = handData.handedness;
+                    vrHitStatus.touchStartTime = Date.now(); 
+                    vrHitStatus.activeHand = handData.handedness;
                     triggerHaptic(handData, 0.8, 100);
                     playClickFeedback(targetObj);
+                    console.log(`✅ 開始計時點擊`);
                 } else {
-                    if ((Date.now() - vrHitStatus.touchStartTime) / 1000 >= 0.3) { 
+                    const elapsed = (Date.now() - vrHitStatus.touchStartTime) / 1000;
+                    console.log(`⏱️ 點擊持續: ${elapsed.toFixed(1)}s`);
+                    
+                    if (elapsed >= 0.3) { 
+                        console.log(`🎉 點擊完成！`);
                         safeSetText('interaction-status', '✅ 完成');
                         completeStepVR(); 
                         vrHitStatus.touchStartTime = 0; 
@@ -853,30 +941,45 @@
             } else { 
                 handData.indicator.material.color.set(0x00ff00); 
                 handData.indicator.material.emissiveIntensity = 0.5;
-                if (distance < 1.0) safeSetText('interaction-status', '🟡 接近中');
-                else safeSetText('interaction-status', '⚪ 待機中');
-                if(vrHitStatus.activeHand === handData.handedness) vrHitStatus.touchStartTime = 0; 
+                
+                if (distance < VR_CONFIG.VR_INTERACTION_DISTANCE * 1.5) {
+                    safeSetText('interaction-status', `🟡 接近中 ${(distance * 100).toFixed(0)}cm`);
+                } else {
+                    safeSetText('interaction-status', `⚪ 待機中 ${(distance * 100).toFixed(0)}cm`);
+                }
+                
+                if(vrHitStatus.activeHand === handData.handedness) {
+                    vrHitStatus.touchStartTime = 0;
+                    console.log(`❌ 離開判定範圍，重置計時`);
+                }
             }
         }
 
         function handlePressInteraction(distance, handData, targetObj, requiredDuration) {
-            if (distance < VR_CONFIG.DETECTION_RADIUS) {
+            // 🔥 使用 VR 專用距離
+            if (distance < VR_CONFIG.VR_INTERACTION_DISTANCE) {
                 handData.indicator.material.color.set(0xffff00);
                 handData.indicator.material.emissiveIntensity = 1.0;
+                
                 if (!vrHitStatus.touchStartTime) { 
                     vrHitStatus.touchStartTime = Date.now(); 
                     vrHitStatus.activeHand = handData.handedness; 
                     triggerHaptic(handData, 0.5, 50); 
                     safeSetText('interaction-status', '🟡 按壓中...');
+                    console.log(`🟡 開始按壓，需持續 ${requiredDuration}s`);
                 }
                 else {
                     const elapsed = (Date.now() - vrHitStatus.touchStartTime) / 1000;
                     const progress = Math.min(elapsed / requiredDuration, 1.0) * 100;
                     safeSetText('interaction-status', `🟡 按壓 ${progress.toFixed(0)}%`);
                     targetObj.scale.setScalar(1 + Math.min(elapsed / requiredDuration, 1) * 0.3);
+                    
+                    console.log(`⏱️ 按壓進度: ${progress.toFixed(0)}%`);
+                    
                     if (elapsed >= requiredDuration) { 
                         triggerHaptic(handData, 1.0, 200);
                         safeSetText('interaction-status', '✅ 完成');
+                        console.log(`🎉 按壓完成！`);
                         completeStepVR(); 
                         vrHitStatus.touchStartTime = 0; 
                     }
@@ -885,21 +988,34 @@
                 handData.indicator.material.color.set(0x00ff00); 
                 handData.indicator.material.emissiveIntensity = 0.5;
                 targetObj.scale.set(1,1,1); 
-                if (distance < 1.0) safeSetText('interaction-status', '🟢 接近中');
-                else safeSetText('interaction-status', '⚪ 待機中');
-                if(vrHitStatus.activeHand === handData.handedness) vrHitStatus.touchStartTime = 0; 
+                
+                if (distance < VR_CONFIG.VR_INTERACTION_DISTANCE * 1.5) {
+                    safeSetText('interaction-status', `🟢 接近中 ${(distance * 100).toFixed(0)}cm`);
+                } else {
+                    safeSetText('interaction-status', `⚪ 待機中 ${(distance * 100).toFixed(0)}cm`);
+                }
+                
+                if(vrHitStatus.activeHand === handData.handedness) {
+                    vrHitStatus.touchStartTime = 0;
+                    console.log(`❌ 離開判定範圍，按壓重置`);
+                }
             }
         }
 
         function handleDragInteraction(distToStart, indexPos, handData, startObj, endObj) {
+            // 🔥 注意：distToStart 已經是調整後的距離
             if (!vrHitStatus.isTouchingStart) {
-                if (distToStart < VR_CONFIG.DETECTION_RADIUS) {
-                    vrHitStatus.isTouchingStart = true; vrHitStatus.activeHand = handData.handedness;
+                // 🔥 使用 VR 專用距離
+                if (distToStart < VR_CONFIG.VR_INTERACTION_DISTANCE) {
+                    vrHitStatus.isTouchingStart = true; 
+                    vrHitStatus.activeHand = handData.handedness;
                     handData.indicator.material.color.set(0xffff00);
                     handData.indicator.scale.setScalar(1.5);
                     handData.indicator.material.emissiveIntensity = 1.0;
                     triggerHaptic(handData, 0.8, 100);
                     safeSetText('interaction-status', '🟡 開始拖拽');
+                    console.log(`🟡 開始拖拽，起點已觸發`);
+                    
                     if (startObj.userData.sphere) startObj.userData.sphere.material.color.set(0xffff00);
                     if (endObj) {
                         endObj.visible = true;
@@ -909,17 +1025,24 @@
             } else if (vrHitStatus.activeHand === handData.handedness) {
                 handData.indicator.material.color.set(0xffa500);
                 if (endObj) {
-                    const distToEnd = indexPos.distanceTo(endObj.position);
+                    // 🔥 修正：計算到終點的距離時也要考慮 scale
+                    const rawDistToEnd = indexPos.distanceTo(endObj.position);
+                    const distToEnd = rawDistToEnd / dolly.scale.x;
+                    
                     const totalDist = startObj.position.distanceTo(endObj.position);
                     const progress = 1 - Math.min(distToEnd / totalDist, 1);
                     
                     safeSetText('interaction-status', `🟠 進度 ${(progress * 100).toFixed(0)}%`);
+                    console.log(`🟠 拖拽進度: ${(progress * 100).toFixed(0)}%, 距終點: ${(distToEnd * 100).toFixed(0)}cm`);
+                    
                     if (startObj.userData.sphere) startObj.userData.sphere.material.opacity = 0.3 + progress * 0.7;
                     handData.indicator.material.emissiveIntensity = progress;
                     
-                    if (distToEnd < VR_CONFIG.DETECTION_RADIUS * 1.2) {
+                    // 🔥 使用 VR 專用距離判定終點
+                    if (distToEnd < VR_CONFIG.VR_INTERACTION_DISTANCE * 1.2) {
                         triggerHaptic(handData, 1.0, 200);
                         safeSetText('interaction-status', '✅ 完成');
+                        console.log(`🎉 拖拽完成！到達終點`);
                         completeStepVR(); 
                         vrHitStatus.isTouchingStart = false;
                         handData.indicator.scale.setScalar(1);
@@ -942,6 +1065,7 @@
         // 🔥 優化：簡化觸控事件處理
         let touchStartPos = { x: 0, y: 0 };
         let touchStartTime = 0;
+        let isClickLocked = false;  // 🔥 新增：點擊鎖定標記
         
         function onTouchStart(e) { 
             // 🔥 多點觸控：啟用攝影機
@@ -949,6 +1073,7 @@
                 isMultiTouch = true;
                 controls.enabled = true;
                 isDragging = false;
+                isClickLocked = false;
                 return;
             }
             
@@ -972,6 +1097,12 @@
             
             e.preventDefault(); 
             
+            // 🔥 如果點擊被鎖定，完全禁用攝影機
+            if (isClickLocked) {
+                controls.enabled = false;
+                return;
+            }
+            
             // 🔥 單點觸控
             if (isDragging) {
                 controls.enabled = false;
@@ -990,6 +1121,9 @@
         }
         
         function onTouchEnd(e) {
+            // 🔥 解除點擊鎖定
+            isClickLocked = false;
+            
             // 🔥 重置多點觸控狀態
             if (e.touches.length < 2) {
                 isMultiTouch = false;
@@ -1024,7 +1158,10 @@
             
             if (hitInteractable) { 
                 isDragging = true; 
-                controls.enabled = false; 
+                controls.enabled = false;
+                
+                // 🔥 啟用點擊鎖定
+                isClickLocked = true;
                 
                 // 🔥 視覺反饋
                 if (hitInteractable.userData.sphere) {
@@ -1043,8 +1180,9 @@
                 
                 checkIntersection(); 
             } else { 
-                // 🔥 點擊空白處：啟用攝影機
-                controls.enabled = true; 
+                // 🔥 點擊空白處：啟用攝影機，不鎖定
+                controls.enabled = true;
+                isClickLocked = false;
             }
         }
         
@@ -1357,17 +1495,18 @@
             ring.renderOrder = 998;
             group.add(ring);
             
-            // 🔥 關鍵：hitBox 不可見但可以被 raycaster 檢測（VR 用）
+            // 🔥 關鍵修正：hitBox 保持透明但可檢測（VR 用）
             const hitBox = new THREE.Mesh(
                 new THREE.SphereGeometry(VR_CONFIG.DETECTION_RADIUS * 1.5, 16, 16), 
                 new THREE.MeshBasicMaterial({ 
                     transparent: true, 
-                    opacity: 0,
+                    opacity: 0,  // 完全透明
                     depthWrite: false,
-                    visible: false  // 🔥 設為不可見，但不禁用 raycast
+                    depthTest: false
                 })
             );
-            hitBox.renderOrder = 1000; 
+            // 🔥 不設 visible: false，讓 VR 可以檢測距離
+            hitBox.renderOrder = -1;  // 🔥 渲染順序最低，避免阻擋
             group.add(hitBox);
             
             group.userData.sphere = sphere;
