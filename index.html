@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (v26.8)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (v27.2)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -101,7 +101,7 @@
         <div class="welcome-slide" id="slide-instructions">
             <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
             <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典式腿部按摩 SOP</h1>
-            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v26.8</p>
+            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v27.2</p>
             
             <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px; margin-left: auto; margin-right: auto;">
                 <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 操作指南</p>
@@ -194,7 +194,6 @@
 
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
-        // 🔥 模特兒位置：Z 軸設為 0.25，讓它往玩家方向（+Z）移動，解決手太短摸不到的問題
         const MODEL_CONFIG = {
             male: { pos: { x: 0.1, y: 2.32, z: 0.25 }, scale: 1.0, rot: { x: 1.57, y: 0, z: 1.57 } },
             female: { pos: { x: 0.1, y: 2.28, z: 0.25 }, scale: 1.0, rot: { x: 1.57, y: 0, z: 1.57 } }
@@ -231,31 +230,32 @@
         };
 
         // SOP 標準流程資料庫
+        // 🔥 修正: 抬升 Y 軸座標，防止球體沉入肉裡導致無法點擊
         const learningData = {
             "1": [ // 2.0 準備與開場（5個步驟）
-                { id: "2.1", text: "毛巾安撫", note: "雙手從大腿根部沿兩側滑順至腳底", type: "drag", tool: "towel", icon: "⬜", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, end: {x: COORDS.FOOT, y: -0.3, z: 0}, view: "overview", pose: "flat" },
-                { id: "2.2", text: "腿部定位", note: "放置毛巾捲於雙腿之間", type: "click", tool: "towel_roll", icon: "🌀", start: {x: COORDS.KNEE, y: -0.2, z: 0}, end: {x: COORDS.KNEE, y: -0.2, z: 0}, view: "knee", pose: "flat" },
-                { id: "2.3", text: "初步舒緩", note: "雙手由跟腱向上長距離撫順至大腿", type: "drag", tool: "hands", icon: "✨", start: {x: COORDS.FOOT, y: 0.0, z: 0}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, view: "overview", pose: "flat" },
-                { id: "2.4", text: "單腿準備", note: "覆蓋右腿，準備操作左腿", type: "click", tool: "towel", icon: "🛡️", start: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: -0.2, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
-                { id: "2.5", text: "上油與開場", note: "左腿上油並執行大安撫", type: "drag", tool: "oil", icon: "🧴", start: {x: COORDS.FOOT, y: -0.3, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" }
+                { id: "2.1", text: "毛巾安撫", note: "雙手從大腿根部沿兩側滑順至腳底", type: "drag", tool: "towel", icon: "⬜", start: {x: COORDS.THIGH_ROOT, y: 0.0, z: 0}, end: {x: COORDS.FOOT, y: 0.0, z: 0}, view: "overview", pose: "flat" },
+                { id: "2.2", text: "腿部定位", note: "放置毛巾捲於雙腿之間", type: "click", tool: "towel_roll", icon: "🌀", start: {x: COORDS.KNEE, y: 0.1, z: 0}, end: {x: COORDS.KNEE, y: 0.1, z: 0}, view: "knee", pose: "flat" },
+                { id: "2.3", text: "初步舒緩", note: "雙手由跟腱向上長距離撫順至大腿", type: "drag", tool: "hands", icon: "✨", start: {x: COORDS.FOOT, y: 0.1, z: 0}, end: {x: COORDS.THIGH_ROOT, y: 0.0, z: 0}, view: "overview", pose: "flat" },
+                { id: "2.4", text: "單腿準備", note: "覆蓋右腿，準備操作左腿", type: "click", tool: "towel", icon: "🛡️", start: {x: COORDS.KNEE, y: 0.1, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: 0.1, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
+                { id: "2.5", text: "上油與開場", note: "左腿上油並執行大安撫", type: "drag", tool: "oil", icon: "🧴", start: {x: COORDS.FOOT, y: 0.0, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: 0.0, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" }
             ],
             "2": [ // 3.0 左腿流程（5個步驟）
-                { id: "3.1", text: "大腿長推撫", note: "拇指併排，從膝蓋推至大腿根部", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: -0.2, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" },
-                { id: "3.1.2", text: "S型抓捏 (大腿)", note: "雙手交替S型提拉肌束", type: "drag", tool: "hand", icon: "✊", start: {x: COORDS.KNEE, y: -0.2, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: -0.15, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" },
-                { id: "3.2", text: "推至委中穴", note: "小腿長推至膝窩中心", type: "drag", tool: "hand", icon: "☝️", start: {x: COORDS.ANKLE, y: -0.3, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, view: "calf", pose: "flat" },
-                { id: "3.2.2", text: "膝窩分區按壓", note: "按壓委中穴周邊 (內中外循環)", type: "press", tool: "thumb", icon: "📍", start: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: -0.25, z: LEFT_LEG_Z}, duration: 3, view: "knee", pose: "flat" },
-                { id: "3.3", text: "足部：湧泉穴打圈", note: "抬腿90度，拇指順時鐘按壓湧泉", type: "drag", tool: "thumb", icon: "🦶", start: {x: COORDS.FOOT, y: 0.2, z: LEFT_LEG_Z}, end: {x: COORDS.FOOT, y: 0.3, z: LEFT_LEG_Z}, view: "foot", pose: "leftRaised" }
+                { id: "3.1", text: "大腿長推撫", note: "拇指併排，從膝蓋推至大腿根部", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: 0.0, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: 0.0, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" },
+                { id: "3.1.2", text: "S型抓捏 (大腿)", note: "雙手交替S型提拉肌束", type: "drag", tool: "hand", icon: "✊", start: {x: COORDS.KNEE, y: 0.1, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: 0.15, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" },
+                { id: "3.2", text: "推至委中穴", note: "小腿長推至膝窩中心", type: "drag", tool: "hand", icon: "☝️", start: {x: COORDS.ANKLE, y: 0.0, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: 0.05, z: LEFT_LEG_Z}, view: "calf", pose: "flat" },
+                { id: "3.2.2", text: "膝窩分區按壓", note: "按壓委中穴周邊 (內中外循環)", type: "press", tool: "thumb", icon: "📍", start: {x: COORDS.KNEE, y: 0.1, z: LEFT_LEG_Z}, end: {x: COORDS.KNEE, y: 0.1, z: LEFT_LEG_Z}, duration: 3, view: "knee", pose: "flat" },
+                { id: "3.3", text: "足部：湧泉穴打圈", note: "抬腿90度，拇指順時鐘按壓湧泉", type: "drag", tool: "thumb", icon: "🦶", start: {x: COORDS.FOOT, y: 0.3, z: LEFT_LEG_Z}, end: {x: COORDS.FOOT, y: 0.4, z: LEFT_LEG_Z}, view: "foot", pose: "leftRaised" }
             ],
             "3": [ // 4.0 右腿流程（3個步驟）
-                { id: "4.1", text: "右大腿長推", note: "拇指併排，對稱操作", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: RIGHT_LEG_Z}, view: "thigh", pose: "flat" },
-                { id: "4.2", text: "S型抓捏 (右腿)", note: "雙手交替S型提拉", type: "drag", tool: "hand", icon: "✊", start: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: -0.15, z: RIGHT_LEG_Z}, view: "thigh", pose: "flat" },
-                { id: "4.3", text: "右足湧泉穴", note: "抬右腿90度，按壓湧泉", type: "drag", tool: "thumb", icon: "🦶", start: {x: COORDS.FOOT, y: 0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.FOOT, y: 0.3, z: RIGHT_LEG_Z}, view: "foot", pose: "rightRaised" }
+                { id: "4.1", text: "右大腿長推", note: "拇指併排，對稱操作", type: "drag", tool: "thumb", icon: "👍", start: {x: COORDS.KNEE, y: 0.0, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: 0.0, z: RIGHT_LEG_Z}, view: "thigh", pose: "flat" },
+                { id: "4.2", text: "S型抓捏 (右腿)", note: "雙手交替S型提拉", type: "drag", tool: "hand", icon: "✊", start: {x: COORDS.KNEE, y: 0.1, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: 0.15, z: RIGHT_LEG_Z}, view: "thigh", pose: "flat" },
+                { id: "4.3", text: "右足湧泉穴", note: "抬右腿90度，按壓湧泉", type: "drag", tool: "thumb", icon: "🦶", start: {x: COORDS.FOOT, y: 0.3, z: RIGHT_LEG_Z}, end: {x: COORDS.FOOT, y: 0.4, z: RIGHT_LEG_Z}, view: "foot", pose: "rightRaised" }
             ],
             "4": [ // 5.0 結束程序（4個步驟）
-                { id: "5.1", text: "右腿單邊安撫", note: "完成右腿後進行長推撫", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.ANKLE, y: -0.3, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
-                { id: "5.2", text: "整體大安撫", note: "雙腿同時長推，整合感受", type: "drag", tool: "hands", icon: "🌊", start: {x: COORDS.ANKLE, y: -0.3, z: 0}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, view: "overview", pose: "flat" },
-                { id: "5.3", text: "足底靜置", note: "掌心覆蓋足底，停留接地", type: "press", tool: "hands", icon: "🧘", start: {x: COORDS.FOOT, y: -0.35, z: 0}, end: {x: COORDS.FOOT, y: -0.35, z: 0}, duration: 5, view: "foot", pose: "flat" },
-                { id: "5.4", text: "最終覆蓋", note: "蓋上大毛巾，完成療程", type: "click", tool: "towel", icon: "✅", start: {x: COORDS.THIGH_MID, y: -0.1, z: 0}, end: {x: COORDS.KNEE, y: -0.1, z: 0}, view: "overview", pose: "flat" }
+                { id: "5.1", text: "右腿單邊安撫", note: "完成右腿後進行長推撫", type: "drag", tool: "hand", icon: "✨", start: {x: COORDS.ANKLE, y: 0.0, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: 0.0, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
+                { id: "5.2", text: "整體大安撫", note: "雙腿同時長推，整合感受", type: "drag", tool: "hands", icon: "🌊", start: {x: COORDS.ANKLE, y: 0.1, z: 0}, end: {x: COORDS.THIGH_ROOT, y: 0.2, z: 0}, view: "overview", pose: "flat" },
+                { id: "5.3", text: "足底靜置", note: "掌心覆蓋足底，停留接地", type: "press", tool: "hands", icon: "🧘", start: {x: COORDS.FOOT, y: 0.0, z: 0}, end: {x: COORDS.FOOT, y: 0.0, z: 0}, duration: 5, view: "foot", pose: "flat" },
+                { id: "5.4", text: "最終覆蓋", note: "蓋上大毛巾，完成療程", type: "click", tool: "towel", icon: "✅", start: {x: COORDS.THIGH_MID, y: 0.15, z: 0}, end: {x: COORDS.KNEE, y: 0.15, z: 0}, view: "overview", pose: "flat" }
             ]
         };
         
@@ -272,6 +272,7 @@
         let currentFloatingIcon = null; 
         let autoNextTimeout = null; 
         let isMultiTouch = false; 
+        let dragPlane; // 🔥 新增：實體拖曳層
         
         let modelPos = { ...MODEL_CONFIG.male.pos };
         let modelRot = { ...MODEL_CONFIG.male.rot };
@@ -308,7 +309,7 @@
         let areaIndicator;
 
         const VR_CONFIG = {
-            DETECTION_RADIUS: 0.60, 
+            DETECTION_RADIUS: 0.80, // 🔥 增加 VR 偵測範圍 (0.6 -> 0.8)
             PRESS_DURATION: 0.4,
             HAND_INDICATOR_SIZE: 0.12,
             HAPTIC_INTENSITY: 1.0,
@@ -444,9 +445,7 @@
             const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, opacity: 0.9 });
             const mesh = new THREE.Mesh(geometry, material);
             
-            // 🔥 移動到更右側以避免遮擋 (原: 1.0 -> 改: 1.3, 剛好在綠色按鈕旁邊)
             mesh.position.set(1.3, 3.2, -2.0); 
-            // 🔥 稍微旋轉面向使用者
             mesh.rotation.set(0, -0.3, 0); 
             
             scene.add(mesh);
@@ -477,9 +476,9 @@
             dolly = new THREE.Group();
             // 🔥 VR 起始位置：提升玩家高度 (Y=1.3) 讓手能碰到床，並移動到床邊 (Z=-1.2)
             // 🔥🔥 關鍵修正：使用 Z = -1.2 讓玩家站在模特兒的 "側邊"，而不是床尾 (Z = 0.8)
-            // 🔥🔥 關鍵修正：使用 Scale = 2.0 讓玩家體型變大 (世界變小)，解決 "像小矮人" 的問題
+            // 🔥🔥 關鍵修正：使用 Scale = 2.5 讓玩家體型變大 (世界變小)，解決 "像小矮人" 的問題
             dolly.position.set(1.5, 1.6, -1.0); 
-            dolly.scale.set(2, 2, 2); // 🔥 縮放世界，讓玩家感覺變大
+            dolly.scale.set(2.5, 2.5, 2.5); // 🔥 縮放世界，讓玩家感覺變大
             scene.add(dolly);
             
             cameraOffset = new THREE.Group();
@@ -502,6 +501,14 @@
             trajectoryLine.visible = false;
             scene.add(trajectoryLine);
             
+            // 🔥 關鍵修復：將 dragPlane 設為 visible: true 但 opacity: 0
+            const planeGeo = new THREE.CircleGeometry(5, 32);
+            const planeMat = new THREE.MeshBasicMaterial({ visible: true, opacity: 0, transparent: true, depthWrite: false }); 
+            dragPlane = new THREE.Mesh(planeGeo, planeMat);
+            dragPlane.rotation.x = -Math.PI / 2; 
+            dragPlane.position.y = modelPos.y; 
+            scene.add(dragPlane);
+
             createInstructionBoard();
             createTeleportVisuals();
             createGhostHand(); 
@@ -979,70 +986,13 @@
         }
 
         function checkIntersection() {
-            const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -model.position.y);
-            const point = new THREE.Vector3();
-            raycaster.ray.intersectPlane(plane, point);
+            // 🔥 關鍵修正：使用 dragPlane 而不是數學平面
+            // 這樣可以確保 Raycaster 總是打在一個固定高度的實體上
+            const intersects = raycaster.intersectObject(dragPlane);
             
-            const intersects = raycaster.intersectObjects(interactables, true);
-            if (intersects.length > 0) {
-                const obj = intersects[0].object;
-                if (obj === vr3DButtonMesh && globalEnterVRFunc) { 
-                    globalEnterVRFunc(); 
-                    return; 
-                }
+            if (intersects.length > 0 && isDragging) {
+                const point = intersects[0].point;
                 
-                const currentData = learningData[String(currentPhase)]; 
-                if (!currentData) return;
-
-                const step = currentData[currentStepIndex];
-                
-                if (step.type === 'press' || step.type === 'click') {
-                    isDragging = false;
-                    const targetGroup = intersects[0].object.parent || intersects[0].object;
-                    
-                    if (targetGroup) {
-                        gsap.to(targetGroup.scale, { 
-                            x: 1.5, y: 1.5, z: 1.5, 
-                            duration: 0.2, 
-                            yoyo: true, 
-                            repeat: 1 
-                        });
-                        
-                        setTimeout(() => { 
-                            safeSetText('interaction-status', '✅ 完成');
-                            nextStep(); 
-                        }, 400);
-                    }
-                    return;
-                }
-                
-                if (step.type === 'drag') {
-                    const endObj = interactables.find(obj => obj.userData.isEnd);
-                    if (endObj && point) {
-                        const distToEnd = point.distanceTo(endObj.position);
-                        if (distToEnd < 1.2) {
-                            isDragging = false;
-                            
-                            gsap.to(endObj.scale, { 
-                                x: 1.5, y: 1.5, z: 1.5, 
-                                duration: 0.2, 
-                                yoyo: true, 
-                                repeat: 1 
-                            });
-                            
-                            controls.enabled = true;
-                            
-                            setTimeout(() => { 
-                                safeSetText('interaction-status', '✅ 完成');
-                                nextStep(); 
-                            }, 400);
-                            return;
-                        }
-                    }
-                }
-            }
-
-            if (point && isDragging) {
                 if (ghostHand) {
                     ghostHand.visible = true; 
                     ghostHand.position.copy(point); 
@@ -1058,6 +1008,7 @@
                                 step.end.z + model.position.z
                             );
                             
+                            // 提高完成判定的寬容度
                             if (ghostHand.position.distanceTo(endPos) < 1.5) {
                                 isDragging = false; 
                                 controls.enabled = true; 
@@ -1155,6 +1106,12 @@
             } else {
                 isDragging = false;
                 controls.enabled = true; 
+                
+                // 🔥 新增：點擊空白處也要有反饋
+                const dragIntersects = raycaster.intersectObject(dragPlane);
+                if (dragIntersects.length > 0) {
+                    showTouchFeedback(dragIntersects[0].point);
+                }
             }
         }
         
@@ -1185,10 +1142,10 @@
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             
-            const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -model.position.y);
-            const point = new THREE.Vector3();
-            if (raycaster.ray.intersectPlane(plane, point)) {
-                showTouchFeedback(point);
+            // 嘗試在 dragPlane 上顯示反饋
+            const intersects = raycaster.intersectObject(dragPlane);
+            if (intersects.length > 0) {
+                showTouchFeedback(intersects[0].point);
             }
             
             const vrIntersects = raycaster.intersectObjects([vr3DButtonMesh], true);
@@ -1198,20 +1155,19 @@
             }
             
             let hitInteractable = null;
+            // 🔥 這裡也要過濾 visible
             const directIntersects = raycaster.intersectObjects(interactables, true);
             if (directIntersects.length > 0) {
-                hitInteractable = directIntersects[0].object.parent || directIntersects[0].object;
-            }
-            
-            if (!hitInteractable && point) {
-                const validInteractables = interactables.filter(obj => obj !== vr3DButtonMesh && obj.visible);
-                for (let obj of validInteractables) {
-                    const distance = point.distanceTo(obj.position);
-                    if (distance < 0.8) {
-                        hitInteractable = obj;
+                 for (let i = 0; i < directIntersects.length; i++) {
+                    if (directIntersects[i].object.visible === true) {
+                        hitInteractable = directIntersects[i].object.parent || directIntersects[i].object;
                         break;
                     }
                 }
+            }
+            
+            if (!hitInteractable && intersects.length > 0) {
+               // Check distance logic removed to rely purely on visual hit
             }
             
             if (hitInteractable) { 
@@ -1259,29 +1215,40 @@
                 if (ghostHand) ghostHand.visible = false; 
                 setTimeout(() => { controls.enabled = true; }, 100);
             } else {
+                // ... (Click logic remains similar, but relies on accurate raycasting)
                 const holdDuration = Date.now() - touchStartTime;
-                if (holdDuration < 300) { 
+                 if (holdDuration < 300) {
                     raycaster.setFromCamera(mouse, camera);
-                    const intersects = raycaster.intersectObjects(interactables, true);
-                    if (intersects.length > 0) {
-                        const hitObj = intersects[0].object.parent || intersects[0].object;
-                        gsap.to(hitObj.scale, { 
-                            x: 1.5, y: 1.5, z: 1.5, 
-                            duration: 0.2, 
-                            yoyo: true, 
-                            repeat: 1,
-                            onComplete: () => {
-                                const currentData = learningData[String(currentPhase)];
-                                if (currentData) {
-                                    const step = currentData[currentStepIndex];
-                                    if (step && (step.type === 'click' || step.type === 'press')) {
-                                        setTimeout(() => { nextStep(); }, 300);
+                    // Check visible interactables again
+                     const intersects = raycaster.intersectObjects(interactables, true);
+                     if (intersects.length > 0) {
+                         let hitObj = null;
+                         for(let i=0; i<intersects.length; i++){
+                             if(intersects[i].object.visible === true){
+                                 hitObj = intersects[i].object.parent || intersects[i].object;
+                                 break;
+                             }
+                         }
+                         
+                        if(hitObj){
+                            gsap.to(hitObj.scale, { 
+                                x: 1.5, y: 1.5, z: 1.5, 
+                                duration: 0.2, 
+                                yoyo: true, 
+                                repeat: 1,
+                                onComplete: () => {
+                                    const currentData = learningData[String(currentPhase)];
+                                    if (currentData) {
+                                        const step = currentData[currentStepIndex];
+                                        if (step && (step.type === 'click' || step.type === 'press')) {
+                                            setTimeout(() => { nextStep(); }, 300);
+                                        }
                                     }
                                 }
-                            }
-                        });
-                    }
-                }
+                            });
+                        }
+                     }
+                 }
                 setTimeout(() => { controls.enabled = true; }, 100);
             }
         }
@@ -1328,6 +1295,9 @@
                     }
                 });
                 scene.add(model); applyPose('flat');
+                // Update dragPlane position
+                if(dragPlane) dragPlane.position.y = modelPos.y + 0.2; // Slightly above model base
+                
                 document.getElementById('welcome').style.display = 'none'; document.getElementById('ui').style.display = 'block';
                 console.log("✅ 模型載入完成，開始初始化第一階段...");
                 setPhase(1);
@@ -1443,6 +1413,9 @@
                 create3DInteractable(step.start, 0x00ff00, step.type);
                 showGhostGuide(step.start, step.end || step.start, false);
             }
+            
+            // Update dragPlane Y to match interactables height for smooth drag
+            if(dragPlane) dragPlane.position.y = modelPos.y + 0.2;
         }
 
         function createAreaIndicator(start, end) {
@@ -1474,7 +1447,6 @@
 
         function create3DInteractable(pos, color, type, isHidden = false) {
             const group = new THREE.Group();
-            // 🔥 降低高度偏移，原 +0.5 -> +0.2
             group.position.set(pos.x + model.position.x, pos.y + model.position.y + 0.2, pos.z + model.position.z);
             
             const sphereGeometry = new THREE.SphereGeometry(VR_CONFIG.SPHERE_SIZE * 1.2, 32, 32); 
@@ -1508,7 +1480,12 @@
                 // 🔥 關鍵修正：將 hitBox 設為不可見，避免手機觸控 Raycaster 點到它
                 new THREE.MeshBasicMaterial({ visible: false })
             );
-            hitBox.visible = false; // 雙重保險
+            hitBox.visible = true; // 雙重保險
+            hitBox.material.opacity = 0; // 確保透明
+            hitBox.material.transparent = true;
+            // 🔥 關鍵修正：關閉 hitBox 的 raycast，只讓 VR 偵測距離，不讓手機點到
+            hitBox.raycast = () => {}; 
+            
             hitBox.renderOrder = 1000; 
             group.add(hitBox);
             
