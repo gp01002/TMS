@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (v26.6)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (v26.7)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -101,7 +101,7 @@
         <div class="welcome-slide" id="slide-instructions">
             <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
             <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典式腿部按摩 SOP</h1>
-            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v26.6</p>
+            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v26.7</p>
             
             <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px; margin-left: auto; margin-right: auto;">
                 <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 操作指南</p>
@@ -113,6 +113,7 @@
                     <p style="margin-top: 10px;">🥽 <b>VR 操作：</b></p>
                     <p style="margin-left: 20px;">• 支援手勢追蹤：食指靠近球體即可觸發</p>
                     <p style="margin-left: 20px;">• 支援手把控制器：靠近球體即可觸發</p>
+                    <p style="margin-left: 20px; color: #ffff00;">• 已優化位置：靠近床邊，伸手可及</p>
                 </div>
             </div>
             
@@ -193,9 +194,10 @@
 
         const BASE_URL = "https://gp01002.github.io/TMS/";
 
+        // 🔥 模特兒位置：Z 軸設為 0.25，讓它往玩家方向（+Z）移動，解決手太短摸不到的問題
         const MODEL_CONFIG = {
-            male: { pos: { x: 0.1, y: 2.32, z: 0 }, scale: 1.0, rot: { x: 1.57, y: 0, z: 1.57 } },
-            female: { pos: { x: 0.1, y: 2.28, z: 0 }, scale: 1.0, rot: { x: 1.57, y: 0, z: 1.57 } }
+            male: { pos: { x: 0.1, y: 2.32, z: 0.25 }, scale: 1.0, rot: { x: 1.57, y: 0, z: 1.57 } },
+            female: { pos: { x: 0.1, y: 2.28, z: 0.25 }, scale: 1.0, rot: { x: 1.57, y: 0, z: 1.57 } }
         };
         
         const LEFT_LEG_Z = 0.12;  
@@ -205,26 +207,27 @@
             CENTER_LEGS: 0
         };
 
+        // 🔥 更新 View Presets，讓 VR 起始位置更靠近床邊 (Z=0.8) 
         const VIEW_PRESETS = {
             overview: { 
                 pcPos: {x: 2.0, y: 2.0, z: 2.0}, pcTarget: {x: 0, y: 0.5, z: 0}, 
-                vrPos: {x: 0.7, z: 1.3} 
+                vrPos: {x: 0.7, z: 0.8} 
             },
             thigh: { 
                 pcPos: {x: -2.0, y: 1.5, z: 1.0}, pcTarget: {x: -2.5, y: 0.5, z: 0}, 
-                vrPos: {x: 0.6, z: 1.3} 
+                vrPos: {x: 0.6, z: 0.8} 
             },
             knee: { 
                 pcPos: {x: -1.0, y: 1.2, z: 1.0}, pcTarget: {x: -1.5, y: 1.0, z: 0}, 
-                vrPos: {x: 0.6, z: 1.3} 
+                vrPos: {x: 0.6, z: 0.8} 
             },
             calf: { 
                 pcPos: {x: 0.5, y: 1.2, z: 1.0}, pcTarget: {x: -0.5, y: 0.5, z: 0}, 
-                vrPos: {x: 0.6, z: 1.3} 
+                vrPos: {x: 0.6, z: 0.8} 
             },
             foot: { 
                 pcPos: {x: 1.5, y: 1.0, z: 1.0}, pcTarget: {x: 0.5, y: 0.3, z: 0}, 
-                vrPos: {x: 0.8, z: 1.3} 
+                vrPos: {x: 0.8, z: 0.8} 
             }
         };
 
@@ -233,6 +236,7 @@
             "1": [ // 2.0 準備與開場（5個步驟）
                 { id: "2.1", text: "毛巾安撫", note: "雙手從大腿根部沿兩側滑順至腳底", type: "drag", tool: "towel", icon: "⬜", start: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, end: {x: COORDS.FOOT, y: -0.3, z: 0}, view: "overview", pose: "flat" },
                 { id: "2.2", text: "腿部定位", note: "放置毛巾捲於雙腿之間", type: "click", tool: "towel_roll", icon: "🌀", start: {x: COORDS.KNEE, y: -0.2, z: 0}, end: {x: COORDS.KNEE, y: -0.2, z: 0}, view: "knee", pose: "flat" },
+                // 🔥 修正 Step 2.3 高度，原 -0.3 太低被床擋住，改為 0.0 (懸浮)
                 { id: "2.3", text: "初步舒緩", note: "雙手由跟腱向上長距離撫順至大腿", type: "drag", tool: "hands", icon: "✨", start: {x: COORDS.FOOT, y: 0.0, z: 0}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: 0}, view: "overview", pose: "flat" },
                 { id: "2.4", text: "單腿準備", note: "覆蓋右腿，準備操作左腿", type: "click", tool: "towel", icon: "🛡️", start: {x: COORDS.KNEE, y: -0.2, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: -0.2, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
                 { id: "2.5", text: "上油與開場", note: "左腿上油並執行大安撫", type: "drag", tool: "oil", icon: "🧴", start: {x: COORDS.FOOT, y: -0.3, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: -0.2, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" }
@@ -471,11 +475,12 @@
             document.body.appendChild(vrButton);
 
             dolly = new THREE.Group();
-            dolly.position.set(0.7, 0, 1.0); 
+            // 🔥 VR 起始位置：提升玩家高度 (Y=1.3) 讓手能碰到床，並移動到床邊 (Z=0.8)
+            dolly.position.set(0.7, 1.3, 0.8); 
             scene.add(dolly);
             
             cameraOffset = new THREE.Group();
-            cameraOffset.position.y = 2.75; 
+            cameraOffset.position.y = 0; // 🔥 歸零 cameraOffset Y 軸，因為已經用 dolly 抬高了
             dolly.add(cameraOffset);
             cameraOffset.add(camera);
             
@@ -1121,7 +1126,33 @@
             touchStartPos.y = e.touches[0].clientY;
             touchStartTime = Date.now();
             isTouchHolding = true;
-            onPointerDown(e.touches[0]); 
+            
+            mouse.x = (e.touches[0].clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(e.touches[0].clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(mouse, camera);
+
+            // 🔥 關鍵修正：只檢測 visible = true 的物體，忽略隱形 hitBox
+            const intersects = raycaster.intersectObjects(interactables, true);
+            let hitObject = null;
+
+            if (intersects.length > 0) {
+                for (let i = 0; i < intersects.length; i++) {
+                    // 🔥 嚴格檢查：只有當前點擊到的物體是可見的，才算選中
+                    if (intersects[i].object.visible === true) {
+                        hitObject = intersects[i].object.parent || intersects[i].object;
+                        break;
+                    }
+                }
+            }
+
+            if (hitObject) {
+                isDragging = true;
+                controls.enabled = false; 
+                onPointerDown(e.touches[0]); 
+            } else {
+                isDragging = false;
+                controls.enabled = true; 
+            }
         }
         
         function onTouchMove(e) { 
@@ -1440,7 +1471,8 @@
 
         function create3DInteractable(pos, color, type, isHidden = false) {
             const group = new THREE.Group();
-            group.position.set(pos.x + model.position.x, pos.y + model.position.y + 0.5, pos.z + model.position.z);
+            // 🔥 降低高度偏移，原 +0.5 -> +0.2
+            group.position.set(pos.x + model.position.x, pos.y + model.position.y + 0.2, pos.z + model.position.z);
             
             const sphereGeometry = new THREE.SphereGeometry(VR_CONFIG.SPHERE_SIZE * 1.2, 32, 32); 
             const sphereMaterial = new THREE.MeshStandardMaterial({ 
