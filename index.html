@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, maximum-scale=1.0">
-    <title>艾柏國際芳療 - VR 按摩教學 (v34.8 穴位微調版)</title>
+    <title>艾柏國際芳療 - VR 按摩教學 (v34.19 回歸 v34.13版)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
 
@@ -93,7 +93,7 @@
         <div class="welcome-slide" id="slide-instructions">
             <div style="font-size: 40px; font-weight: bold; color: #8ec5fc; margin-bottom: 10px;">艾柏國際芳療</div>
             <h1 style="font-size: 28px; margin-bottom: 10px;">🤲 VR 瑞典式腿部按摩 SOP</h1>
-            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v34.8</p>
+            <p style="color: #00ff00; font-size: 20px; font-weight: bold;">v34.19 (原 v34.13)</p>
             <div style="margin-top: 30px; background: rgba(0,255,0,0.1); padding: 20px; border-radius: 15px; border: 2px solid rgba(0,255,0,0.3); max-width: 600px; margin-left: auto; margin-right: auto;">
                 <p style="color: #00ff00; font-weight: bold; font-size: 16px; margin-bottom: 15px;">🔧 操作指南</p>
                 <div style="text-align: left; color: #ccc; line-height: 2;">
@@ -198,34 +198,37 @@
             CENTER_LEGS: 0
         };
 
-        // 🔥 v34.8 更新：11個精選穴位 (微調更貼合腿部)
-        // 坐標已根據第二張圖的需求進行微調：更低、更靠左(後)
+        // 🔥 v34.19 (回歸 v34.13 設定)：以環跳 (X: -3.0, Y: 0.0) 為基準
+        // X 軸從大腿根部 (-3.0) 延伸至腳踝 (0.2)
         const ACUPOINTS = [
-            // 臀部/大腿後側 (X: -2.6 ~ -0.8)
-            { name: "1.環跳穴", pos: { x: -2.4, y: 0.40, z: 0.32 }, type: "main" }, // 臀部外側
-            { name: "2.秩邊穴", pos: { x: -2.6, y: 0.40, z: -0.1 }, type: "sub" }, // 臀部後正中旁
-            { name: "3.殿門穴", pos: { x: -2.5, y: 0.40, z: 0.15 }, type: "sub" }, // 臀部外上方
-            { name: "4.承扶穴", pos: { x: -2.3, y: 0.38, z: 0.0 }, type: "main" }, // 臀橫紋正中
-            { name: "5.浮郄穴", pos: { x: -1.5, y: 0.36, z: 0.20 }, type: "sub" }, // 膝蓋外上方
-            { name: "6.委陽穴", pos: { x: -1.2, y: 0.35, z: 0.12 }, type: "sub" }, // 膕窩外側
-            { name: "7.合陽穴", pos: { x: -1.0, y: 0.33, z: 0.0 }, type: "sub" },  // 小腿肚上方
+            // ========== 臀部/大腿後側 (X: -3.0 ~ -1.5) ==========
+            { name: "1.環跳穴", pos: { x: -3.0, y: 0.0, z: 0.50 }, type: "main", note: "坐骨神經痛、下肢痿痺" }, // 大腿根部基準
+            { name: "2.秩邊穴", pos: { x: -3.1, y: 0.0, z: -0.20 }, type: "sub", note: "腰骶痛、下肢痿痺" }, // 臀部後正中旁
+            { name: "3.殿門穴", pos: { x: -2.9, y: 0.0, z: 0.40 }, type: "sub", note: "腰痛、腿痛" },
+            { name: "4.承扶穴", pos: { x: -2.8, y: 0.0, z: 0.0 }, type: "main", note: "腰骶臀股部疼痛、痔疾" }, // 臀橫紋
+            
+            // ========== 大腿後側/膝窩 (X: -2.0 ~ -1.3) ==========
+            { name: "5.浮郄穴", pos: { x: -1.8, y: 0.02, z: 0.25 }, type: "sub", note: "膕窩部疼痛、下肢痿痺" }, // 委陽上一寸
+            { name: "6.委陽穴", pos: { x: -1.6, y: 0.02, z: 0.20 }, type: "sub", note: "腰脊強痛、小腹脹滿" }, // 膕窩外側
+            { name: "7.合陽穴", pos: { x: -1.3, y: 0.02, z: 0.0 }, type: "sub", note: "腰脊強痛、下肢痿痺" },  // 委中下二寸
+            
+            // ========== 膝蓋/小腿 (X: -1.5 ~ -0.5) ==========
+            { name: "8.承筋穴", pos: { x: -1.1, y: 0.05, z: 0.0 }, type: "sub", note: "小腿痛、腰背拘急" },   // 小腿肚正中
+            { name: "9.承山穴", pos: { x: -0.8, y: 0.08, z: 0.0 }, type: "main", note: "小腿抽筋、腰背痛" },   // 小腿肚下方
+            { name: "10.梁丘穴", pos: { x: -1.6, y: 0.1, z: 0.15 }, type: "sub", note: "急性胃痛、膝腫痛" },  // 膝蓋前外上
+            { name: "11.飛揚穴", pos: { x: -0.7, y: 0.05, z: 0.20 }, type: "sub", note: "頭痛、目眩、腰腿痛" },  // 承山外下方
 
-            // 膝蓋/小腿 (X: -1.4 ~ -0.3)
-            { name: "8.承筋穴", pos: { x: -0.7, y: 0.32, z: 0.0 }, type: "sub" },  // 小腿肚正中
-            { name: "9.承山穴", pos: { x: -0.4, y: 0.30, z: 0.0 }, type: "main" }, // 小腿肚下方
-            { name: "10.梁丘穴", pos: { x: -1.4, y: 0.38, z: 0.18 }, type: "sub" },// 膝蓋前外上
-            { name: "11.飛揚穴", pos: { x: -0.4, y: 0.30, z: 0.15 }, type: "sub" },// 小腿外側
-            { name: "12.陽陵泉", pos: { x: -1.1, y: 0.35, z: 0.28 }, type: "main" },// 膝下外側
-
-            // 腳踝/足部 (X: 0.0 ~ 0.2)
-            { name: "13.崑崙穴", pos: { x: 0.05, y: 0.25, z: 0.28 }, type: "main" }, // 外踝後方
-            { name: "14.申脈穴", pos: { x: 0.10, y: 0.22, z: 0.26 }, type: "sub" }, // 外踝下方
-            { name: "15.金門穴", pos: { x: 0.15, y: 0.20, z: 0.24 }, type: "sub" }, // 足外側骨下方
-            { name: "16.京骨穴", pos: { x: 0.18, y: 0.18, z: 0.22 }, type: "sub" }, // 足外側骨前方
-            { name: "17.僕參穴", pos: { x: 0.02, y: 0.22, z: 0.26 }, type: "sub" }  // 跟骨外側
+            // ========== 腳踝/足部 (X: -0.5 ~ 0.2) ==========
+            { name: "12.陽陵泉", pos: { x: -1.4, y: 0.05, z: 0.30 }, type: "main", note: "下肢痿痺、膝腫痛" }, // 膝下外側
+            { name: "13.崑崙穴", pos: { x: -0.1, y: 0.0, z: 0.35 }, type: "main", note: "頭痛、項強、腰骶疼痛" }, // 外踝後方
+            { name: "14.申脈穴", pos: { x: 0.0, y: -0.05, z: 0.35 }, type: "sub", note: "頭痛、眩暈、腰腿痠痛" }, // 外踝下方
+            { name: "15.金門穴", pos: { x: 0.1, y: -0.08, z: 0.30 }, type: "sub", note: "頭痛、癲癇、小兒驚風" }, // 申脈前
+            { name: "16.京骨穴", pos: { x: 0.2, y: -0.08, z: 0.25 }, type: "sub", note: "頭痛、項強、腰腿痛" }, // 足外側骨
+            { name: "17.僕參穴", pos: { x: -0.15, y: -0.05, z: 0.30 }, type: "sub", note: "下肢痿痺、足跟痛" }  // 跟骨外側
         ];
 
         const VIEW_PRESETS = {
+            // 🔥 更新 PC 視角
             overview: { 
                 pcPos: {x: 1.0, y: 2.8, z: 1.0}, pcTarget: {x: -1.0, y: 2.3, z: 0}, 
                 vrPos: {x: 0.7, z: 1.3} 
@@ -248,12 +251,13 @@
             }
         };
 
+        // SOP 標準流程資料庫
         const learningData = {
             "1": [ // 2.0 準備與開場
                 { id: "2.1", text: "毛巾安撫", note: "雙手從大腿根部沿兩側滑順至腳底", type: "drag", tool: "towel", icon: "⬜", start: {x: COORDS.THIGH_ROOT, y: 0.5, z: 0}, end: {x: COORDS.FOOT, y: 0.5, z: 0}, view: "overview", pose: "flat" },
-                { id: "2.2", text: "腿部定位", note: "放置毛巾捲於雙腿之間", type: "click", tool: "towel_roll", icon: "🌀", start: {x: COORDS.KNEE, y: 0.5, z: 0}, end: {x: COORDS.KNEE, y: 0.5, z: 0}, view: "knee", pose: "flat" },
-                { id: "2.3", text: "初步舒緩", note: "雙手由跟腱向上長距離撫順至大腿", type: "drag", tool: "hands", icon: "✨", start: {x: COORDS.FOOT, y: 0.5, z: 0}, end: {x: COORDS.THIGH_ROOT, y: 0.5, z: 0}, view: "overview", pose: "flat" },
-                { id: "2.4", text: "單腿準備", note: "覆蓋右腿，準備操作左腿", type: "click", tool: "towel", icon: "🛡️", start: {x: COORDS.KNEE, y: 0.5, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: 0.5, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
+                { id: "2.2", text: "腿部定位", note: "放置毛巾捲於雙腿之間", type: "click", tool: "towel_roll", icon: "🌀", start: {x: COORDS.KNEE, y: 0.3, z: 0}, end: {x: COORDS.KNEE, y: 0.3, z: 0}, view: "knee", pose: "flat" },
+                { id: "2.3", text: "初步舒緩", note: "雙手由跟腱向上長距離撫順至大腿", type: "drag", tool: "hands", icon: "✨", start: {x: COORDS.FOOT, y: 0.35, z: 0}, end: {x: COORDS.THIGH_ROOT, y: 0.3, z: 0}, view: "overview", pose: "flat" },
+                { id: "2.4", text: "單腿準備", note: "覆蓋右腿，準備操作左腿", type: "click", tool: "towel", icon: "🛡️", start: {x: COORDS.KNEE, y: 0.3, z: RIGHT_LEG_Z}, end: {x: COORDS.THIGH_MID, y: 0.3, z: RIGHT_LEG_Z}, view: "overview", pose: "flat" },
                 { id: "2.5", text: "上油與開場", note: "左腿上油並執行大安撫", type: "drag", tool: "oil", icon: "🧴", start: {x: COORDS.FOOT, y: 0.3, z: LEFT_LEG_Z}, end: {x: COORDS.THIGH_ROOT, y: 0.3, z: LEFT_LEG_Z}, view: "thigh", pose: "flat" }
             ],
             "2": [ // 3.0 左腿流程
@@ -363,23 +367,22 @@
             }, 1000);
         }
         
-        // 🔥 穴位開關：修改為白色，並降低高度以貼合腿部
+        // 🔥 穴位開關：修改為白色，並直接使用 ACUPOINTS 內的座標
         function toggleAcupoints() {
             if (!acupointGroup) {
                 acupointGroup = new THREE.Group();
                 acupointDots = []; 
 
                 ACUPOINTS.forEach(pt => {
-                    // 🔥 將所有穴位顏色統一改為白色
                     const color = 0xffffff;
                     const geo = new THREE.SphereGeometry(0.025, 16, 16); 
                     const mat = new THREE.MeshBasicMaterial({ color: color });
                     const mesh = new THREE.Mesh(geo, mat);
                     
-                    // 🔥 關鍵修改：將 Y 軸座標全面降低 0.15，使其貼合腿部表面
+                    // 🔥 直接使用 ACUPOINTS 內的座標，不進行額外計算
                     mesh.position.set(
                         pt.pos.x + modelPos.x,
-                        pt.pos.y + modelPos.y - 0.15, 
+                        pt.pos.y + modelPos.y,
                         pt.pos.z + modelPos.z
                     );
                     
@@ -564,7 +567,7 @@
             loadEnvironment();
         }
 
-        // ... (Existing VR button, hands setup, interaction logic from v33.3 - kept for brevity) ...
+        // ... (Existing VR button, hands setup, interaction logic from v34.13 - kept for brevity) ...
         function createVRButton(renderer) { const button = document.createElement('button'); button.style.position = 'absolute'; button.style.top = '10%'; button.style.left = '50%'; button.style.transform = 'translateX(-50%)'; button.style.padding = '15px 40px'; button.style.border = '2px solid rgba(0, 255, 0, 0.5)'; button.style.borderRadius = '50px'; button.style.background = 'rgba(0, 30, 0, 0.7)'; button.style.backdropFilter = 'blur(5px)'; button.style.color = '#00ff00'; button.style.font = 'bold 20px "Microsoft JhengHei", monospace'; button.style.cursor = 'pointer'; button.style.zIndex = '999'; button.style.display = 'none'; button.style.transition = 'all 0.3s ease'; button.onmouseover = () => { button.style.transform = 'translateX(-50%) scale(1.05)'; }; button.onmouseout = () => { button.style.transform = 'translateX(-50%) scale(1)'; }; function showEnterVR() { let currentSession = null; button.textContent = '🥽 進入 VR'; button.style.display = ''; const enterVR = async () => { if (!currentSession) { const sessionInit = { optionalFeatures: ['local-floor', 'hand-tracking'] }; try { const session = await navigator.xr.requestSession('immersive-vr', sessionInit); currentSession = session; session.addEventListener('end', () => { currentSession = null; button.textContent = '🥽 進入 VR'; vr3DButtonMesh.visible = true; document.body.classList.remove('vr-active'); }); await renderer.xr.setSession(session); button.textContent = '🚪 退出 VR'; vr3DButtonMesh.visible = false; document.body.classList.add('vr-active'); } catch(e) { alert("VR Error: " + e.message); } } else { currentSession.end(); } }; button.onclick = enterVR; globalEnterVRFunc = enterVR; } if ('xr' in navigator) navigator.xr.isSessionSupported('immersive-vr').then(s => s ? showEnterVR() : null); return button; }
         function setupVRHands() { handModelFactory = new XRHandModelFactory(); controllerModelFactory = new XRControllerModelFactory(); for (let i = 0; i < 2; i++) { const controller = renderer.xr.getController(i); cameraOffset.add(controller); vrControllers.push(controller); const controllerModel = controllerModelFactory.createControllerModel(controller); controller.add(controllerModel); const hand = renderer.xr.getHand(i); cameraOffset.add(hand); try { const handModel = handModelFactory.createHandModel(hand, "mesh"); hand.add(handModel); } catch (e) {} const handData = { hand: hand, controller: controller, handIndex: i, handedness: null, isHandTracking: false, isControllerActive: false, indexTip: null, indicator: null, isPinching: false }; const indicator = new THREE.Mesh(new THREE.SphereGeometry(VR_CONFIG.HAND_INDICATOR_SIZE, 32, 32), new THREE.MeshStandardMaterial({ color: 0x00ff00, transparent: true, opacity: 0.6, emissive: 0x00ff00, emissiveIntensity: 0.5 })); indicator.visible = false; scene.add(indicator); handData.indicator = indicator; hand.addEventListener('connected', (e) => { handData.handedness = e.data.handedness; handData.isHandTracking = true; safeSetText('hand-track-status', `Hand ${e.data.handedness}`); }); hand.addEventListener('disconnected', () => { handData.isHandTracking = false; }); controller.addEventListener('connected', (e) => { handData.handedness = e.data.handedness; handData.isControllerActive = true; safeSetText('hand-track-status', `Ctrl ${e.data.handedness}`); }); controller.addEventListener('disconnected', () => { handData.isControllerActive = false; }); vrHands.push(hand); vrHandData.push(handData); } }
         function updateVRStatus() { vrHandData.forEach(handData => { let activePos = null; handData.hand.updateMatrixWorld(true); if (handData.isHandTracking && handData.hand.joints && handData.hand.joints['index-finger-tip']) { handData.indexTip = handData.hand.joints['index-finger-tip']; handData.thumbTip = handData.hand.joints['thumb-tip']; handData.wrist = handData.hand.joints['wrist']; const worldPos = new THREE.Vector3(); handData.indexTip.getWorldPosition(worldPos); activePos = worldPos; } else if (handData.isHandTracking) { const worldPos = new THREE.Vector3(); handData.hand.getWorldPosition(worldPos); activePos = worldPos; } else if (handData.isControllerActive) { const worldPos = new THREE.Vector3(); const direction = new THREE.Vector3(); handData.controller.getWorldPosition(worldPos); handData.controller.getWorldDirection(direction); direction.multiplyScalar(-0.1); worldPos.add(direction); activePos = worldPos; } if (activePos && handData.indicator) { handData.indicator.position.copy(activePos); handData.indicator.visible = true; } else if (handData.indicator) { handData.indicator.visible = false; } }); const currentData = learningData[String(currentPhase)]; if (currentData && interactables.length > 0) { const startObj = interactables.find(obj => obj.userData.isStart || (!obj.userData.isEnd && !obj.userData.isStart)); if (startObj) { vrHandData.forEach(handData => { if (handData.indicator && handData.indicator.visible) { const dist = handData.indicator.position.distanceTo(startObj.position); if (dist < 1.0) { safeSetText('distance-status', `${(dist * 100).toFixed(0)}cm`); } } }); } } }
@@ -623,7 +626,6 @@
         }
         
         function onTouchStart(e) { 
-            // 🔥 雙擊解鎖
             const currentTime = new Date().getTime();
             const tapLength = currentTime - lastTapTime;
             if (tapLength < 300 && tapLength > 0) {
@@ -652,29 +654,23 @@
 
             let hitObject = null;
             
-            // 🔥 優先檢查穴位 (如果穴位開啟)
             if (acupointGroup && acupointGroup.visible) {
                  const acuIntersects = raycaster.intersectObjects(acupointDots);
                  if (acuIntersects.length > 0) {
                      const hitAcu = acuIntersects[0].object;
-                     // Toggle label
                      if (hitAcu.userData.label) {
-                         // Hide all other labels
                          acupointDots.forEach(d => {
                              if(d !== hitAcu && d.userData.label) d.userData.label.visible = false;
                          });
                          hitAcu.userData.label.visible = !hitAcu.userData.label.visible;
                      }
-                     // 不觸發其他互動
                      return; 
                  }
             }
 
-            // 遍歷所有可見的球體
             for(let obj of interactables) {
                 if(obj.visible && obj.userData.sphere) {
                     const screenPos = obj.position.clone().project(camera);
-                    // 🔥 Z軸深度檢測
                     if (screenPos.z > 1 || screenPos.z < -1) continue; 
 
                     const x = (screenPos.x * .5 + .5) * window.innerWidth;
@@ -684,7 +680,6 @@
                     const dy = y - e.touches[0].clientY;
                     const dist = Math.sqrt(dx*dx + dy*dy);
                     
-                    // 🔥 手機判定範圍
                     if(dist < 80) {
                         hitObject = obj;
                         break;
@@ -737,7 +732,6 @@
             mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             
-            // 🔥 滑鼠點擊穴位邏輯
              if (acupointGroup && acupointGroup.visible) {
                  const acuIntersects = raycaster.intersectObjects(acupointDots);
                  if (acuIntersects.length > 0) {
@@ -946,7 +940,7 @@
             const material = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false }); // depthTest: false 讓它總是顯示在最上層
             const sprite = new THREE.Sprite(material);
 
-            // 設定位置
+            // 設定位置 (再往上移一點，避免擋住球)
             sprite.position.set(pos.x + model.position.x, pos.y + model.position.y + 0.8, pos.z + model.position.z); // 高度稍微降低 0.8 -> 0.6
             
             // 縮小整體 3D 尺寸
